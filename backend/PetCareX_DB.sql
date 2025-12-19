@@ -2,7 +2,9 @@
    PETCAREX - DATABASE SCRIPT (SQL Server)
    ========================================================= */
 
--- T?O DATABASE
+-- TẠO DATABASE
+USE master
+GO
 IF DB_ID(N'PetCareX') IS NOT NULL
 BEGIN
     ALTER DATABASE PetCareX SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -126,12 +128,11 @@ CREATE TABLE NguoiDung (
 GO
 
 CREATE TABLE TaiKhoan (
-    MaND        varchar(10)     NOT NULL,
-    MatKhau     varchar(30)   NOT NULL,
-    NgayTaoTaiKhoan     datetime        NOT NULL,
-    TrangThai   nvarchar(20)    NOT NULL,
+    MaND			varchar(10)     NOT NULL,
+    MatKhau			varchar(30)		NOT NULL,
+    NgayTaoTaiKhoan datetime        NOT NULL 	CONSTRAINT DF_TaiKhoan_NgayTao DEFAULT (GETDATE()),
+    TrangThai		nvarchar(20)    NOT NULL,
     CONSTRAINT PK_TaiKhoan PRIMARY KEY (MaND),
-	CONSTRAINT DF_TaiKhoan_NgayTao DEFAULT (GETDATE()),
     CONSTRAINT FK_TaiKhoan_NguoiDung FOREIGN KEY (MaND) REFERENCES NguoiDung(MaND),
     CONSTRAINT CK_TaiKhoan_TrangThai CHECK (TrangThai IN (N'Hoạt động', N'Khóa'))
 );
@@ -206,7 +207,7 @@ GO
 CREATE TABLE CungCapDV (
     MaCN       varchar(10)     NOT NULL,
     MaDV       varchar(10)   NOT NULL,
-    CONSTRAINT PK_DichVu PRIMARY KEY (MaDV, MaCN),
+    CONSTRAINT PK_CCDichVu PRIMARY KEY (MaDV, MaCN),
 	CONSTRAINT FK_CungCap_CN FOREIGN KEY (MaCN) REFERENCES ChiNhanh(MaCN),
 	CONSTRAINT FK_CungCap_DV FOREIGN KEY (MaDV) REFERENCES DichVu(MaDV)
 );
