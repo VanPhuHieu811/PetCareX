@@ -1,5 +1,7 @@
 ## PetCareX Backend
 
+Node.js (Express / NestJS)
+
 ## How to run
 
 ```zsh
