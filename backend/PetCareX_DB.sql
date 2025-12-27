@@ -25,8 +25,8 @@ CREATE TABLE ChiNhanh (
     TenCN       nvarchar(100)   NOT NULL,
     DiaChi      nvarchar(255)   NOT NULL,
     SDT         varchar(10)     NULL,
-    ThoiGianMo  datetime        NULL,
-    ThoiGianDong datetime        NULL,
+    ThoiGianMo  time(0)			NULL,
+    ThoiGianDong time(0)			NULL,
     CONSTRAINT PK_ChiNhanh PRIMARY KEY (MaCN),
     CONSTRAINT CK_ChiNhanh_SDT_So CHECK (SDT IS NULL OR SDT NOT LIKE '%[^0-9]%'),
     CONSTRAINT CK_ChiNhanh_Gio CHECK (ThoiGianMo IS NULL OR ThoiGianDong IS NULL OR ThoiGianDong > ThoiGianMo)
@@ -65,7 +65,7 @@ CREATE TABLE LoaiSP (
     MaLoaiSP    varchar(10)     NOT NULL,
     TenLoaiSP   nvarchar(50)    NOT NULL,
     CONSTRAINT PK_LoaiSP PRIMARY KEY (MaLoaiSP),
-    CONSTRAINT CK_LoaiSP_Ten CHECK (TenLoaiSP IN (N'Thuốc', N'Thức an', N'Phụ kiện'))
+    CONSTRAINT CK_LoaiSP_Ten CHECK (TenLoaiSP IN (N'Thuốc', N'Thức ăn', N'Phụ kiện'))
 );
 GO
 
@@ -150,7 +150,7 @@ CREATE TABLE NhanVien (
     CONSTRAINT FK_NhanVien_ChucVu FOREIGN KEY (MaChucVu) REFERENCES ChucVu(MaChucVu),
     CONSTRAINT FK_NhanVien_ChiNhanh FOREIGN KEY (MaCN) REFERENCES ChiNhanh(MaCN),
     CONSTRAINT CK_NhanVien_Luong CHECK (LuongCoBan > 0), 
-    CONSTRAINT CK_NhanVien_TrangThai CHECK (TrangThai IN (N'Ðang làm', N'Nghỉ việc'))
+    CONSTRAINT CK_NhanVien_TrangThai CHECK (TrangThai IN (N'Đang làm', N'Nghỉ việc'))
 );
 GO
 
@@ -243,7 +243,7 @@ CREATE TABLE PhieuDatDVKhamBenh (
     BacSiPhuTrach   varchar(10)     NOT NULL,
     CONSTRAINT PK_PhieuKham PRIMARY KEY (MaPhieuDV),
     CONSTRAINT FK_PhieuKham_PhieuDatDV FOREIGN KEY (MaPhieuDV) REFERENCES PhieuDatDV(MaPhieuDV),
-	CONSTRAINT CK_PhieuKham_NTK CHECK (NgayTaiKham > NgayKham), 
+	CONSTRAINT CK_PhieuKham_NTK CHECK (NgayTaiKham IS NULL OR NgayTaiKham > NgayKham), 
     CONSTRAINT FK_PhieuKham_ThuCung FOREIGN KEY (MaTC) REFERENCES ThuCung(MaTC),
     CONSTRAINT FK_PhieuKham_BacSi FOREIGN KEY (BacSiPhuTrach) REFERENCES NhanVien(MaNV),
     CONSTRAINT CK_PhieuKham_TongTien CHECK (TongTienDonThuoc >= 0)
@@ -310,7 +310,7 @@ GO
 CREATE TABLE VacXin (
     MaVacXin    varchar(10)     NOT NULL,
     TenVacXin   nvarchar(100)   NOT NULL,
-    NgaySanXuat datetime            NOT NULL,
+    NgaySanXuat date           NOT NULL,
     DonViTinh   nvarchar(20)    NOT NULL,
     GiaVacXin   int             NOT NULL,
     CONSTRAINT PK_VacXin PRIMARY KEY (MaVacXin),
