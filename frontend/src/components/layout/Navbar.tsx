@@ -1,0 +1,103 @@
+import { Link, useLocation } from 'react-router-dom';
+import { ShoppingCart, Calendar, User, Menu, X, Home, PawPrint } from 'lucide-react';
+import { useState } from 'react';
+import { currentUser } from '../../data/mockDatabase';
+import clsx from 'clsx';
+
+export default function Navbar() {
+    const [isOpen, setIsOpen] = useState(false);
+    const location = useLocation();
+
+    const navigation = [
+        { name: 'Trang chủ', href: '/', icon: Home },
+        { name: 'Sản phẩm', href: '/products', icon: ShoppingCart },
+        { name: 'Đặt lịch khám', href: '/booking', icon: Calendar },
+        { name: 'Hồ sơ cá nhân', href: '/profile', icon: User },
+    ];
+
+    return (
+        <nav className="bg-white shadow-sm sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between h-16">
+                    <div className="flex">
+                        <Link to="/" className="flex-shrink-0 flex items-center gap-2">
+                            <div className="bg-blue-600 p-1.5 rounded-lg">
+                                <PawPrint className="h-6 w-6 text-white" />
+                            </div>
+                            <span className="font-bold text-xl text-blue-900">PetCareX</span>
+                        </Link>
+                    </div>
+
+                    {/* Desktop Menu */}
+                    <div className="hidden sm:flex sm:items-center sm:space-x-8">
+                        {navigation.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = location.pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    to={item.href}
+                                    className={clsx(
+                                        'inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200',
+                                        isActive
+                                            ? 'text-blue-600'
+                                            : 'text-gray-500 hover:text-blue-600'
+                                    )}
+                                >
+                                    <Icon className="w-4 h-4 mr-2" />
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    {/* User Info & Mobile Button */}
+                    <div className="flex items-center">
+                        <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-gray-200 ml-4">
+                            <span className="text-sm font-medium text-gray-700">{currentUser.name}</span>
+                            <Link to="/profile" className="cursor-pointer hover:opacity-80 transition-opacity">
+                                <img
+                                    className="h-8 w-8 rounded-full border border-gray-200"
+                                    src={currentUser.avatar}
+                                    alt={currentUser.name}
+                                />
+                            </Link>
+                        </div>
+                        <div className="-mr-2 flex items-center sm:hidden">
+                            <button
+                                onClick={() => setIsOpen(!isOpen)}
+                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                            >
+                                {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Menu */}
+            <div className={clsx('sm:hidden', isOpen ? 'block' : 'hidden')}>
+                <div className="pt-2 pb-3 space-y-1">
+                    {navigation.map((item) => (
+                        <Link
+                            key={item.name}
+                            to={item.href}
+                            className={clsx(
+                                'block pl-3 pr-4 py-2 border-l-4 text-base font-medium',
+                                location.pathname === item.href
+                                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                            )}
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <div className="flex items-center">
+                                <item.icon className="w-5 h-5 mr-3" />
+                                {item.name}
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </nav>
+    );
+}
