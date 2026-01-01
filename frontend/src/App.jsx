@@ -7,6 +7,8 @@ import PetSearch from './pages/staff/PetSearch';
 import CustomerManagement from './pages/staff/CustomerManagement';
 import CreateAppointment from './pages/staff/CreateAppointment';
 import PetPOS from './pages/staff/PetPOS';
+import Settings from './pages/staff/Settings';
+import Invoices from './pages/staff/Invoices';
 
 function App() {
   return (
@@ -37,8 +39,8 @@ function App() {
 
           {/* Các trang đang phát triển (Tạm thời trỏ về Dashboard) */}
           <Route path="pets" element={<PetSearch />} />
-          <Route path="invoices" element={<PetPOS />} />
-          <Route path="settings" element={<Dashboard />} />
+          <Route path="invoices" element={<Invoices />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* Trang lỗi 404 (Nếu người dùng nhập sai địa chỉ) */}
