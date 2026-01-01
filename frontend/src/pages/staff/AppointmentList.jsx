@@ -4,7 +4,7 @@ import {
   Plus, Search, Calendar, ChevronDown, 
   MoreVertical, RotateCcw, Edit2, Trash2, X, Clock, User, PawPrint
 } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 // 1. Component thẻ trạng thái với kích thước vừa vặn hơn
 const StatusCard = ({ count, label, color }) => {
   const styles = {
@@ -28,7 +28,7 @@ const AppointmentList = () => {
   const [showReschedule, setShowReschedule] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [selectedAppt, setSelectedAppt] = useState(null);
-
+  const navigate = useNavigate();
   const appointments = [
     { 
       id: 1, time: '09:00', day: 'Th 3', pet: 'Lucky', service: 'Khám bệnh', 
@@ -61,7 +61,7 @@ const AppointmentList = () => {
           <h1 className="text-2xl font-bold text-[#1E293B]">Quản lý lịch hẹn</h1>
           <p className="text-sm text-gray-400 font-medium">Theo dõi lịch trình chi nhánh</p>
         </div>
-        <button className="bg-[#0095FF] text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 shadow-md transition-all active:scale-95 text-sm">
+        <button onClick={() => navigate('/staff/create-appointment')} className="bg-[#0095FF] text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 shadow-md transition-all active:scale-95 text-sm">
           <Plus size={18} />
           Tạo lịch hẹn
         </button>

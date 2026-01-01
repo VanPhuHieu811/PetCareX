@@ -68,8 +68,6 @@ const StaffLayout = ({ children }) => {
           <SidebarItem icon={Search} label="Tra cứu thú cưng" path="/staff/search" />
           <SidebarItem icon={Users} label="Khách hàng" path="/staff/customers" />
           <SidebarItem icon={PawPrint} label="Thú cưng" path="/staff/pets" />
-          <SidebarItem icon={Stethoscope} label="Khám bệnh" path="/staff/medical" />
-          <SidebarItem icon={Syringe} label="Tiêm phòng" path="/staff/vaccine" />
           <SidebarItem icon={ShoppingCart} label="Bán hàng" path="/staff/pos" />
           <SidebarItem icon={FileText} label="Hóa đơn" path="/staff/invoices" />
           <SidebarItem icon={Settings} label="Cài đặt" path="/staff/settings" />

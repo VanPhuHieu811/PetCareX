@@ -24,9 +24,9 @@ const Dashboard = () => {
             <h4 className="font-bold text-lg">Tạo lịch khám</h4>
             <p className="text-sm text-white/80 mt-1 font-medium">Đặt lịch khám trực tiếp</p>
           </div>
-        <ActionSmallCard icon={Search} title="Tra cứu thú cưng" subtitle="Tìm kiếm thông tin" />
-        <ActionSmallCard icon={RefreshCcw} title="Đổi lịch hẹn" subtitle="Thay đổi thời gian" />
-        <ActionSmallCard icon={Calendar} title="Lịch làm việc" subtitle="Xem lịch hôm nay" />
+        <ActionSmallCard onClick={() => navigate('/staff/search')} icon={Search} title="Tra cứu thú cưng" subtitle="Tìm kiếm thông tin" />
+        <ActionSmallCard onClick={() => navigate('/staff/appointments')} icon={RefreshCcw} title="Đổi lịch hẹn" subtitle="Thay đổi thời gian" />
+        <ActionSmallCard onClick={() => navigate('/staff/appointments')} icon={Calendar} title="Lịch làm việc" subtitle="Xem lịch hôm nay" />
       </div>
 
       {/* Stats - Fix lại màu sắc theo đúng ảnh image_932a32.png */}
@@ -92,11 +92,16 @@ const Dashboard = () => {
 };
 
 // Component phụ
-const ActionSmallCard = ({ icon: Icon, title, subtitle }) => (
-  <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center hover:shadow-md transition-all cursor-pointer group">
-    <div className="text-blue-500 mb-4 group-hover:scale-110 transition-transform"><Icon size={28} /></div>
-    <h4 className="font-bold text-gray-800">{title}</h4>
-    <p className="text-xs text-gray-400 mt-1 font-medium">{subtitle}</p>
+const ActionSmallCard = ({ icon: Icon, title, subtitle, onClick }) => (
+  <div 
+    onClick={onClick} // QUAN TRỌNG: Gắn onClick vào thẻ div thật ở đây
+    className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center hover:border-blue-100 transition-all cursor-pointer group active:scale-95"
+  >
+    <div className="text-blue-500 mb-2 group-hover:scale-110 transition-transform">
+      <Icon size={20} />
+    </div>
+    <h4 className="font-bold text-gray-800 text-sm">{title}</h4>
+    <p className="text-[10px] text-gray-400 mt-0.5 font-medium">{subtitle}</p>
   </div>
 );
 
