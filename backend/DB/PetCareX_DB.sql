@@ -36,7 +36,7 @@ GO
 CREATE TABLE ChucVu (
     MaChucVu     varchar(10)    NOT NULL,
     TenChucVu    nvarchar(50)   NOT NULL,
-    CONSTRAINT PK_ChucVu PRIMARY KEY (MaChucVu)
+    CONSTRAINT PK_ChucVu PRIMARY KEY (MaChucVu),
 );
 GO
 
@@ -178,7 +178,8 @@ CREATE TABLE ThuCung (
     CONSTRAINT PK_ThuCung PRIMARY KEY (MaTC),
     CONSTRAINT FK_ThuCung_Giong FOREIGN KEY (MaGiong) REFERENCES Giong(MaGiong),
     CONSTRAINT FK_ThuCung_KhachHang FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
-    CONSTRAINT CK_ThuCung_GioiTinh CHECK (GioiTinh IN (N'Đực', N'Cái'))
+    CONSTRAINT CK_ThuCung_GioiTinh CHECK (GioiTinh IN (N'Đực', N'Cái')),
+    CONSTRAINT CK_ThuCung_NgaySinh CHECK (NgaySinh <= CAST(GETDATE() AS date))
 );
 GO
 
@@ -186,7 +187,7 @@ CREATE TABLE DieuDong (
     MaCN            varchar(10) NOT NULL,
     MaNV            varchar(10) NOT NULL,
     NgayBD          date        NOT NULL,
-    NgayKT          date        NOT NULL,
+    NgayKT          date        NULL,
     MaNVDieuDong    varchar(10) NOT NULL,
     CONSTRAINT PK_DieuDong PRIMARY KEY (MaCN, MaNV, NgayBD),
     CONSTRAINT FK_DieuDong_CN FOREIGN KEY (MaCN) REFERENCES ChiNhanh(MaCN),
@@ -289,7 +290,7 @@ CREATE TABLE GoiTiemPhong (
     UuDaiGiamTien   int             NOT NULL,
     ThoiHan         int             NOT NULL, 
     CONSTRAINT PK_GoiTiemPhong PRIMARY KEY (MaGoiTP),
-    CONSTRAINT CK_GoiTP_UuDai CHECK (UuDaiGiamTien >= 0),
+    CONSTRAINT CK_GoiTP_UuDai CHECK (UuDaiGiamTien BETWEEN 5 AND 15),
     CONSTRAINT CK_GoiTP_ThoiHan CHECK (ThoiHan > 0)
 );
 GO
