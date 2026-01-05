@@ -1,5 +1,18 @@
-import { NhanVien, SanPham, ThuCung, Vacxin, KhachHang, DoanhThuData, ChiNhanh, DoctorStat, VisitStat } from '../types';
+import { UserAccount, NhanVien, SanPham, ThuCung, Vacxin, KhachHang, DoanhThuData, ChiNhanh, DoctorStat, VisitStat } from '../types';
 
+export const MOCK_ACCOUNTS: UserAccount[] = [
+  // 1. Quản lý (Admin)
+  { username: 'admin', password: '123', role: 'MANAGER', displayName: 'Quản Lý Cửa Hàng', linkedId: 'NV001' },
+  
+  // 2. Bác sĩ
+  { username: 'bacsi', password: '123', role: 'STAFF', displayName: 'Bác sĩ An', linkedId: 'NV002' },
+  
+  // 3. Tiếp tân/Thu ngân (Dùng chung role STAFF hoặc tách ra nếu cần chi tiết)
+  { username: 'tieptan', password: '123', role: 'STAFF', displayName: 'Tiếp tân Bích', linkedId: 'NV003' },
+  
+  // 4. Khách hàng
+  { username: 'khach', password: '123', role: 'CUSTOMER', displayName: 'Phạm Hương', linkedId: 'KH01' }
+];
 export const CURRENT_BRANCH_ID = 'CN01'; // Giả sử đang quản lý CN01
 
 export const BRANCHES: ChiNhanh[] = [

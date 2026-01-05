@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Syringe, 
@@ -27,6 +28,14 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: 
 );
 
 const Layout: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="flex h-screen bg-white">
       {/* Sidebar */}
@@ -48,7 +57,7 @@ const Layout: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-gray-100">
-          <button className="flex items-center space-x-3 text-gray-500 hover:text-red-600 w-full px-4 py-2 transition-colors">
+          <button type="button" onClick={handleLogout} className="flex items-center space-x-3 text-gray-500 hover:text-red-600 w-full px-4 py-2 transition-colors">
             <LogOut size={20} />
             <span>Đăng xuất</span>
           </button>

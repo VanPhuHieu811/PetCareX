@@ -1,4 +1,20 @@
 // Dựa trên schema database đã cung cấp
+export type Role = 'MANAGER' | 'STAFF' | 'CUSTOMER';
+
+export interface UserAccount {
+  username: string;
+  password: string; 
+  role: Role;
+  displayName: string;
+  linkedId?: string;
+}
+
+export interface AuthState {
+  user: UserAccount | null;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
+}
 
 export interface ChiNhanh {
   MaCN: string;

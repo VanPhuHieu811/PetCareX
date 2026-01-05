@@ -34,13 +34,6 @@ CREATE TABLE ChiNhanh (
 );
 GO
 
-CREATE TABLE ChucVu (
-    MaChucVu     varchar(10)    NOT NULL,
-    TenChucVu    nvarchar(50)   NOT NULL,
-    CONSTRAINT PK_ChucVu PRIMARY KEY (MaChucVu)
-);
-GO
-
 CREATE TABLE LoaiThanhVien (
     MaLoaiTV        varchar(10)     NOT NULL,
     TenLoaiTV       nvarchar(15)    NOT NULL,
@@ -134,9 +127,11 @@ CREATE TABLE TaiKhoan (
     MatKhau         varchar(30)     NOT NULL,
     NgayTaoTaiKhoan datetime        NOT NULL    CONSTRAINT DF_TaiKhoan_NgayTao DEFAULT (GETDATE()),
     TrangThai       nvarchar(20)    NOT NULL,
+    VaiTro          nvarchar(50)    NOT NULL,
     CONSTRAINT PK_TaiKhoan PRIMARY KEY (MaND),
     CONSTRAINT FK_TaiKhoan_NguoiDung FOREIGN KEY (MaND) REFERENCES NguoiDung(MaND),
-    CONSTRAINT CK_TaiKhoan_TrangThai CHECK (TrangThai IN (N'Hoạt động', N'Khóa'))
+    CONSTRAINT CK_TaiKhoan_TrangThai CHECK (TrangThai IN (N'Hoạt động', N'Khóa')),
+    CONSTRAINT CK_TaiKhoan_VaiTro CHECK (VaiTro IN (N'Bác sĩ', N'Bán hàng', N'Tiếp tân', N'Quản lý', N'Khách hàng'))
 );
 GO
 
@@ -145,14 +140,15 @@ CREATE TABLE NhanVien (
     NgayVaoLam  datetime        NOT NULL,
     LuongCoBan  int             NOT NULL,
     TrangThai   nvarchar(20)    NOT NULL,
-    MaChucVu    varchar(10)     NOT NULL,
+    TenChucVu   nvarchar(50)    NOT NULL,
     MaCN        varchar(10)     NOT NULL,
     CONSTRAINT PK_NhanVien PRIMARY KEY (MaNV),
     CONSTRAINT FK_NhanVien_NguoiDung FOREIGN KEY (MaNV) REFERENCES NguoiDung(MaND),
-    CONSTRAINT FK_NhanVien_ChucVu FOREIGN KEY (MaChucVu) REFERENCES ChucVu(MaChucVu),
     CONSTRAINT FK_NhanVien_ChiNhanh FOREIGN KEY (MaCN) REFERENCES ChiNhanh(MaCN),
     CONSTRAINT CK_NhanVien_Luong CHECK (LuongCoBan > 0), 
-    CONSTRAINT CK_NhanVien_TrangThai CHECK (TrangThai IN (N'Đang làm', N'Nghỉ việc'))
+    CONSTRAINT CK_NhanVien_TrangThai CHECK (TrangThai IN (N'Đang làm', N'Nghỉ việc')),
+    CONSTRAINT CK_NhanVien_NgayVaoLam CHECK (NgayVaoLam <= GETDATE()),
+    CONSTRAINT CK_NhanVien_ChucVu CHECK (TenChucVu IN (N'Bác sĩ', N'Bán hàng', N'Tiếp tân', N'Quản lý'))
 );
 GO
 
