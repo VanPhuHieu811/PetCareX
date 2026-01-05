@@ -1,6 +1,6 @@
 ﻿/* =========================================================
-   PETCAREX - TRIGGERS SCRIPT (COMPLEX CONSTRAINTS)
-   Updated by: Gemini
+   PETCAREX - TRIGGERS SCRIPT (UNIVERSAL VERSION)
+   Fix: Sửa lỗi "Incorrect syntax near OR" cho SQL Server bản cũ
    ========================================================= */
 
 USE PetCareX;
@@ -8,14 +8,19 @@ GO
 
 /* ---------------------------------------------------------
    1. TRIGGER: KIỂM TRA NGÀY VÀO LÀM > NGÀY SINH CỦA NHÂN VIÊN
-   [cite_start]Ref: [cite: 203]
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_NhanVien_CheckNgayVaoLam
+-- Bước 1: Xóa trigger cũ nếu tồn tại
+IF OBJECT_ID('TR_NhanVien_CheckNgayVaoLam', 'TR') IS NOT NULL
+    DROP TRIGGER TR_NhanVien_CheckNgayVaoLam;
+GO
+
+-- Bước 2: Tạo trigger mới
+CREATE TRIGGER TR_NhanVien_CheckNgayVaoLam
 ON NhanVien
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    -- Kiểm tra nếu có nhân viên nào mà Ngày vào làm <= Ngày sinh (truy vấn từ bảng NguoiDung)
+    -- Kiểm tra nếu có nhân viên nào mà Ngày vào làm <= Ngày sinh
     IF EXISTS (
         SELECT 1
         FROM inserted i
@@ -31,11 +36,12 @@ GO
 
 /* ---------------------------------------------------------
    2. TRIGGER: RÀNG BUỘC ĐIỀU ĐỘNG NHÂN SỰ
-   [cite_start]Ref: [cite: 194, 196]
-   - Người điều động phải là Quản lý
-   - Người điều động khác người bị điều động
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_DieuDong_CheckQuanLy
+IF OBJECT_ID('TR_DieuDong_CheckQuanLy', 'TR') IS NOT NULL
+    DROP TRIGGER TR_DieuDong_CheckQuanLy;
+GO
+
+CREATE TRIGGER TR_DieuDong_CheckQuanLy
 ON DieuDong
 AFTER INSERT, UPDATE
 AS
@@ -54,7 +60,7 @@ BEGIN
         RETURN;
     END
 
-    -- 2. Kiểm tra MaNVDieuDong không trùng với MaNV (tự điều động bản thân)
+    -- 2. Kiểm tra MaNVDieuDong không trùng với MaNV
     IF EXISTS (
         SELECT 1 FROM inserted WHERE MaNV = MaNVDieuDong
     )
@@ -67,11 +73,12 @@ GO
 
 /* ---------------------------------------------------------
    3. TRIGGER: KIỂM TRA BÁC SĨ PHỤ TRÁCH KHÁM BỆNH
-   [cite_start]Ref: [cite: 288, 290]
-   - Bác sĩ phụ trách phải có chức vụ là 'Bác sĩ thú y'
-   - Ngày khám >= Ngày đặt dịch vụ
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_PhieuKham_CheckBacSi
+IF OBJECT_ID('TR_PhieuKham_CheckBacSi', 'TR') IS NOT NULL
+    DROP TRIGGER TR_PhieuKham_CheckBacSi;
+GO
+
+CREATE TRIGGER TR_PhieuKham_CheckBacSi
 ON PhieuDatDVKhamBenh
 AFTER INSERT, UPDATE
 AS
@@ -90,7 +97,7 @@ BEGIN
         RETURN;
     END
 
-    -- 2. Kiểm tra Ngày khám >= Ngày đặt dịch vụ (Tham chiếu ngược bảng PhieuDatDV)
+    -- 2. Kiểm tra Ngày khám >= Ngày đặt dịch vụ
     IF EXISTS (
         SELECT 1
         FROM inserted i
@@ -106,10 +113,12 @@ GO
 
 /* ---------------------------------------------------------
    4. TRIGGER: KIỂM TRA NHÂN VIÊN LẬP HÓA ĐƠN
-   [cite_start]Ref: [cite: 220]
-   - Nhân viên lập hóa đơn phải là 'Nhân viên bán hàng'
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_HoaDon_CheckNhanVien
+IF OBJECT_ID('TR_HoaDon_CheckNhanVien', 'TR') IS NOT NULL
+    DROP TRIGGER TR_HoaDon_CheckNhanVien;
+GO
+
+CREATE TRIGGER TR_HoaDon_CheckNhanVien
 ON HoaDon
 AFTER INSERT, UPDATE
 AS
@@ -130,10 +139,12 @@ GO
 
 /* ---------------------------------------------------------
    5. TRIGGER: KIỂM TRA SẢN PHẨM TRONG ĐƠN THUỐC
-   [cite_start]Ref: [cite: 276]
-   - Sản phẩm kê trong đơn thuốc phải thuộc loại 'Thuốc'
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_DonThuoc_CheckLoaiSP
+IF OBJECT_ID('TR_DonThuoc_CheckLoaiSP', 'TR') IS NOT NULL
+    DROP TRIGGER TR_DonThuoc_CheckLoaiSP;
+GO
+
+CREATE TRIGGER TR_DonThuoc_CheckLoaiSP
 ON DonThuoc
 AFTER INSERT, UPDATE
 AS
@@ -154,10 +165,12 @@ GO
 
 /* ---------------------------------------------------------
    6. TRIGGER: KIỂM TRA THỜI GIAN GÓI TIÊM PHÒNG
-   [cite_start]Ref: [cite: 317]
-   - Tháng tiêm chỉ định (ThangTiem) phải nằm trong khoảng [ThoiGianBD, ThoiGianKT) của gói đăng ký
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_TGTiem_CheckThoiGian
+IF OBJECT_ID('TR_TGTiem_CheckThoiGian', 'TR') IS NOT NULL
+    DROP TRIGGER TR_TGTiem_CheckThoiGian;
+GO
+
+CREATE TRIGGER TR_TGTiem_CheckThoiGian
 ON ThoiGianTiemChiDinh
 AFTER INSERT, UPDATE
 AS
@@ -177,10 +190,12 @@ GO
 
 /* ---------------------------------------------------------
    7. TRIGGER: KIỂM TRA NGÀY TIÊM PHÒNG
-   [cite_start]Ref: [cite: 300]
-   - Ngày tiêm phòng >= Ngày đặt dịch vụ
    --------------------------------------------------------- */
-CREATE OR ALTER TRIGGER TR_PhieuTiem_CheckNgay
+IF OBJECT_ID('TR_PhieuTiem_CheckNgay', 'TR') IS NOT NULL
+    DROP TRIGGER TR_PhieuTiem_CheckNgay;
+GO
+
+CREATE TRIGGER TR_PhieuTiem_CheckNgay
 ON PhieuDatDVTiemPhong
 AFTER INSERT, UPDATE
 AS
