@@ -20,26 +20,38 @@ const Login = () => {
     setLoading(false);
 
     if (success) {
-      // Lấy lại user từ localStorage để check role chính xác
       const currentUser = JSON.parse(localStorage.getItem('petcare_user') || '{}');
       
-      // LOGIC ĐIỀU HƯỚNG THEO ROLE
+      // LOGIC ĐIỀU HƯỚNG MỚI
       switch (currentUser.role) {
         case 'MANAGER':
           navigate('/manager/dashboard');
           break;
-        case 'STAFF':
-          // Nếu sau này bạn phân chi tiết Bác sĩ/Tiếp tân thì check thêm ở đây
+
+        case 'DOCTOR':
+          // Bác sĩ vào thẳng danh sách thú cưng để khám
           navigate('/staff/pets'); 
           break;
-        case 'CUSTOMER':
-          navigate('/customer/home'); // Hoặc trang chủ
+
+        case 'RECEPTIONIST':
+          // Tiếp tân vào thẳng danh sách khách hàng để check-in
+          navigate('/staff/customers'); 
           break;
+
+        case 'SALES':
+          // Bán vé/hàng vào thẳng kho hoặc trang bán hàng
+          navigate('/staff/inventory'); 
+          break;
+
+        case 'CUSTOMER':
+          navigate('/customer/home');
+          break;
+
         default:
           navigate('/');
       }
     } else {
-      setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+      setError('Sai thông tin đăng nhập! (Thử: bacsi/123, tieptan/123...)');
     }
   };
 

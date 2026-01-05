@@ -1,9 +1,8 @@
-// Dựa trên schema database đã cung cấp
-export type Role = 'MANAGER' | 'STAFF' | 'CUSTOMER';
+export type Role = 'MANAGER' | 'DOCTOR' | 'RECEPTIONIST' | 'SALES' | 'CUSTOMER';
 
 export interface UserAccount {
   username: string;
-  password: string; 
+  password: string;
   role: Role;
   displayName: string;
   linkedId?: string;

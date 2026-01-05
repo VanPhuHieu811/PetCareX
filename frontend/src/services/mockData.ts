@@ -1,17 +1,35 @@
 import { UserAccount, NhanVien, SanPham, ThuCung, Vacxin, KhachHang, DoanhThuData, ChiNhanh, DoctorStat, VisitStat } from '../types';
 
 export const MOCK_ACCOUNTS: UserAccount[] = [
-  // 1. Quản lý (Admin)
-  { username: 'admin', password: '123', role: 'MANAGER', displayName: 'Quản Lý Cửa Hàng', linkedId: 'NV001' },
+  // 1. Quản lý (Full quyền)
+  { 
+    username: 'admin', password: '123', role: 'MANAGER', 
+    displayName: 'Quản Lý Cửa Hàng', linkedId: 'NV01' 
+  },
   
-  // 2. Bác sĩ
-  { username: 'bacsi', password: '123', role: 'STAFF', displayName: 'Bác sĩ An', linkedId: 'NV002' },
+  // 2. Bác sĩ (Chuyên về Thú cưng, Tiêm chủng)
+  { 
+    username: 'bacsi', password: '123', role: 'DOCTOR', 
+    displayName: 'Bác sĩ An', linkedId: 'NV02' 
+  },
+
+  // 3. Tiếp tân (Chuyên về Khách hàng, Lịch hẹn)
+  { 
+    username: 'tieptan', password: '123', role: 'RECEPTIONIST', 
+    displayName: 'Lễ tân Hoa', linkedId: 'NV03' 
+  },
+
+  // 4. Bán vé / Bán hàng (Chuyên về Kho, Hóa đơn)
+  { 
+    username: 'banve', password: '123', role: 'SALES', 
+    displayName: 'NV Bán Vé', linkedId: 'NV04' 
+  },
   
-  // 3. Tiếp tân/Thu ngân (Dùng chung role STAFF hoặc tách ra nếu cần chi tiết)
-  { username: 'tieptan', password: '123', role: 'STAFF', displayName: 'Tiếp tân Bích', linkedId: 'NV003' },
-  
-  // 4. Khách hàng
-  { username: 'khach', password: '123', role: 'CUSTOMER', displayName: 'Phạm Hương', linkedId: 'KH01' }
+  // 5. Khách hàng
+  { 
+    username: 'khach', password: '123', role: 'CUSTOMER', 
+    displayName: 'Nguyễn Văn A', linkedId: 'KH01' 
+  }
 ];
 export const CURRENT_BRANCH_ID = 'CN01'; // Giả sử đang quản lý CN01
 
