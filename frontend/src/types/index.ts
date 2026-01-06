@@ -59,6 +59,7 @@ export interface Product {
     rating: number;
     stock: number;
     isInStock: boolean;
+    branchStock?: { [branchId: string]: number }; // Tồn kho theo từng chi nhánh
 }
 
 export interface ProductAvailability {

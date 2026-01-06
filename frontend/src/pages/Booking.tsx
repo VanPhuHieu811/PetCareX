@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { branches, doctors, getAvailableSlots, myPets, services } from '../data/mockDatabase';
+import { branches, getAvailableSlotsForDate, getAvailableDoctorsForSlot, myPets, services } from '../data/mockDatabase';
 import { Doctor, TimeSlot } from '../types';
 import { CheckCircle2, Clock, MapPin, PawPrint, Stethoscope, User, ChevronRight, ChevronLeft, Phone, ChevronDown, Check } from 'lucide-react';
 import clsx from 'clsx';
@@ -27,8 +27,10 @@ export default function Booking() {
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const branchDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Derived state
-    const availableDoctors = doctors.filter(d => d.branchId === selectedBranch.id);
+    // Derived state - doctors available for selected time slot
+    const availableDoctors = selectedSlot
+        ? getAvailableDoctorsForSlot(selectedDate, selectedSlot, selectedBranch.id)
+        : [];
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -49,17 +51,26 @@ export default function Booking() {
 
     const handleDateChange = (date: string) => {
         setSelectedDate(date);
-        if (selectedDoctor) {
-            setAvailableSlots(getAvailableSlots(date, selectedDoctor.id));
-            setSelectedSlot(null); // Reset slot
-        }
+        setAvailableSlots(getAvailableSlotsForDate(date, selectedBranch.id));
+        setSelectedSlot(null); // Reset slot
+        setSelectedDoctor(null); // Reset doctor when date changes
+    };
+
+    const handleSlotSelect = (slotTime: string) => {
+        setSelectedSlot(slotTime);
+        setSelectedDoctor(null); // Reset doctor when slot changes
     };
 
     const handleDoctorSelect = (doc: Doctor) => {
         setSelectedDoctor(doc);
-        setAvailableSlots(getAvailableSlots(selectedDate, doc.id));
-        setSelectedSlot(null);
     };
+
+    // Load available slots when step 3 is reached
+    useEffect(() => {
+        if (currentStep === 3 && availableSlots.length === 0) {
+            setAvailableSlots(getAvailableSlotsForDate(selectedDate, selectedBranch.id));
+        }
+    }, [currentStep, selectedDate, selectedBranch.id]);
 
     const handleNext = () => {
         if (currentStep < 4) setCurrentStep(c => c + 1);
@@ -237,46 +248,15 @@ export default function Booking() {
                                         {selectedPet.id === pet.id && <CheckCircle2 className="ml-auto text-blue-600 w-6 h-6" />}
                                     </div>
                                 ))}
-
-                                {/* Add New Pet Placeholder */}
-                                <div className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50">
-                                    <span>+ Thêm thú cưng mới</span>
-                                </div>
                             </div>
                         </div>
                     )}
 
-                    {/* STEP 3: Doctor & Time */}
+                    {/* STEP 3: Time & Doctor */}
                     {currentStep === 3 && (
                         <div className="animate-fade-in space-y-8">
                             <div className="flex flex-col md:flex-row gap-8">
                                 <div className="flex-1">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                        <User className="text-blue-600" /> Chọn bác sĩ
-                                    </h2>
-                                    <div className="space-y-3">
-                                        {availableDoctors.map(doc => (
-                                            <div
-                                                key={doc.id}
-                                                onClick={() => handleDoctorSelect(doc)}
-                                                className={clsx(
-                                                    "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:bg-blue-50",
-                                                    selectedDoctor?.id === doc.id
-                                                        ? "border-blue-600 bg-blue-50"
-                                                        : "border-gray-200"
-                                                )}
-                                            >
-                                                <img src={doc.avatar} className="w-12 h-12 rounded-full" />
-                                                <div>
-                                                    <div className="font-bold text-sm text-gray-900">{doc.name}</div>
-                                                    <div className="text-xs text-gray-500">{doc.specialty}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 border-l pl-8 border-gray-100">
                                     <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                         <Clock className="text-blue-600" /> Chọn giờ khám
                                     </h2>
@@ -291,26 +271,56 @@ export default function Booking() {
                                         />
                                     </div>
 
-                                    {selectedDoctor ? (
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {availableSlots.map((slot) => (
-                                                <button
-                                                    key={slot.time}
-                                                    disabled={!slot.isAvailable}
-                                                    onClick={() => setSelectedSlot(slot.time)}
-                                                    className={clsx(
-                                                        "py-2 px-1 text-sm rounded-lg border text-center transition-colors",
-                                                        !slot.isAvailable && "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed decoration-slice",
-                                                        slot.isAvailable && selectedSlot !== slot.time && "border-gray-200 hover:border-blue-500 hover:text-blue-600",
-                                                        selectedSlot === slot.time && "bg-blue-600 text-white border-blue-600"
-                                                    )}
-                                                >
-                                                    {slot.time}
-                                                </button>
-                                            ))}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {availableSlots.map((slot) => (
+                                            <button
+                                                key={slot.time}
+                                                disabled={!slot.isAvailable}
+                                                onClick={() => handleSlotSelect(slot.time)}
+                                                className={clsx(
+                                                    "py-2 px-1 text-sm rounded-lg border text-center transition-colors",
+                                                    !slot.isAvailable && "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed decoration-slice",
+                                                    slot.isAvailable && selectedSlot !== slot.time && "border-gray-200 hover:border-blue-500 hover:text-blue-600",
+                                                    selectedSlot === slot.time && "bg-blue-600 text-white border-blue-600"
+                                                )}
+                                            >
+                                                {slot.time}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 border-l pl-8 border-gray-100">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <User className="text-blue-600" /> Chọn bác sĩ
+                                    </h2>
+                                    {selectedSlot ? (
+                                        <div className="space-y-3">
+                                            {availableDoctors.length > 0 ? (
+                                                availableDoctors.map(doc => (
+                                                    <div
+                                                        key={doc.id}
+                                                        onClick={() => handleDoctorSelect(doc)}
+                                                        className={clsx(
+                                                            "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:bg-blue-50",
+                                                            selectedDoctor?.id === doc.id
+                                                                ? "border-blue-600 bg-blue-50"
+                                                                : "border-gray-200"
+                                                        )}
+                                                    >
+                                                        <img src={doc.avatar} className="w-12 h-12 rounded-full" />
+                                                        <div>
+                                                            <div className="font-bold text-sm text-gray-900">{doc.name}</div>
+                                                            <div className="text-xs text-gray-500">{doc.specialty}</div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-sm text-gray-400 italic">Không có bác sĩ khả dụng cho giờ này</div>
+                                            )}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-gray-400 italic">Vui lòng chọn bác sĩ trước</div>
+                                        <div className="text-sm text-gray-400 italic">Vui lòng chọn giờ khám trước</div>
                                     )}
                                 </div>
                             </div>
@@ -372,10 +382,10 @@ export default function Booking() {
 
                     <button
                         onClick={currentStep === 4 ? handleConfirm : handleNext}
-                        disabled={currentStep === 3 && (!selectedDoctor || !selectedSlot)}
+                        disabled={currentStep === 3 && (!selectedSlot || !selectedDoctor)}
                         className={clsx(
                             "flex items-center px-8 py-2 rounded-lg font-medium transition-colors shadow-sm",
-                            (currentStep === 3 && (!selectedDoctor || !selectedSlot))
+                            (currentStep === 3 && (!selectedSlot || !selectedDoctor))
                                 ? "bg-gray-300 text-white cursor-not-allowed"
                                 : "bg-blue-600 text-white hover:bg-blue-700"
                         )}

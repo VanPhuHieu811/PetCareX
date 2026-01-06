@@ -1,17 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Calendar, User, Menu, X, Home, PawPrint } from 'lucide-react';
+import { ShoppingCart, Calendar, User, Menu, X, Home, PawPrint, Package } from 'lucide-react';
 import { useState } from 'react';
 import { currentUser } from '../../data/mockDatabase';
+import { useCart } from '../../context/CartContext';
 import clsx from 'clsx';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
+    const { getTotalItems } = useCart();
 
     const navigation = [
         { name: 'Trang chủ', href: '/', icon: Home },
-        { name: 'Sản phẩm', href: '/products', icon: ShoppingCart },
-        { name: 'Đặt lịch khám', href: '/booking', icon: Calendar },
+        { name: 'Sản phẩm', href: '/products', icon: Package },
+        { name: 'Đặt lịch', href: '/booking', icon: Calendar },
         { name: 'Hồ sơ cá nhân', href: '/profile', icon: User },
     ];
 
@@ -54,6 +56,19 @@ export default function Navbar() {
                     {/* User Info & Mobile Button */}
                     <div className="flex items-center">
                         <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-gray-200 ml-4">
+                            {/* Cart Icon */}
+                            <Link
+                                to="/cart"
+                                className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                                title="Giỏ hàng"
+                            >
+                                <ShoppingCart className="w-6 h-6" />
+                                {getTotalItems() > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                        {getTotalItems() > 9 ? '9+' : getTotalItems()}
+                                    </span>
+                                )}
+                            </Link>
                             <span className="text-sm font-medium text-gray-700">{currentUser.name}</span>
                             <Link to="/profile" className="cursor-pointer hover:opacity-80 transition-opacity">
                                 <img
@@ -78,6 +93,24 @@ export default function Navbar() {
             {/* Mobile Menu */}
             <div className={clsx('sm:hidden', isOpen ? 'block' : 'hidden')}>
                 <div className="pt-2 pb-3 space-y-1">
+                    {/* Cart Link in Mobile */}
+                    <Link
+                        to="/cart"
+                        className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <ShoppingCart className="w-5 h-5 mr-3" />
+                                <span className="text-base font-medium">Giỏ hàng</span>
+                            </div>
+                            {getTotalItems() > 0 && (
+                                <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                    {getTotalItems() > 9 ? '9+' : getTotalItems()}
+                                </span>
+                            )}
+                        </div>
+                    </Link>
                     {navigation.map((item) => (
                         <Link
                             key={item.name}

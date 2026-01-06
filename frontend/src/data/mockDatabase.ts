@@ -2,7 +2,7 @@ import { Branch, CurrentUser, Doctor, MedicalRecord, Order, Pet, Product, Servic
 
 export const currentUser: CurrentUser = {
     id: 'KH001',
-    name: 'Nguyễn Văn A',
+    name: 'Kho Cháng',
     email: 'nguyenvana@gmail.com',
     phone: '0909123456',
     avatar: 'https://i.pravatar.cc/150?u=KH001',
@@ -175,7 +175,11 @@ export const products: Product[] = [
         description: 'Thức ăn đầy đủ dinh dưỡng cho mèo con dưới 12 tháng tuổi.',
         rating: 4.8,
         stock: 20,
-        isInStock: true
+        isInStock: true,
+        branchStock: {
+            'CN01': 15, 'CN02': 20, 'CN03': 12, 'CN04': 18, 'CN05': 10,
+            'CN06': 25, 'CN07': 8, 'CN08': 22, 'CN09': 14, 'CN10': 16
+        }
     },
     {
         id: 'SP02',
@@ -188,7 +192,11 @@ export const products: Product[] = [
         description: 'Cát vệ sinh kiểm soát mùi cực tốt, vón cục nhanh.',
         rating: 4.5,
         stock: 50,
-        isInStock: true
+        isInStock: true,
+        branchStock: {
+            'CN01': 45, 'CN02': 50, 'CN03': 38, 'CN04': 52, 'CN05': 42,
+            'CN06': 48, 'CN07': 35, 'CN08': 55, 'CN09': 40, 'CN10': 43
+        }
     },
     {
         id: 'SP03',
@@ -201,7 +209,11 @@ export const products: Product[] = [
         description: 'Thuốc đặc trị vé, rận cho chó dưới 10kg.',
         rating: 4.9,
         stock: 0,
-        isInStock: false
+        isInStock: false,
+        branchStock: {
+            'CN01': 0, 'CN02': 0, 'CN03': 0, 'CN04': 0, 'CN05': 0,
+            'CN06': 0, 'CN07': 0, 'CN08': 0, 'CN09': 0, 'CN10': 0
+        }
     },
     {
         id: 'SP04',
@@ -214,7 +226,11 @@ export const products: Product[] = [
         description: 'Pate tươi ngon vị cá thu, bổ sung Omega 3.',
         rating: 4.6,
         stock: 100,
-        isInStock: true
+        isInStock: true,
+        branchStock: {
+            'CN02': 100, 'CN03': 88, 'CN05': 92,
+            'CN06': 98, 'CN07': 85, 'CN09': 90, 'CN10': 93
+        }
     },
     {
         id: 'SP05',
@@ -227,7 +243,28 @@ export const products: Product[] = [
         description: 'Xúc xích rau củ ngon miệng cho thú cưng, chứa nhiều chất xơ và dinh dưỡng.',
         rating: 4.6,
         stock: 100,
-        isInStock: true
+        isInStock: true,
+        branchStock: {
+            'CN01': 88, 'CN02': 95, 'CN03': 82, 'CN04': 98, 'CN05': 85,
+            'CN06': 92, 'CN07': 78, 'CN08': 102, 'CN09': 80, 'CN10': 90
+        }
+    },
+    {
+        id: 'SP06',
+        name: 'Máy chải lông Furminator',
+        sku: 'FURM-XL',
+        category: 'Phụ kiện',
+        originalPrice: 350000,
+        discountPercentage: 0,
+        image: '',
+        description: 'Máy chải lông Furminator giúp loại bỏ lông rụng hiệu quả, phù hợp cho chó và mèo.',
+        rating: 4.8,
+        stock: 100,
+        isInStock: true,
+        branchStock: {
+            'CN01': 88, 'CN02': 95, 'CN03': 82, 'CN05': 85,
+            'CN06': 92, 'CN08': 102, 'CN09': 80,
+        }
     }
 ];
 
@@ -296,4 +333,20 @@ export const getAvailableSlots = (_date: string, _doctorId: string): TimeSlot[] 
         time,
         isAvailable: Math.random() > 0.3 // 70% chance available
     }));
+};
+
+// Helper to get available slots for a date (without doctor)
+export const getAvailableSlotsForDate = (_date: string, _branchId: string): TimeSlot[] => {
+    // Mock logic: random availability
+    const slots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'];
+    return slots.map(time => ({
+        time,
+        isAvailable: Math.random() > 0.3 // 70% chance available
+    }));
+};
+
+// Helper to get doctors available at a specific time slot
+export const getAvailableDoctorsForSlot = (_date: string, _timeSlot: string, _branchId: string): Doctor[] => {
+    // Return all doctors in the branch (mock logic)
+    return doctors.filter(d => d.branchId === _branchId);
 };
