@@ -1,5 +1,5 @@
 import React from 'react';
-import { MOCK_CUSTOMERS } from '../services/mockData';
+import { MOCK_CUSTOMERS } from '../../services/mockDataQL';
 import { Users, UserMinus, Crown } from 'lucide-react';
 
 const Customers: React.FC = () => {

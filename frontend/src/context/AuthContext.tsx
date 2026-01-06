@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserAccount, AuthState, Role } from '../types';
-import { MOCK_ACCOUNTS } from '../services/mockData';
+import { MOCK_ACCOUNTS } from '../services/mockDataQL';
 
 // Mở rộng interface AuthState để có thêm hàm register
 interface AuthContextType extends AuthState {

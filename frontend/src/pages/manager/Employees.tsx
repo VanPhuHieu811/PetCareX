@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MOCK_EMPLOYEES, BRANCHES, CURRENT_BRANCH_ID } from '../services/mockData';
-import { NhanVien, ChiNhanh } from '../types';
+import { MOCK_EMPLOYEES, BRANCHES, CURRENT_BRANCH_ID } from '../../services/mockDataQL';
+import { NhanVien, ChiNhanh } from '../../types';
 import { Search, UserPlus, ArrowRightLeft, Star, Trash2 } from 'lucide-react';
 
 const Employees: React.FC = () => {

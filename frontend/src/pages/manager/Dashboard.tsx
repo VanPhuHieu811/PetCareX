@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { MOCK_DOCTOR_STATS, REVENUE_BREAKDOWN } from '../services/mockData';
+import { MOCK_DOCTOR_STATS, REVENUE_BREAKDOWN } from '../../services/mockDataQL';
 import { Calendar, DollarSign, Users, Stethoscope, Syringe, ShoppingBag, TrendingUp } from 'lucide-react';
-import { VisitStat } from '../types';
+import { VisitStat } from '../../types';
 
 const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'day' | 'month' | 'year'>('month');

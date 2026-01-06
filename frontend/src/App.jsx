@@ -6,20 +6,21 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // --- 2. LAYOUTS ---
-import MainLayout from './layouts/Layout';      // Layout cho Manager (Admin)
+import MainLayout from './layouts/ManagerLayout';      // Layout cho Manager (Admin)
 import StaffLayout from './layouts/StaffLayout';   // Layout riêng cho Staff
+import CustomerLayout from './layouts/CustomerLayout'; // Layout riêng cho Khách hàng
 
 // --- 3. PUBLIC PAGES ---
 import Login from './pages/Login';
 import Register from './pages/Register';
 
 // --- 4. MANAGER PAGES ---
-import ManagerDashboard from './pages/Dashboard'; 
-import Employees from './pages/Employees';
-import Inventory from './pages/Inventory';
-import Vaccination from './pages/Vaccination';
-import Pets from './pages/Pets';
-import ManagerCustomers from './pages/Customers';
+import ManagerDashboard from './pages/manager/Dashboard'; 
+import Employees from './pages/manager/Employees';
+import Inventory from './pages/manager/Inventory';
+import Vaccination from './pages/manager/Vaccination';
+import Pets from './pages/manager/Pets';
+import ManagerCustomers from './pages/manager/Customers';
 
 // --- 5. STAFF PAGES ---
 import StaffDashboard from './pages/staff/Dashboard'; 
@@ -30,6 +31,12 @@ import PetSearch from './pages/staff/PetSearch';
 import PetPOS from './pages/staff/PetPOS';
 import Invoices from './pages/staff/Invoices';
 import Settings from './pages/staff/Settings';
+
+// --- 6. CUSTOMER PAGES ---
+import Dashboard from './pages/customer/Dashboard';
+import PetDetail from './pages/customer/PetDetail';
+import ClinicalExam from './pages/customer/ClinicalExam';
+import CustomerVaccination from './pages/customer/Vaccination';
 
 function App() {
   return (
@@ -75,6 +82,17 @@ function App() {
               <Route path="pos" element={<PetPOS />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="settings" element={<Settings />} />
+            </Route>
+          </Route>
+
+					{/* ================== D. Khách hàng ================== */}
+					<Route element={<ProtectedRoute allowedRoles={['Khách hàng']} />}>
+            <Route path="/customer" element={<CustomerLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="pet/:id" element={<PetDetail />} />
+              <Route path="exam/:petId" element={<ClinicalExam />} />
+              <Route path="vaccination/:petId" element={<CustomerVaccination />} />
             </Route>
           </Route>
 

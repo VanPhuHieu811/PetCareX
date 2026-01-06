@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { MOCK_PRODUCTS } from '../services/mockData';
+import { MOCK_PRODUCTS } from '../../services/mockDataQL';
 import { Search, AlertTriangle, Plus, Edit, X, Save, Trash2 } from 'lucide-react';
-import { SanPham } from '../types';
+import { SanPham } from '../../types';
 
 const Inventory: React.FC = () => {
   const [products, setProducts] = useState<SanPham[]>(MOCK_PRODUCTS);

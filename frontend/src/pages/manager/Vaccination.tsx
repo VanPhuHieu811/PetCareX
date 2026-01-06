@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { MOCK_VACCINES } from '../services/mockData';
+import { MOCK_VACCINES } from '../../services/mockDataQL';
 import { Search, Info, Activity, Plus, Edit, X, Save, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Vacxin } from '../types';
+import { Vacxin } from '../../types';
 
 const Vaccination: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stats' | 'list'>('list');

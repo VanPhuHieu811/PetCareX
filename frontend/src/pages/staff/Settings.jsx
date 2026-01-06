@@ -30,12 +30,12 @@ const Settings = () => {
         <h1 className="text-2xl font-black text-[#1E293B] tracking-tight">
           Cài đặt hệ thống
         </h1>
-        <p className="text-xs md:text-sm text-gray-400 font-semibold uppercase tracking-[0.25em] mt-2">
+        <p className="md:text-sm text-gray-400 font-semibold mt-2">
           Cá nhân hóa trải nghiệm làm việc
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 font-sans">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Cột trái: Menu cài đặt */}
         <div className="lg:col-span-4 space-y-4">
           <SettingsTab icon={User} label="Thông tin cá nhân" active />
@@ -46,7 +46,7 @@ const Settings = () => {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold uppercase text-[11px] tracking-[0.18em] group"
+            className="cursor-pointer border-[1px] bg-white w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-[20px] group"
           >
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
               <LogOut size={18} />
@@ -69,10 +69,10 @@ const Settings = () => {
             </div>
 
             <div className="text-center md:text-left">
-              <h2 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">
+              <h2 className="text-xl md:text-2xl font-black text-gray-800">
                 Trần Thị Hoa
               </h2>
-              <p className="text-gray-400 font-semibold text-xs md:text-sm italic uppercase tracking-[0.2em] mt-2">
+              <p className="text-gray-400 font-semibold md:text-sm mt-2">
                 Lễ tân trưởng • Chi nhánh Quận 1
               </p>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
@@ -90,7 +90,7 @@ const Settings = () => {
           <div className="space-y-8">
             {/* Thông tin cơ bản */}
             <section className="space-y-4">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.25em] border-l-4 border-blue-500 pl-3">
+              <h3 className="text-[20px] font-bold border-l-4 border-blue-500 pl-3">
                 Thông tin cơ bản
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -103,7 +103,7 @@ const Settings = () => {
 
             {/* Bảo mật tài khoản */}
             <section className="space-y-4">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.25em] border-l-4 border-emerald-500 pl-3">
+              <h3 className="text-[20px] font-bold border-l-4 border-blue-500 pl-3">
                 Bảo mật tài khoản
               </h3>
 
@@ -116,10 +116,10 @@ const Settings = () => {
                     <Shield size={22} />
                   </div>
                   <div>
-                    <p className="font-black text-gray-800 text-sm md:text-base">
+                    <p className="font-bold text-gray-800 text-sm md:text-base">
                       Đổi mật khẩu định kỳ
                     </p>
-                    <p className="text-xs text-gray-400 font-medium italic mt-1">
+                    <p className="text-[16px] text-gray-500 mt-1">
                       Bấm vào đây để cập nhật bảo mật mới
                     </p>
                   </div>
@@ -132,10 +132,10 @@ const Settings = () => {
 
             {/* Nút lưu / hủy */}
             <div className="pt-4 border-t border-gray-100 flex justify-end gap-3 md:gap-4">
-              <button className="px-6 md:px-8 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-[11px] uppercase tracking-[0.18em] transition-all hover:bg-gray-200">
+              <button className="cursor-pointer px-6 md:px-8 py-3 bg-gray-100 text-gray-400 rounded-2xl font-bold text-[16px] transition-all hover:bg-gray-200">
                 Hủy bỏ
               </button>
-              <button className="px-6 md:px-8 py-3 bg-[#0095FF] text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.18em] shadow-lg shadow-blue-100 hover:bg-blue-600 active:scale-95 transition-all">
+              <button className="cursor-pointer px-6 md:px-8 py-3 bg-[#0095FF] text-white rounded-2xl font-bold text-[16px] hover:bg-blue-600 active:scale-95 transition-all">
                 Lưu thay đổi
               </button>
             </div>
@@ -207,34 +207,34 @@ const SettingsTab = ({ icon: Icon, label, active }) => (
   <button
     className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all group ${
       active
-        ? "bg-[#0095FF] text-white shadow-lg shadow-blue-100"
-        : "bg-white border border-gray-100 text-gray-500 hover:border-blue-200"
+        ? "bg-[#0095FF] text-white"
+        : "cursor-pointer bg-white border border-gray-200 text-gray-500 hover:border-blue-500"
     }`}
   >
     <div className="flex items-center gap-3">
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
           active
-            ? "bg-white/15 shadow-inner"
+            ? "bg-white/15"
             : "bg-gray-50 text-gray-400 group-hover:text-[#0095FF]"
         }`}
       >
         <Icon size={20} />
       </div>
-      <span className="font-black text-[11px] uppercase tracking-[0.18em]">
+      <span className="font-medium text-[16px]">
         {label}
       </span>
     </div>
     <ChevronRight
       size={18}
-      className={active ? "opacity-40" : "text-gray-200"}
+      className={active ? "" : "text-gray-500"}
     />
   </button>
 );
 
 const InputGroup = ({ label, value }) => (
   <div className="space-y-2">
-    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">
+    <label className="text-[16px] font-medium ml-1">
       {label}
     </label>
     <input
