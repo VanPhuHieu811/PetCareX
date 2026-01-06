@@ -1,4 +1,3 @@
-
 Kết nối SSMS vào Server
 Mở phần mềm SSMS trên máy tính.
 
