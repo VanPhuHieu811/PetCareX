@@ -1,12 +1,11 @@
 import React from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { useState } from 'react';
 import { User, Bell, Shield, LogOut, ChevronRight, Camera, Key, X } from 'lucide-react';
 
 const Settings = () => {
   const [showPassModal, setShowPassModal] = useState(false);
   return (
-    <StaffLayout>
+    <>
       <div className="mb-10">
         <h1 className="text-3xl font-black text-[#1E293B] tracking-tight">Cài đặt hệ thống</h1>
         <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-1">Cá nhân hóa trải nghiệm làm việc</p>
@@ -110,7 +109,7 @@ const Settings = () => {
            </div>
         </div>
       )}
-    </StaffLayout>
+    </>
   );
 };
 

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { UserPlus, Search, Mail, Phone, MoreVertical, Star, Crown, PawPrint, Filter } from 'lucide-react';
 
 const CustomerManagement = () => {
@@ -11,7 +10,7 @@ const CustomerManagement = () => {
   ];
 
   return (
-    <StaffLayout>
+    <>
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Quản lý khách hàng</h1>
@@ -120,7 +119,7 @@ const CustomerManagement = () => {
            </div>
         </div>
       )}
-    </StaffLayout>
+    </>
   );
 };
 

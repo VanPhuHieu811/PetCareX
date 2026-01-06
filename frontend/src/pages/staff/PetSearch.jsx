@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { Search, PawPrint, User, Activity, Calendar, Hash } from 'lucide-react';
 
 const PetSearch = () => {
@@ -12,7 +11,7 @@ const PetSearch = () => {
   ];
 
   return (
-    <StaffLayout>
+    <>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Tra cứu thú cưng</h1>
         <p className="text-sm text-gray-400 font-medium">Tìm kiếm thông tin thú cưng và xác định khách hàng mới/cũ</p>
@@ -102,7 +101,7 @@ const PetSearch = () => {
           )}
         </div>
       </div>
-    </StaffLayout>
+    </>
   );
 };
 

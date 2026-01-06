@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { 
   FileText, Search, Calendar, Filter, Eye, Printer, 
   Download, ChevronRight, CheckCircle2, Clock, X 
@@ -22,7 +21,7 @@ const Invoices = () => {
   };
 
   return (
-    <StaffLayout>
+    <>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-black text-[#1E293B] tracking-tight">Lịch sử Hóa đơn</h1>
@@ -151,7 +150,7 @@ const Invoices = () => {
           </div>
         </div>
       )}
-    </StaffLayout>
+    </>
   );
 };
 

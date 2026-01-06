@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { 
   ArrowLeft, Search, UserPlus, PawPrint, Calendar, 
   Clock, Stethoscope, MapPin, User, Plus, X, ChevronDown, Check
@@ -49,7 +48,7 @@ const CreateAppointment = () => {
   };
 
   return (
-    <StaffLayout>
+    <>
       <div className="flex items-center gap-4 mb-8">
         <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-gray-800 transition-all shadow-sm">
           <ArrowLeft size={20} />
@@ -317,7 +316,7 @@ const CreateAppointment = () => {
           </div>
         </div>
       </div>
-    </StaffLayout>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, Calendar, Search, Users, PawPrint, 
   Stethoscope, Syringe, ShoppingCart, FileText, Settings, 
@@ -37,7 +37,7 @@ const NotiItem = ({ title, desc, time, active }) => (
   </div>
 );
 
-const StaffLayout = ({ children }) => {
+const StaffLayout = () => {
   const [showNoti, setShowNoti] = useState(false); // Logic hiển thị thông báo
   const [currentDate, setCurrentDate] = useState(""); // Logic ngày hiện tại
   const location = useLocation();
@@ -148,7 +148,7 @@ const StaffLayout = ({ children }) => {
 
         {/* Nội dung các trang con */}
         <div className="p-10 w-full max-w-[1600px] mx-auto">
-          {children}
+          <Outlet />
         </div>
       </main>
     </div>

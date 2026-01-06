@@ -1,12 +1,11 @@
 import React from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import { Plus, Search, RefreshCcw, Calendar, Users, PawPrint, DollarSign, MoreVertical } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   return (
-    <StaffLayout>
+    <>
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-[#1E293B] flex items-center gap-3">
           Xin chào, Hoa! 👋
@@ -87,7 +86,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </StaffLayout>
+    </>
   );
 };
 
