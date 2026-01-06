@@ -24,26 +24,26 @@ const Login = () => {
       
       // LOGIC ĐIỀU HƯỚNG MỚI
       switch (currentUser.role) {
-        case 'MANAGER':
+        case 'Quản lý':
           navigate('/manager/dashboard');
           break;
 
-        case 'DOCTOR':
+        case 'Bác sĩ':
           // Bác sĩ vào thẳng danh sách thú cưng để khám
           navigate('/staff/pets'); 
           break;
 
-        case 'RECEPTIONIST':
+        case 'Tiếp tân':
           // Tiếp tân vào thẳng danh sách khách hàng để check-in
           navigate('/staff/customers'); 
           break;
 
-        case 'SALES':
+        case 'Bán hàng':
           // Bán vé/hàng vào thẳng kho hoặc trang bán hàng
-          navigate('/staff/inventory'); 
+          navigate('/staff/pos'); 
           break;
 
-        case 'CUSTOMER':
+        case 'Khách hàng':
           navigate('/customer/home');
           break;
 

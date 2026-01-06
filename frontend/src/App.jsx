@@ -7,22 +7,21 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // --- 2. LAYOUTS ---
 import MainLayout from './layouts/Layout';      // Layout cho Manager (Admin)
-import StaffLayout from './layouts/StaffLayout';   // Layout riêng cho Staff (Lấy từ hình 2 của bạn)
+import StaffLayout from './layouts/StaffLayout';   // Layout riêng cho Staff
 
 // --- 3. PUBLIC PAGES ---
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-// --- 4. MANAGER PAGES (Các file cũ nằm ngoài thư mục staff) ---
-// Giả sử các file này nằm ở src/pages/
+// --- 4. MANAGER PAGES ---
 import ManagerDashboard from './pages/Dashboard'; 
 import Employees from './pages/Employees';
 import Inventory from './pages/Inventory';
 import Vaccination from './pages/Vaccination';
 import Pets from './pages/Pets';
-import ManagerCustomers from './pages/Customers'; // Khách hàng (View quản lý)
+import ManagerCustomers from './pages/Customers';
 
-// --- 5. STAFF / RECEPTIONIST PAGES (Các file trong hình 2: src/pages/staff/) ---
+// --- 5. STAFF PAGES ---
 import StaffDashboard from './pages/staff/Dashboard'; 
 import AppointmentList from './pages/staff/AppointmentList';
 import CreateAppointment from './pages/staff/CreateAppointment';
@@ -38,18 +37,14 @@ function App() {
       <BrowserRouter>
         <Routes>
 
-          {/* =========================================================
-              A. PUBLIC ROUTES
-             ========================================================= */}
+          {/* ================== A. PUBLIC ================== */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* =========================================================
-              B. MANAGER ROUTES (Dành cho Quản lý)
-              Sử dụng: MainLayout (Sidebar Admin)
-             ========================================================= */}
-          <Route element={<ProtectedRoute allowedRoles={['MANAGER']} />}>
+          {/* ================== B. MANAGER ================== */}
+          {/* Chỉ tài khoản role = "Quản lý" mới vào được khu /manager */}
+          <Route element={<ProtectedRoute allowedRoles={['Quản lý']} />}>
             <Route path="/manager" element={<MainLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               
@@ -62,15 +57,15 @@ function App() {
             </Route>
           </Route>
 
-          {/* =========================================================
-              C. STAFF / RECEPTIONIST ROUTES (Dành cho Tiếp tân)
-              Sử dụng: StaffLayout (Sidebar Lễ tân - File trong hình 2)
-             ========================================================= */}
-          <Route element={<ProtectedRoute allowedRoles={['RECEPTIONIST']} />}>
+          {/* ================== C. STAFF ================== */}
+          {/* Khu /staff dùng chung cho 2 loại:
+              - "Tiếp tân"
+              - "Bán hàng"
+              (tuỳ bạn, có thể cho "Quản lý" vào khu này luôn nếu muốn) */}
+          <Route element={<ProtectedRoute allowedRoles={['Tiếp tân', 'Bán hàng']} />}>
             <Route path="/staff" element={<StaffLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
 
-              {/* Các chức năng lấy từ hình 2 của bạn */}
               <Route path="dashboard" element={<StaffDashboard />} />
               <Route path="appointments" element={<AppointmentList />} />
               <Route path="create-appointment" element={<CreateAppointment />} />
@@ -80,13 +75,11 @@ function App() {
               <Route path="pos" element={<PetPOS />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="settings" element={<Settings />} />
-              
             </Route>
           </Route>
 
-          {/* 404 Redirect */}
+          {/* 404 */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>

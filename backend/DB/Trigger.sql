@@ -1,213 +1,181 @@
-﻿/* =========================================================
-   PETCAREX - TRIGGERS SCRIPT (UNIVERSAL VERSION)
-   Fix: Sửa lỗi "Incorrect syntax near OR" cho SQL Server bản cũ
-   ========================================================= */
-
-USE PetCareX;
+﻿USE PetCareX; -- Hoặc db_ac329b_login
 GO
 
 /* ---------------------------------------------------------
-   1. TRIGGER: KIỂM TRA NGÀY VÀO LÀM > NGÀY SINH CỦA NHÂN VIÊN
+   1. TRIGGER: KIỂM TRA NGÀY VÀO LÀM > NGÀY SINH
+   (Giữ nguyên logic, chỉ đảm bảo tương thích)
    --------------------------------------------------------- */
--- Bước 1: Xóa trigger cũ nếu tồn tại
-IF OBJECT_ID('TR_NhanVien_CheckNgayVaoLam', 'TR') IS NOT NULL
-    DROP TRIGGER TR_NhanVien_CheckNgayVaoLam;
+IF OBJECT_ID('TR_NhanVien_CheckNgayVaoLam', 'TR') IS NOT NULL DROP TRIGGER TR_NhanVien_CheckNgayVaoLam;
 GO
-
--- Bước 2: Tạo trigger mới
 CREATE TRIGGER TR_NhanVien_CheckNgayVaoLam
 ON NhanVien
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    -- Kiểm tra nếu có nhân viên nào mà Ngày vào làm <= Ngày sinh
+    -- Chỉ kiểm tra nếu NgaySinh không NULL (vì DB mới cho phép NULL)
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN NguoiDung nd ON i.MaNV = nd.MaND
-        WHERE i.NgayVaoLam <= nd.NgaySinh
+        WHERE nd.NgaySinh IS NOT NULL AND i.NgayVaoLam <= nd.NgaySinh
     )
     BEGIN
-        RAISERROR(N'Lỗi: Ngày vào làm của nhân viên phải lớn hơn ngày sinh.', 16, 1);
+        RAISERROR(N'Lỗi: Ngày vào làm phải lớn hơn ngày sinh.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   2. TRIGGER: RÀNG BUỘC ĐIỀU ĐỘNG NHÂN SỰ
+   2. TRIGGER: ĐIỀU ĐỘNG (Sửa: Check trực tiếp TenChucVu)
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_DieuDong_CheckQuanLy', 'TR') IS NOT NULL
-    DROP TRIGGER TR_DieuDong_CheckQuanLy;
+IF OBJECT_ID('TR_DieuDong_CheckQuanLy', 'TR') IS NOT NULL DROP TRIGGER TR_DieuDong_CheckQuanLy;
 GO
-
 CREATE TRIGGER TR_DieuDong_CheckQuanLy
 ON DieuDong
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    -- 1. Kiểm tra Người điều động (MaNVDieuDong) phải có chức vụ chứa từ 'Quản lý'
+    -- [SỬA] Không cần JOIN ChucVu, check thẳng cột TenChucVu
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN NhanVien nv ON i.MaNVDieuDong = nv.MaNV
-        JOIN ChucVu cv ON nv.MaChucVu = cv.MaChucVu
-        WHERE cv.TenChucVu NOT LIKE N'%Quản lý%'
+        WHERE nv.TenChucVu NOT LIKE N'%Quản lý%' -- DB mới dùng từ "Quản lý"
     )
     BEGIN
-        RAISERROR(N'Lỗi: Người thực hiện điều động phải là Quản lý chi nhánh.', 16, 1);
+        RAISERROR(N'Lỗi: Người điều động phải là Quản lý.', 16, 1);
         ROLLBACK TRANSACTION;
         RETURN;
     END
 
-    -- 2. Kiểm tra MaNVDieuDong không trùng với MaNV
-    IF EXISTS (
-        SELECT 1 FROM inserted WHERE MaNV = MaNVDieuDong
-    )
+    IF EXISTS (SELECT 1 FROM inserted WHERE MaNV = MaNVDieuDong)
     BEGIN
-        RAISERROR(N'Lỗi: Người quản lý không thể tự điều động chính mình.', 16, 1);
+        RAISERROR(N'Lỗi: Không thể tự điều động chính mình.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   3. TRIGGER: KIỂM TRA BÁC SĨ PHỤ TRÁCH KHÁM BỆNH
+   3. TRIGGER: PHIẾU KHÁM (Sửa: Check 'Bác sĩ')
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_PhieuKham_CheckBacSi', 'TR') IS NOT NULL
-    DROP TRIGGER TR_PhieuKham_CheckBacSi;
+IF OBJECT_ID('TR_PhieuKham_CheckBacSi', 'TR') IS NOT NULL DROP TRIGGER TR_PhieuKham_CheckBacSi;
 GO
-
 CREATE TRIGGER TR_PhieuKham_CheckBacSi
 ON PhieuDatDVKhamBenh
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    -- 1. Kiểm tra chức vụ Bác sĩ
+
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN NhanVien nv ON i.BacSiPhuTrach = nv.MaNV
-        JOIN ChucVu cv ON nv.MaChucVu = cv.MaChucVu
-        WHERE cv.TenChucVu <> N'Bác sĩ thú y'
+        WHERE i.BacSiPhuTrach IS NOT NULL AND nv.TenChucVu <> N'Bác sĩ'
     )
     BEGIN
-        RAISERROR(N'Lỗi: Người phụ trách khám bệnh phải có chức vụ là Bác sĩ thú y.', 16, 1);
+        RAISERROR(N'Lỗi: Người phụ trách phải là Bác sĩ.', 16, 1);
         ROLLBACK TRANSACTION;
         RETURN;
     END
 
-    -- 2. Kiểm tra Ngày khám >= Ngày đặt dịch vụ
+    -- Check ngày khám >= ngày đặt
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN PhieuDatDV pdv ON i.MaPhieuDV = pdv.MaPhieuDV
         WHERE i.NgayKham < pdv.NgayDatDV
     )
     BEGIN
-        RAISERROR(N'Lỗi: Ngày khám bệnh phải sau hoặc bằng ngày đặt dịch vụ.', 16, 1);
+        RAISERROR(N'Lỗi: Ngày khám phải sau ngày đặt.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   4. TRIGGER: KIỂM TRA NHÂN VIÊN LẬP HÓA ĐƠN
+   4. TRIGGER: HÓA ĐƠN (Sửa: Check 'Bán hàng')
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_HoaDon_CheckNhanVien', 'TR') IS NOT NULL
-    DROP TRIGGER TR_HoaDon_CheckNhanVien;
+IF OBJECT_ID('TR_HoaDon_CheckNhanVien', 'TR') IS NOT NULL DROP TRIGGER TR_HoaDon_CheckNhanVien;
 GO
-
 CREATE TRIGGER TR_HoaDon_CheckNhanVien
 ON HoaDon
 AFTER INSERT, UPDATE
 AS
 BEGIN
+    -- [SỬA] Check TenChucVu = 'Bán hàng' (theo DB mới)
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN NhanVien nv ON i.MaNVLap = nv.MaNV
-        JOIN ChucVu cv ON nv.MaChucVu = cv.MaChucVu
-        WHERE cv.TenChucVu <> N'Nhân viên bán hàng'
+        WHERE nv.TenChucVu <> N'Bán hàng'
     )
     BEGIN
-        RAISERROR(N'Lỗi: Người lập hóa đơn phải là Nhân viên bán hàng.', 16, 1);
+        RAISERROR(N'Lỗi: Người lập hóa đơn phải là nhân viên Bán hàng.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   5. TRIGGER: KIỂM TRA SẢN PHẨM TRONG ĐƠN THUỐC
+   5. TRIGGER: ĐƠN THUỐC (Không đổi, giữ nguyên)
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_DonThuoc_CheckLoaiSP', 'TR') IS NOT NULL
-    DROP TRIGGER TR_DonThuoc_CheckLoaiSP;
+IF OBJECT_ID('TR_DonThuoc_CheckLoaiSP', 'TR') IS NOT NULL DROP TRIGGER TR_DonThuoc_CheckLoaiSP;
 GO
-
 CREATE TRIGGER TR_DonThuoc_CheckLoaiSP
 ON DonThuoc
 AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN SanPham sp ON i.MaSP = sp.MaSP
         JOIN LoaiSP lsp ON sp.MaLoaiSP = lsp.MaLoaiSP
         WHERE lsp.TenLoaiSP <> N'Thuốc'
     )
     BEGIN
-        RAISERROR(N'Lỗi: Sản phẩm trong đơn thuốc bắt buộc phải là Thuốc.', 16, 1);
+        RAISERROR(N'Lỗi: Đơn thuốc chỉ được kê Thuốc.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   6. TRIGGER: KIỂM TRA THỜI GIAN GÓI TIÊM PHÒNG
+   6. TRIGGER: GÓI TIÊM (Check NULL an toàn)
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_TGTiem_CheckThoiGian', 'TR') IS NOT NULL
-    DROP TRIGGER TR_TGTiem_CheckThoiGian;
+IF OBJECT_ID('TR_TGTiem_CheckThoiGian', 'TR') IS NOT NULL DROP TRIGGER TR_TGTiem_CheckThoiGian;
 GO
-
 CREATE TRIGGER TR_TGTiem_CheckThoiGian
 ON ThoiGianTiemChiDinh
 AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN DangKyGoiTP dk ON i.MaDK = dk.MaDK
-        WHERE i.ThangTiem < dk.ThoiGianBD OR i.ThangTiem >= dk.ThoiGianKT
+        WHERE i.ThangTiem IS NOT NULL 
+          AND (i.ThangTiem < dk.ThoiGianBD OR i.ThangTiem >= dk.ThoiGianKT)
     )
     BEGIN
-        RAISERROR(N'Lỗi: Tháng tiêm chỉ định phải nằm trong thời gian hiệu lực của gói đăng ký.', 16, 1);
+        RAISERROR(N'Lỗi: Thời gian tiêm phải nằm trong hạn gói.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;
 GO
 
 /* ---------------------------------------------------------
-   7. TRIGGER: KIỂM TRA NGÀY TIÊM PHÒNG
+   7. TRIGGER: PHIẾU TIÊM (Không đổi)
    --------------------------------------------------------- */
-IF OBJECT_ID('TR_PhieuTiem_CheckNgay', 'TR') IS NOT NULL
-    DROP TRIGGER TR_PhieuTiem_CheckNgay;
+IF OBJECT_ID('TR_PhieuTiem_CheckNgay', 'TR') IS NOT NULL DROP TRIGGER TR_PhieuTiem_CheckNgay;
 GO
-
 CREATE TRIGGER TR_PhieuTiem_CheckNgay
 ON PhieuDatDVTiemPhong
 AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1
-        FROM inserted i
+        SELECT 1 FROM inserted i
         JOIN PhieuDatDV pdv ON i.MaPhieuDV = pdv.MaPhieuDV
         WHERE i.NgayTiem < pdv.NgayDatDV
     )
     BEGIN
-        RAISERROR(N'Lỗi: Ngày tiêm phòng phải sau hoặc bằng ngày đặt dịch vụ.', 16, 1);
+        RAISERROR(N'Lỗi: Ngày tiêm phải sau ngày đặt.', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;

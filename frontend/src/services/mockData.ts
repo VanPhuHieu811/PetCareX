@@ -3,31 +3,31 @@ import { UserAccount, NhanVien, SanPham, ThuCung, Vacxin, KhachHang, DoanhThuDat
 export const MOCK_ACCOUNTS: UserAccount[] = [
   // 1. Quản lý (Full quyền)
   { 
-    username: 'admin', password: '123', role: 'MANAGER', 
+    username: 'admin', password: '123', role: 'Quản lý', 
     displayName: 'Quản Lý Cửa Hàng', linkedId: 'NV01' 
   },
   
   // 2. Bác sĩ (Chuyên về Thú cưng, Tiêm chủng)
   { 
-    username: 'bacsi', password: '123', role: 'DOCTOR', 
+    username: 'bacsi', password: '123', role: 'Bác sĩ', 
     displayName: 'Bác sĩ An', linkedId: 'NV02' 
   },
 
   // 3. Tiếp tân (Chuyên về Khách hàng, Lịch hẹn)
   { 
-    username: 'tieptan', password: '123', role: 'RECEPTIONIST', 
+    username: 'tieptan', password: '123', role: 'Tiếp tân', 
     displayName: 'Lễ tân Hoa', linkedId: 'NV03' 
   },
 
   // 4. Bán vé / Bán hàng (Chuyên về Kho, Hóa đơn)
   { 
-    username: 'banve', password: '123', role: 'SALES', 
-    displayName: 'NV Bán Vé', linkedId: 'NV04' 
+    username: 'banhang', password: '123', role: 'Bán hàng', 
+    displayName: 'NV Bán hàng Hảo', linkedId: 'NV04' 
   },
   
   // 5. Khách hàng
   { 
-    username: 'khach', password: '123', role: 'CUSTOMER', 
+    username: 'khach', password: '123', role: 'Khách hàng', 
     displayName: 'Nguyễn Văn A', linkedId: 'KH01' 
   }
 ];

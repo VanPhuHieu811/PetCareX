@@ -3,7 +3,7 @@ export type Role = 'MANAGER' | 'DOCTOR' | 'RECEPTIONIST' | 'SALES' | 'CUSTOMER';
 export interface UserAccount {
   username: string;
   password: string;
-  role: Role;
+  role: string;
   displayName: string;
   linkedId?: string;
 }

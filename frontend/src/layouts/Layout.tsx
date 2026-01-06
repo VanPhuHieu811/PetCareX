@@ -48,12 +48,12 @@ const Layout: React.FC = () => {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-          <SidebarItem to="/" icon={LayoutDashboard} label="Tổng quan & Doanh thu" />
-          <SidebarItem to="/vaccination" icon={Syringe} label="Tiêm phòng" />
-          <SidebarItem to="/inventory" icon={Package} label="Kho hàng & Sản phẩm" />
-          <SidebarItem to="/pets" icon={Dog} label="Hồ sơ Thú cưng" />
-          <SidebarItem to="/employees" icon={Users} label="Nhân sự" />
-          <SidebarItem to="/customers" icon={UserCircle} label="Khách hàng" />
+          <SidebarItem to="/manager/dashboard" icon={LayoutDashboard} label="Tổng quan & Doanh thu" />
+          <SidebarItem to="/manager/vaccination" icon={Syringe} label="Tiêm phòng" />
+          <SidebarItem to="/manager/inventory" icon={Package} label="Kho hàng & Sản phẩm" />
+          <SidebarItem to="/manager/pets" icon={Dog} label="Hồ sơ Thú cưng" />
+          <SidebarItem to="/manager/employees" icon={Users} label="Nhân sự" />
+          <SidebarItem to="/manager/customers" icon={UserCircle} label="Khách hàng" />
         </nav>
 
         <div className="p-4 border-t border-gray-100">
