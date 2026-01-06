@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { petHistories, currentUser } from '../../services/mockDataKH';
+import { petHistories, currentUser } from '../../services/mockDataBS';
 // 1. Import các component đã tách
-import Step1Diagnosis from '../../components/customer/clinical/Step1Diagnosis';
-import Step2Treatment from '../../components/customer/clinical/Step2Treatment'; 
-import Stepper from '../../components/customer/common/Stepper';
-import PrescriptionModal from '../../components/customer/clinical/PrescriptionModal';
-import AppointmentModal from '../../components/customer/clinical/AppointmentModal';
+import Step1Diagnosis from '../../components/doctor/clinical/Step1Diagnosis';
+import Step2Treatment from '../../components/doctor/clinical/Step2Treatment'; 
+import Stepper from '../../components/doctor/common/Stepper';
+import PrescriptionModal from '../../components/doctor/clinical/PrescriptionModal';
+import AppointmentModal from '../../components/doctor/clinical/AppointmentModal';
 
 const ClinicalExam = () => {
   const { petId } = useParams();

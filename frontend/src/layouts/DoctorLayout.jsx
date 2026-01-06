@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { currentUser } from '../services/mockDataKH';
+import { currentUser } from '../services/mockDataBS';
 import { useNavigate } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 

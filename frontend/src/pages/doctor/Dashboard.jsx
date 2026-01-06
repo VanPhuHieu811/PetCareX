@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { appointments, dashboardStats } from '../../services/mockDataKH';
+import { appointments, dashboardStats } from '../../services/mockDataBS';
 
 
 const Dashboard = () => {

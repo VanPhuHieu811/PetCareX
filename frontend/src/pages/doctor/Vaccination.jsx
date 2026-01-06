@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { petHistories, currentUser } from '../../services/mockDataKH';
-import VaccineSelection from '../../components/customer/vaccination/VaccineSelection';
+import { petHistories, currentUser } from '../../services/mockDataBS';
+import VaccineSelection from '../../components/doctor/vaccination/VaccineSelection';
 
 const Vaccination = () => {
   const { petId } = useParams();

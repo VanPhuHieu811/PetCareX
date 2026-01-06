@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { petHistories, petVaccinePackages } from '../../services/mockDataKH';
-import VaccinePackage from '../../components/customer/common/VaccinePackage';
+import { petHistories, petVaccinePackages } from '../../services/mockDataBS';
+import VaccinePackage from '../../components/doctor/common/VaccinePackage';
 
 const PetDetail = () => {
   const { id } = useParams();

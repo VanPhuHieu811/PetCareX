@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { mockVaccines } from '../../../services/mockDataKH';
+import { mockVaccines } from '../../../services/mockDataBS';
 
 const VaccineSelection = ({ onSelect, selectedId }) => {
   const [searchTerm, setSearchTerm] = useState('');

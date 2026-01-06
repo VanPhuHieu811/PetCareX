@@ -25,12 +25,12 @@ const Login = () => {
       // LOGIC ĐIỀU HƯỚNG MỚI
       switch (currentUser.role) {
         case 'Quản lý':
-          navigate('/manager/dashboard');
+          navigate('/manager/');
           break;
 
         case 'Bác sĩ':
           // Bác sĩ vào thẳng danh sách thú cưng để khám
-          navigate('/staff/pets'); 
+          navigate('/doctor/'); 
           break;
 
         case 'Tiếp tân':
@@ -40,7 +40,7 @@ const Login = () => {
 
         case 'Bán hàng':
           // Bán vé/hàng vào thẳng kho hoặc trang bán hàng
-          navigate('/login'); 
+          navigate('/staff/pos'); 
           break;
 
         case 'Khách hàng':

@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('petcare_user');
   };
 
-  // Hàm Đăng ký: Mặc định role là CUSTOMER
+  // Hàm Đăng ký: Mặc định role là "Khách hàng" để khớp với ProtectedRoute
   const register = async (username: string, password: string, displayName: string): Promise<boolean> => {
     await new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
     
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       username,
       password,
       displayName,
-      role: 'CUSTOMER', // MẶC ĐỊNH LÀ KHÁCH HÀNG
+      role: 'Khách hàng', // Mặc định là Khách hàng (trùng với MOCK_ACCOUNTS & ProtectedRoute)
       linkedId: `KHNew${Date.now()}` // Fake ID
     };
 
