@@ -25,7 +25,7 @@ const PrescriptionModal = ({ isOpen, onClose, petName }) => {
   const handleSave = () => {
     alert("Kê đơn thành công!");
     onClose();
-    navigate('/customer/dashboard');
+    navigate('/doctor/dashboard');
   };
 
   return (
