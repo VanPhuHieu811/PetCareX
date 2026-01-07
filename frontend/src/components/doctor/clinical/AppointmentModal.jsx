@@ -55,7 +55,7 @@ const AppointmentModal = ({ isOpen, onClose, petName }) => {
             onClick={() => {
               alert(`Đã đặt lịch tái khám cho ${petName} vào ngày ${selectedDate}`);
               onClose();               // đóng modal
-              navigate('/dashboard');  // 👉 quay về dashboard
+              navigate('/doctor/dashboard');  // 👉 quay về dashboard
             }}
             className={`flex-1 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2
               ${selectedDate
