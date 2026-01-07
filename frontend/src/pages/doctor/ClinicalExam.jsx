@@ -47,7 +47,7 @@ const ClinicalExam = () => {
     }
     else if (actionId === 'finish') {
       // Logic hoàn tất khám
-      navigate('/dashboard');
+      navigate('/doctor/dashboard');
     }
   };
 
