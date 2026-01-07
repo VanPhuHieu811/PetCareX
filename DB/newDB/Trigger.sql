@@ -315,3 +315,57 @@ BEGIN
     WHERE dk.MaPhieuDV IN (SELECT MaPhieuDV FROM inserted UNION SELECT MaPhieuDV FROM deleted);
 END;
 GO
+
+-- 14. Mỗi khi khách hàng thanh toán hóa đơn thì tự động cộng điểm 
+CREATE TRIGGER TR_HoaDon_AddLoyalty
+ON HoaDon
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Cộng điểm tích lũy: 50.000 VNĐ = 1 điểm
+    UPDATE kh
+    SET kh.DiemLoyalty = kh.DiemLoyalty + (i.TongTien / 50000)
+    FROM KhachHang kh
+    INNER JOIN inserted i ON kh.MaKH = i.MaKH;
+END;
+GO
+
+-- 15. Kiểm tra và thăng hạng thành viên (nếu đủ điều kiện) của khách hàng sau khi thanh toán hóa đơn
+CREATE TRIGGER TR_HoaDon_UpgradeMembership_Yearly
+ON HoaDon
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @NamHienTai INT = YEAR(GETDATE());
+
+    -- 1. Tính tổng chi tiêu CỦA NĂM NAY (Bao gồm cả hóa đơn vừa thêm)
+    DECLARE @ChiTieuNamNay TABLE (MaKH VARCHAR(10), TongTienNamNay BIGINT);
+    
+    INSERT INTO @ChiTieuNamNay (MaKH, TongTienNamNay)
+    SELECT h.MaKH, SUM(h.TongTien)
+    FROM HoaDon h
+    WHERE h.MaKH IN (SELECT MaKH FROM inserted) 
+      AND YEAR(h.NgayLap) = @NamHienTai -- Chỉ lấy hóa đơn trong năm nay
+    GROUP BY h.MaKH;
+
+    -- 2. Cập nhật thăng hạng (CHỈ TĂNG, KHÔNG GIẢM)
+    -- Mốc xét hạng: VIP (12tr), Thân thiết (5tr)
+    UPDATE kh
+    SET MaLoaiTV = CASE 
+        -- Nếu năm nay tiêu >= 12tr và chưa phải VIP -> Lên VIP (LTV03)
+        WHEN ct.TongTienNamNay >= 12000000 AND kh.MaLoaiTV IN ('LTV01', 'LTV02') THEN 'LTV03'
+        
+        -- Nếu năm nay tiêu >= 5tr và đang là Cơ bản -> Lên Thân thiết (LTV02)
+        WHEN ct.TongTienNamNay >= 5000000 AND kh.MaLoaiTV = 'LTV01' THEN 'LTV02'
+        
+        -- Các trường hợp khác: Giữ nguyên (Không hạ cấp lúc này)
+        ELSE kh.MaLoaiTV
+    END
+    FROM KhachHang kh
+    JOIN @ChiTieuNamNay ct ON kh.MaKH = ct.MaKH;
+END;
+GO
