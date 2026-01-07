@@ -23,7 +23,7 @@ const Vaccination = () => {
         Hệ thống đã cập nhật tồn kho.`
     );
 
-    navigate('/dashboard'); // ✅ quay về dashboard
+    navigate('/doctor/dashboard'); // ✅ quay về dashboard
   };
 
   return (

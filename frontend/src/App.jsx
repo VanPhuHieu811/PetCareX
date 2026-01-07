@@ -40,6 +40,7 @@ import Dashboard from './pages/doctor/Dashboard';
 import PetDetail from './pages/doctor/PetDetail';
 import ClinicalExam from './pages/doctor/ClinicalExam';
 import CustomerVaccination from './pages/doctor/Vaccination';
+import DoctorSetting from './pages/doctor/DoctorSettings'
 
 // --- 7. CUSTOMER PAGES ---
 import Booking from './pages/customer/Booking';
@@ -105,6 +106,7 @@ function App() {
 							<Route path="pet/:id" element={<PetDetail />} />
 							<Route path="exam/:petId" element={<ClinicalExam />} />
 							<Route path="vaccination/:petId" element={<CustomerVaccination />} />
+							<Route path="settings" element={<DoctorSetting />} />
 						</Route>
 					</Route>
 
