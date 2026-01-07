@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StaffLayout from '../../layouts/StaffLayout';
 import { 
   ShoppingBag, Search, Plus, Minus, Trash2, CreditCard, 
   Banknote, X, CheckCircle2, User, Package
@@ -52,7 +51,7 @@ const PetPOS = () => {
   const total = subtotal - discount;
 
   return (
-    <StaffLayout>
+    <>
       <div className="grid grid-cols-12 gap-8 font-sans h-[calc(100vh-140px)]">
         
         {/* BÊN TRÁI: DANH MỤC SẢN PHẨM */}
@@ -203,7 +202,7 @@ const PetPOS = () => {
            </div>
         </div>
       )}
-    </StaffLayout>
+    </>
   );
 };
 
