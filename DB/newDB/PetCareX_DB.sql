@@ -280,10 +280,12 @@ CREATE TABLE DatKhamBenh (
     NgayTaiKham datetime NULL,
     TongTienDonThuoc int DEFAULT 0,
     MaTC varchar(10) NOT NULL,
+	BacSiPhuTrach varchar(10) NOT NULL,
     CONSTRAINT PK_PhieuKham PRIMARY KEY (MaPhieuDV),
     CONSTRAINT FK_PhieuKham_PhieuDatDV FOREIGN KEY (MaPhieuDV) REFERENCES PhieuDatDV(MaPhieuDV),
     CONSTRAINT FK_PhieuKham_ThuCung FOREIGN KEY (MaTC) REFERENCES ThuCung(MaTC),
     CONSTRAINT CK_PhieuKham_NTK CHECK (NgayTaiKham IS NULL OR NgayTaiKham > NgayKham),
+	CONSTRAINT FK_PhieuKham_BacSi FOREIGN KEY (BacSiPhuTrach) REFERENCES NhanVien(MaNV),
     CONSTRAINT CK_PhieuKham_TongTien CHECK (TongTienDonThuoc >= 0)
 ); 
 GO
@@ -306,10 +308,12 @@ CREATE TABLE DatTiemPhong (
     NgayTiem datetime NOT NULL,
     MaTC varchar(10) NOT NULL,
     MaDK varchar(10) NULL,
+    BacSiPhuTrach varchar(10) NOT NULL, 
     CONSTRAINT PK_PhieuTiem PRIMARY KEY (MaPhieuDV),
     CONSTRAINT FK_PhieuTiem_PhieuDatDV FOREIGN KEY (MaPhieuDV) REFERENCES PhieuDatDV(MaPhieuDV),
     CONSTRAINT FK_PhieuTiem_ThuCung FOREIGN KEY (MaTC) REFERENCES ThuCung(MaTC),
-    CONSTRAINT FK_PhieuTiem_DK FOREIGN KEY (MaDK) REFERENCES DangKyGoiTP(MaDK)
+    CONSTRAINT FK_PhieuTiem_DK FOREIGN KEY (MaDK) REFERENCES DangKyGoiTP(MaDK),
+    CONSTRAINT FK_PhieuTiem_BacSi FOREIGN KEY (BacSiPhuTrach) REFERENCES NhanVien(MaNV)
 ); 
 GO
 
@@ -417,6 +421,7 @@ CREATE TABLE ChiTietHoaDon (
     CONSTRAINT CK_CTHD_Tong CHECK (TongTienDV >= 0)
 ); 
 GO
+
 
 CREATE TABLE DanhGia (
     MaPhieuDV varchar(10) NOT NULL,

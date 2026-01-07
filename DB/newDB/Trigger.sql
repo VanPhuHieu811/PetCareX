@@ -76,7 +76,7 @@ END;
 GO
 
 -- 3. SNAPSHOT: Tự động lưu Giá và Tên SP vào DonThuoc (Khi kê đơn hoặc sửa số lượng)
-CREATE OR ALTER TRIGGER TR_DonThuoc_Snapshot
+CREATE TRIGGER TR_DonThuoc_Snapshot
 ON DonThuoc
 AFTER INSERT, UPDATE
 AS
@@ -225,15 +225,18 @@ ON DatKhamBenh
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM inserted i
-        JOIN PhieuDatDV p ON i.MaPhieuDV = p.MaPhieuDV
-        WHERE i.NgayKham < p.NgayDatDV
-    )
-    BEGIN
-        RAISERROR(N'Lỗi: Ngày khám phải sau hoặc bằng ngày đặt.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END
+	if update(NgayKham)
+	begin
+		IF EXISTS (
+			SELECT 1 FROM inserted i
+			JOIN PhieuDatDV p ON i.MaPhieuDV = p.MaPhieuDV
+			WHERE i.NgayKham < p.NgayDatDV
+		)
+		BEGIN
+			RAISERROR(N'Lỗi: Ngày khám phải sau hoặc bằng ngày đặt.', 16, 1);
+			ROLLBACK TRANSACTION;
+		END
+	end
 END;
 GO
 
@@ -297,7 +300,7 @@ END;
 GO
 
 -- 13. Tự động cộng dồn tiền từ Đơn Thuốc lên Phiếu Khám
-CREATE OR ALTER TRIGGER TR_DonThuoc_UpdateTongTien
+CREATE TRIGGER TR_DonThuoc_UpdateTongTien
 ON DonThuoc
 AFTER INSERT, UPDATE, DELETE
 AS
