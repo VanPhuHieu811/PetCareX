@@ -23,6 +23,7 @@ import Inventory from './pages/manager/Inventory';
 import Vaccination from './pages/manager/Vaccination';
 import Pets from './pages/manager/Pets';
 import ManagerCustomers from './pages/manager/Customers';
+import ManagerSettings from './pages/manager/ManagerSettings';
 
 // --- 5. STAFF PAGES ---
 import StaffDashboard from './pages/staff/Dashboard';
@@ -71,6 +72,7 @@ function App() {
 							<Route path="vaccination" element={<Vaccination />} />
 							<Route path="pets" element={<Pets />} />
 							<Route path="customers" element={<ManagerCustomers />} />
+							<Route path="settings" element={<ManagerSettings />} />
 						</Route>
 					</Route>
 
