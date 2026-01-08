@@ -2,17 +2,11 @@ import jwt from 'jsonwebtoken';
 
 export const login = async (pool, email, password) => {
   try {
-    const query = `
-    select nd.MaND, nd.HoTen, nd.Email, tk.VaiTro
-    from TaiKhoan tk
-    join NguoiDung nd on tk.MaND = nd.MaND
-    where nd.Email = @Email and tk.MatKhau = @password
-    `
+    const request = pool.request();
+    request.input('Email', email);
+    request.input('password', password);
     
-    const result = await pool.request()
-      .input('Email', email)
-      .input('password', password)
-      .query(query);
+    const result = await request.execute('sp_login');
 
     if (result.recordset.length === 0) {
       throw new Error('Invalid credentials');
