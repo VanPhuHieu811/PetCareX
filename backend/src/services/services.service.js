@@ -1,18 +1,15 @@
-export const getDoctorQueue = async (pool, doctorId) => {
+export const getDoctorDashboard = async (pool, doctorId) => {
   try {
-    // Sử dụng hàm SQL bạn đã viết để lấy danh sách khám/tiêm trong ngày
-    const query = `
-      SELECT * FROM dbo.fn_LayDanhSachKhamTrongNgay(@MaBS) 
-      ORDER BY GioDat ASC
-    `;
-
     const result = await pool.request()
-      .input('MaBS', doctorId) // Truyền MaBS từ tham số API vào SQL
-      .query(query);
+      .input('MaBS', doctorId)
+      .execute('sp_LayDashboardBacSi');
 
-    return result.recordset;
+    return {
+      stats: result.recordsets[0][0], // Lấy dòng đầu tiên của tập kết quả 1
+      queue: result.recordsets[1]     // Lấy toàn bộ tập kết quả 2
+    };
   } catch (err) {
-    throw new Error(`Lỗi truy vấn hàng đợi: ${err.message}`);
+    throw new Error(`Lỗi lấy dữ liệu Dashboard: ${err.message}`);
   }
 };
 
@@ -59,6 +56,23 @@ export const updateRevisitDate = async (pool, maPhieuDV, ngayTaiKham) => {
     return { success: true, message: 'Cập nhật ngày tái khám thành công' };
   } catch (err) {
     throw new Error(`Lỗi Service: ${err.message}`);
+  }
+};
+
+// src/services/medical.service.js
+export const updateExamDiagnosis = async (pool, data) => {
+  try {
+    const { maPhieuDV, trieuChung, chuanDoan } = data;
+    
+    await pool.request()
+      .input('MaPhieuDV', maPhieuDV)
+      .input('MoTaTrieuChung', trieuChung)
+      .input('MoTaChuanDoan', chuanDoan)
+      .execute('sp_CapNhatChuanDoanKham');
+
+    return { success: true, message: 'Cập nhật chẩn đoán thành công' };
+  } catch (err) {
+    throw new Error(`Lỗi cập nhật khám bệnh: ${err.message}`);
   }
 };
 

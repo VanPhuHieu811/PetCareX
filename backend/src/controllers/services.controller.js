@@ -1,20 +1,20 @@
 import * as servicesService from '../services/services.service.js';
 
-export const getQueue = async (req, res) => {
+export const getDashboard = async (req, res) => {
   try {
-    const { doctorId } = req.body; // Lấy :doctorId từ endpoint
-    const result = await servicesService.getDoctorQueue(req.db, doctorId);
+    const { doctorId } = req.body; 
+    if (!doctorId) return res.status(400).json({ error: 'Missing doctorId' });
+
+    const data = await servicesService.getDoctorDashboard(req.db, doctorId);
     
+    // Trả về đúng cấu trúc bạn cần
     res.status(200).json({
       success: true,
-      data: result
+      dashboardStats: data.stats,
+      queue: data.queue
     });
   } catch (err) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Không thể lấy hàng đợi khám', 
-      details: err.message 
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
@@ -50,5 +50,14 @@ export const patchRevisitDate = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const patchExamDiagnosis = async (req, res) => {
+  try {
+    const result = await servicesService.updateExamDiagnosis(req.db, req.body);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };
