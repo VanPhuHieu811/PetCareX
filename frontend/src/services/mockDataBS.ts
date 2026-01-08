@@ -131,7 +131,7 @@ export const currentUser = {
 
 
 export const petHistories = {
-  'TC101': {
+  'TC104': {
     info: { 
       MaTC: 'TC101', //[cite: 44, 127]
       TenTC: 'Milu', //: 44, 127]
@@ -180,7 +180,7 @@ export const petHistories = {
 export const petVaccinePackages = {
   'TC102': null,
 
-  'TC101': {
+  'TC104': {
     maDK: 'DK001', // Khóa chính bảng DangKyGoiTP [cite: 109, 371]
     tenGoi: 'Gói vaccine cơ bản mèo', // TenGoiTP [cite: 104, 381]
     ngayBatDau: '2024-10-15', // ThoiGianBD [cite: 109, 373]

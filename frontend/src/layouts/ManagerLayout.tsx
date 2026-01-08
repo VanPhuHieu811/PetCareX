@@ -9,7 +9,8 @@ import {
 	Users,
 	UserCircle,
 	LogOut,
-	PawPrint
+	PawPrint,
+	Settings 
 } from 'lucide-react';
 
 const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
@@ -54,6 +55,7 @@ const Layout: React.FC = () => {
 					<SidebarItem to="/manager/pets" icon={Dog} label="Hồ sơ Thú cưng" />
 					<SidebarItem to="/manager/employees" icon={Users} label="Nhân sự" />
 					<SidebarItem to="/manager/customers" icon={UserCircle} label="Khách hàng" />
+					<SidebarItem to="/manager/settings" icon={Settings} label="Thông tin cá nhân" />
 				</nav>
 
 				<div className="p-4 border-t border-gray-100">

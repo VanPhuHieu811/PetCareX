@@ -372,3 +372,55 @@ BEGIN
     JOIN @ChiTieuNamNay ct ON kh.MaKH = ct.MaKH;
 END;
 GO
+
+USE db_ac329b_login; -- Đảm bảo chọn đúng Database của bạn
+GO
+
+-- =============================================
+-- 1. Trigger cho bảng DATKHAMBENH
+-- =============================================
+CREATE TRIGGER TR_DatKham_AutoFillDoctor
+ON DatKhamBenh
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update bảng DatKhamBenh dựa trên thông tin từ PhieuDatDV
+    UPDATE dk
+    SET dk.BacSiPhuTrach = p.BacSiPhuTrach
+    FROM DatKhamBenh dk
+    INNER JOIN inserted i ON dk.MaPhieuDV = i.MaPhieuDV -- Chỉ tác động vào dòng vừa thêm
+    INNER JOIN PhieuDatDV p ON dk.MaPhieuDV = p.MaPhieuDV; -- Lấy thông tin từ bảng cha
+END;
+GO
+
+-- =============================================
+-- 2. Trigger cho bảng DATTIEMPHONG
+-- =============================================
+CREATE TRIGGER TR_DatTiem_AutoFillDoctor
+ON DatTiemPhong
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update bảng DatTiemPhong dựa trên thông tin từ PhieuDatDV
+    UPDATE dt
+    SET dt.BacSiPhuTrach = p.BacSiPhuTrach
+    FROM DatTiemPhong dt
+    INNER JOIN inserted i ON dt.MaPhieuDV = i.MaPhieuDV -- Chỉ tác động vào dòng vừa thêm
+    INNER JOIN PhieuDatDV p ON dt.MaPhieuDV = p.MaPhieuDV; -- Lấy thông tin từ bảng cha
+END;
+GO
+
+
+--________________________________________________
+-- Kiểm các trigger đang có
+
+SELECT 
+    name,
+    type_desc,
+    create_date
+FROM sys.triggers
+WHERE parent_class_desc = 'OBJECT_OR_COLUMN'; -- Chỉ lấy trigger gắn vào bảng

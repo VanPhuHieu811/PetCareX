@@ -90,7 +90,7 @@ const Dashboard = () => {
 							filteredAppointments.map((apt, index) => (
 								<tr
 									key={apt.id}
-									onClick={() => navigate(`/customer/pet/${apt.maTC}`)}
+									onClick={() => navigate(`/doctor/pet/${apt.maTC}`)}
 									className={`border-b border-slate-200 hover:bg-slate-50 cursor-pointer
                     ${apt.status === 'Đang khám' ? 'bg-blue-50' : ''}
                   `}
@@ -132,13 +132,13 @@ const Dashboard = () => {
 												onClick={(e) => {
 													e.stopPropagation();
 													if (apt.type === 'clinic') {
-														navigate(`/customer/exam/${apt.maTC}`); // Chuyển sang trang khám bạn vừa tạo
+														navigate(`/doctor/exam/${apt.maTC}`); // Chuyển sang trang khám bạn vừa tạo
 													} else {
-														navigate(`/customer/vaccination/${apt.maTC}`);
+														navigate(`/doctor/vaccination/${apt.maTC}`);
 													}
 												}}
 												className={`w-[90px] h-[38px] rounded-xl text-sm font-bold text-white
-                          ${apt.type === 'clinic'
+                          						${apt.type === 'clinic'
 														? 'bg-blue-600 hover:bg-blue-700'
 														: 'bg-emerald-600 hover:bg-emerald-700'}
                         `}

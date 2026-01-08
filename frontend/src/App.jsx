@@ -23,6 +23,7 @@ import Inventory from './pages/manager/Inventory';
 import Vaccination from './pages/manager/Vaccination';
 import Pets from './pages/manager/Pets';
 import ManagerCustomers from './pages/manager/Customers';
+import ManagerSettings from './pages/manager/ManagerSettings';
 
 // --- 5. STAFF PAGES ---
 import StaffDashboard from './pages/staff/Dashboard';
@@ -39,6 +40,7 @@ import Dashboard from './pages/doctor/Dashboard';
 import PetDetail from './pages/doctor/PetDetail';
 import ClinicalExam from './pages/doctor/ClinicalExam';
 import CustomerVaccination from './pages/doctor/Vaccination';
+import DoctorSetting from './pages/doctor/DoctorSettings'
 
 // --- 7. CUSTOMER PAGES ---
 import Booking from './pages/customer/Booking';
@@ -71,6 +73,7 @@ function App() {
 							<Route path="vaccination" element={<Vaccination />} />
 							<Route path="pets" element={<Pets />} />
 							<Route path="customers" element={<ManagerCustomers />} />
+							<Route path="settings" element={<ManagerSettings />} />
 						</Route>
 					</Route>
 
@@ -103,6 +106,7 @@ function App() {
 							<Route path="pet/:id" element={<PetDetail />} />
 							<Route path="exam/:petId" element={<ClinicalExam />} />
 							<Route path="vaccination/:petId" element={<CustomerVaccination />} />
+							<Route path="settings" element={<DoctorSetting />} />
 						</Route>
 					</Route>
 

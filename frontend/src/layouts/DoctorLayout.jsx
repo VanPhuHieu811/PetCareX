@@ -7,10 +7,8 @@ import { PawPrint } from 'lucide-react';
 // Sidebar nội bộ, dùng trong layout
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 	const menuItems = [
-		{ name: 'Dashboard', icon: '', active: true },
-		{ name: 'Thú cưng', icon: '', active: false },
-		{ name: 'Lịch hẹn', icon: '', active: false },
-		{ name: 'Cài đặt', icon: '', active: false },
+		{ name: 'Dashboard', icon: '', path: '/doctor/dashboard' },
+		{ name: 'Cài đặt', icon: '', path: '/doctor/settings' },
 	];
 
 	const navigate = useNavigate();
@@ -35,23 +33,26 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 				<nav className="space-y-1">
 					{menuItems.map((item) => (
 						<div
-							key={item.name}
-							className={`flex items-center rounded-xl cursor-pointer transition-all h-12 ${isCollapsed ? 'justify-center' : 'px-4 gap-4'
-								} ${item.active
-									? 'bg-white text-[#3b71ca] font-bold shadow-md'
-									: 'text-blue-50 hover:bg-white/10'
-								}`}
-							title={isCollapsed ? item.name : ''}
+						key={item.name}
+						onClick={() => navigate(item.path)}
+						className={`flex items-center rounded-xl cursor-pointer transition-all h-12 
+							${isCollapsed ? 'justify-center' : 'px-4 gap-4'}
+							${location.pathname === item.path
+							? 'bg-white text-[#3b71ca] font-bold shadow-md'
+							: 'text-blue-50 hover:bg-white/10'
+							}`}
+						title={isCollapsed ? item.name : ''}
 						>
-							<span className="text-xl shrink-0">{item.icon}</span>
-							{!isCollapsed && (
-								<span className="text-sm transition-opacity duration-300">
-									{item.name}
-								</span>
-							)}
+						<span className="text-xl shrink-0">{item.icon}</span>
+						{!isCollapsed && (
+							<span className="text-sm transition-opacity duration-300">
+							{item.name}
+							</span>
+						)}
 						</div>
 					))}
 				</nav>
+
 			</div>
 
 			<div className="mt-auto p-4">

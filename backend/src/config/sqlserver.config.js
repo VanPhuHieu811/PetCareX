@@ -1,9 +1,10 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 const config = {
-  server: process.env.SQLSERVER_HOST,
+  server: process.env.SQLSERVER_NAME,
   database: process.env.SQLSERVER_DB,
   user: process.env.SQLSERVER_USER,
   password: process.env.SQLSERVER_PASSWORD,
