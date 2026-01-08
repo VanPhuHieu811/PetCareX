@@ -225,12 +225,12 @@ export const petVaccinePackages = {
 };
 
 export const mockMedicines = [
-  { MaSP: 'SP001', TenSP: 'Amoxicillin 250mg', Loai: 'Kháng sinh', Ton: 200, DonVi: 'Viên nén • 250mg' },
-  { MaSP: 'SP002', TenSP: 'Metoclopramide 10mg', Loai: 'Chống nôn', Ton: 150, DonVi: 'Viên nén' },
-  { MaSP: 'SP003', TenSP: 'Prednisolone 5mg', Loai: 'Corticoid', Ton: 100, DonVi: 'Viên nén' },
-  { MaSP: 'SP004', TenSP: 'Meloxicam 1.5mg/ml', Loai: 'Giảm đau/Kháng viêm', Ton: 30, DonVi: 'Hỗn dịch' },
-  { MaSP: 'SP005', TenSP: 'Famotidine 10mg', Loai: 'Dạ dày', Ton: 80, DonVi: 'Viên nén' },
-  { MaSP: 'SP006', TenSP: 'Cephalexin 500mg', Loai: 'Kháng sinh', Ton: 120, DonVi: 'Viên nén' },
+  { MaSP: 'SP001', TenSP: 'Amoxicillin 250mg', Ton: 200, DonVi: 'Viên nén • 250mg' },
+  { MaSP: 'SP002', TenSP: 'Metoclopramide 10mg', Ton: 150, DonVi: 'Viên nén' },
+  { MaSP: 'SP003', TenSP: 'Prednisolone 5mg', Ton: 100, DonVi: 'Viên nén' },
+  { MaSP: 'SP004', TenSP: 'Meloxicam 1.5mg/ml', Ton: 30, DonVi: 'Hỗn dịch' },
+  { MaSP: 'SP005', TenSP: 'Famotidine 10mg', Ton: 80, DonVi: 'Viên nén' },
+  { MaSP: 'SP006', TenSP: 'Cephalexin 500mg', Ton: 120, DonVi: 'Viên nén' },
 ];
 
 // Dữ liệu giả lập cho Vaccine (Bổ sung thuộc tính DonViTinh)
