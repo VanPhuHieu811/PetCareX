@@ -106,9 +106,3 @@ export const MOCK_VISIT_STATS_DAILY: VisitStat[] = [
   { ThoiGian: '04/06/2024', LuotKham: 20, LuotTiem: 12 },
   { ThoiGian: '05/06/2024', LuotKham: 14, LuotTiem: 6 },
 ];
-
-export const REVENUE_BREAKDOWN = {
-  KhamBenh: 450000000,
-  TiemPhong: 320000000,
-  BanHang: 680000000,
-};
