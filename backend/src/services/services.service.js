@@ -76,3 +76,14 @@ export const updateExamDiagnosis = async (pool, data) => {
   }
 };
 
+export const getVaccinesInStock = async (pool, branchId) => {
+  try {
+    const result = await pool.request()
+      .input('MaCN', branchId)
+      .execute('sp_LayDanhSachVacxinTrongChiNhanh');
+      
+    return result.recordset;
+  } catch (err) {
+    throw new Error(`Lỗi lấy danh sách vắc-xin: ${err.message}`);
+  }
+};

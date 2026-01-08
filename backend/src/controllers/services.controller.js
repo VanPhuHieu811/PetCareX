@@ -61,3 +61,21 @@ export const patchExamDiagnosis = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+export const getVaccines = async (req, res) => {
+  try {
+    const { branchId } = req.body;
+    
+    if (!branchId) {
+      return res.status(400).json({ error: 'Thiếu mã chi nhánh (branchId)' });
+    }
+
+    const result = await servicesService.getVaccinesInStock(req.db, branchId);
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

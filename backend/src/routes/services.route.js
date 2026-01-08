@@ -9,5 +9,6 @@ router.get('/exams/medicines', servicesController.getMedicines);
 router.post('/exams/medicines', servicesController.postPrescription);
 router.patch('/exams/revisit-date', servicesController.patchRevisitDate);
 router.patch('/exams', servicesController.patchExamDiagnosis);
-
+// Endpoint: GET /api/v1/services/vaccinations/vaccines
+router.get('/vaccinations/vaccines', servicesController.getVaccines);
 export default router;
