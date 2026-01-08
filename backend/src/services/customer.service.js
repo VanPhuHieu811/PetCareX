@@ -40,9 +40,9 @@ export const getCurrentCustomer = async (pool, customerId) => {
     const request = pool.request();
     const query = `
     select *
-    from KhachHang kh
-    join NguoiDung nd on kh.MaKH = nd.MaND
-    where kh.MaKH = @MaND
+    from TaiKhoan tk
+    join NguoiDung nd on tk.MaND = nd.MaND
+    where tk.MaND = @MaND
     `;
     request.input('MaND', customerId);
 
