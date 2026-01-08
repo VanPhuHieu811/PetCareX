@@ -1,11 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { dbMiddleware } from './config/sqlserver.config.js';
 import branchRoutes from './routes/branch.route.js';
 import doctorRoutes from './routes/doctor.route.js';
-import { dbMiddleware } from './config/sqlserver.config.js';
-
-import branchRoutes from './routes/branch.route.js';
 import authRoutes from './routes/auth.route.js';
 
 const app = express();
