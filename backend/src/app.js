@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import branchRoutes from './routes/branch.route.js';
 import receptionRoutes from './routes/reception.route.js';
 import salesRoutes from './routes/sales.route.js';
 import invoiceRoutes from './routes/invoice.route.js';
