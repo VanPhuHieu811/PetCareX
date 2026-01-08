@@ -74,21 +74,28 @@ export const updateCurrentCustomer = async (req, res) => {
     CCCD: CCCD !== undefined && CCCD !== null ? CCCD : undefined,
   };
 
-  const customer = await customerService.updateCurrentCustomer(pool, customerId, updateData);
+  try {
+    const customer = await customerService.updateCurrentCustomer(pool, customerId, updateData);
 
-  if (!customer) {
-    return res.status(404).json({
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Customer updated successfully',
+      data: customer,
+    });
+  } catch (err) {
+    return res.status(500).json({
       success: false,
-      message: 'Customer not found',
+      message: 'Failed to update customer',
+      error: err.message,
     });
   }
-
-  return res.status(200).json({
-    success: true,
-    message: 'Customer updated successfully',
-    data: customer,
-  });
-
 }
 
 export const getCustomerReceipts = async (req, res) => {
