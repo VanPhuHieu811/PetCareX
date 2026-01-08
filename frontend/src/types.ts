@@ -109,12 +109,6 @@ export interface DoctorStat {
 	DoanhThu: number;
 }
 
-export interface VisitStat {
-	ThoiGian: string;
-	LuotKham: number;
-	LuotTiem: number;
-}
-
 export interface CurrentUser {
 	id: string;
 	name: string;
