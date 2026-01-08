@@ -9,6 +9,7 @@ import { dbMiddleware } from './config/sqlserver.config.js';
 import branchRoutes from './routes/branch.route.js';
 import doctorRoutes from './routes/doctor.route.js';
 import authRoutes from './routes/auth.route.js';
+import customerRoutes from './routes/customer.route.js';
 
 const app = express();
 
@@ -25,5 +26,6 @@ app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/pets', petRoutes); 
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/customers', customerRoutes);
 
 export default app;
