@@ -27,14 +27,14 @@ export const login = async (pool, email, password) => {
   }
 }
 
-export const register = async (pool, email, password, name) => {
+export const register = async (pool, email, password, name, cccd) => {
   try {
     const request = pool.request();
 
     request.input('Email', email);
     request.input('MatKhau', password);
     request.input('HoTen', name);
-
+    request.input('CCCD', cccd);
     const result = await request.execute('sp_register');
 
     if (result.recordset && result.recordset.length > 0) {
@@ -44,6 +44,7 @@ export const register = async (pool, email, password, name) => {
     return {
       HoTen: name,
       Email: email,
+      CCCD: cccd,
       VaiTro: 'Khách hàng',
       TrangThai: 'Hoạt động'
     };

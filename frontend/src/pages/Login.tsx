@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setemail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const success = await login(username, password);
+    const success = await login(email, password);
     setLoading(false);
 
     if (success) {
@@ -24,34 +24,15 @@ const Login = () => {
       
       // LOGIC ĐIỀU HƯỚNG MỚI
       switch (currentUser.role) {
-        case 'Quản lý':
-          navigate('/manager/');
-          break;
-
-        case 'Bác sĩ':
-          // Bác sĩ vào thẳng danh sách thú cưng để khám
-          navigate('/doctor/'); 
-          break;
-
-        case 'Tiếp tân':
-          // Tiếp tân vào thẳng danh sách khách hàng để check-in
-          navigate('/staff/customers'); 
-          break;
-
-        case 'Bán hàng':
-          // Bán vé/hàng vào thẳng kho hoặc trang bán hàng
-          navigate('/staff/pos'); 
-          break;
-
-        case 'Khách hàng':
-          navigate('/customer/');
-          break;
-
-        default:
-          navigate('/');
+        case 'Quản lý': navigate('/manager/'); break;
+        case 'Bác sĩ': navigate('/doctor/'); break;
+        case 'Tiếp tân': navigate('/staff/customers'); break;
+        case 'Bán hàng': navigate('/staff/pos'); break;
+        case 'Khách hàng': navigate('/customer/'); break;
+        default: navigate('/');
       }
     } else {
-      setError('Sai thông tin đăng nhập! (Thử: bacsi/123, tieptan/123...)');
+      setError('Sai thông tin đăng nhập!');
     }
   };
 
@@ -89,8 +70,8 @@ const Login = () => {
                   required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="admin / staff / khach"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setemail(e.target.value)}
                 />
               </div>
               <div>
