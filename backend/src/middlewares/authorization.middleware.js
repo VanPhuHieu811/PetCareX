@@ -1,43 +1,12 @@
-// Role: Quản lý
-const authorizeManager = (req, res, next) => {
-  if (!req.user || req.user.role !== 'Quản lý') {
-    return res.status(403).json({
-      success: false,
-      message: 'Forbidden: Managers only'
-    });
+const authorizeRoles = (...roles) => (req, res, next) => {
+  const role = req.user.role
+  if (!role || !roles.includes(role)) {
+    return res.status(403).json({ success: false, message: 'Forbidden' });
   }
-  next()
-}
+  next();
+};
 
-// Role: Tiếp tân
-const authorizeReceptionist = (req, res, next) => {
-  if (!req.user || req.user.role !== 'Tiếp tân') {
-    return res.status(403).json({
-      success: false,
-      message: 'Forbidden: Receptionists only'
-    });
-  }
-  next()
-}
-
-// Role: Bác sĩ
-const authorizeDoctor = (req, res, next) => {
-  if (!req.user || req.user.role !== 'Bác sĩ') {
-    return res.status(403).json({
-      success: false,
-      message: 'Forbidden: Doctors only'
-    });
-  }
-  next()
-}
-
-// Role: Bán hàng
-const authorizeSeller = (req, res, next) => {
-  if (!req.user || req.user.role !== 'Bán hàng') {
-    return res.status(403).json({
-      success: false,
-      message: 'Forbidden: Sellers only'
-    });
-  }
-  next()
-}
+export const authorizeManager = authorizeRoles('Quản lý');
+export const authorizeReceptionist = authorizeRoles('Tiếp tân');
+export const authorizeDoctor = authorizeRoles('Bác sĩ');
+export const authorizeSeller = authorizeRoles('Bán hàng');
