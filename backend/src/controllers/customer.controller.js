@@ -3,8 +3,19 @@ import * as customerService from '../services/customer.service.js';
 export const getAllCustomers = async (req, res) => {
   try {
     const pool = req.db;
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    let page = parseInt(req.query.page, 10);
+    let limit = parseInt(req.query.limit, 10);
+
+    // Normalize pagination parameters
+    if (Number.isNaN(page) || page < 1) {
+      page = 1;
+    }
+
+    if (Number.isNaN(limit) || limit < 1) {
+      limit = 10;
+    } else if (limit > 100) {
+      limit = 100;
+    }
     const offset = (page - 1) * limit;
 
     const result = await customerService.getAllCustomers(pool, page, limit, offset)
