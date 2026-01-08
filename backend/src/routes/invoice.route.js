@@ -3,7 +3,7 @@ import invoiceController from '../controllers/invoice.controller.js';
 
 const router = express.Router();
 
-router.get('/full', invoiceController.getFullDetails);
+router.post('/full', invoiceController.getFullDetails);
 router.get('/grouped', invoiceController.getGroupedDetails);
 router.get('/summary', invoiceController.getInvoiceSummary);
 

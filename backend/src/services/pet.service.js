@@ -13,12 +13,13 @@ export const getAllPetsByUserId = async (pool, userId) => {
     }
 };
 
-export const getPetById = async (pool, petId) => {
+export const getPetById = async (pool, petId, userId) => {
     try {
-        const query = 'Select * from ThuCung where MaTC = @MaTC';
+        const query = 'Select * from ThuCung where MaTC = @MaTC and MaKH = @MaKH';
 
         const result = await pool.request()
             .input('MaTC', petId)
+            .input('MaKH', userId)
             .query(query);
         
         return result.recordset[0];
@@ -47,12 +48,13 @@ export const createPet = async (pool, petData) => {
     }
 }
 
-export const deletePet = async (pool, petId) => {
+export const deletePet = async (pool, petId, userId) => {
     try {
-        const query = 'DELETE FROM ThuCung WHERE MaTC = @MaTC';
+        const query = 'DELETE FROM ThuCung WHERE MaTC = @MaTC and MaKH = @MaKH';
 
         const result = await pool.request()
             .input('MaTC', petId)
+            .input('MaKH', userId)
             .query(query);
 
         return result.rowsAffected[0];
@@ -76,7 +78,7 @@ export const updatePet = async (pool, petData) => {
                 TinhTrangSucKhoe = COALESCE(@TinhTrangSucKhoe, TinhTrangSucKhoe),
                 GioiTinh         = COALESCE(@GioiTinh, GioiTinh),
                 MaKH             = COALESCE(@MaKH, MaKH)
-            WHERE MaTC = @MaTC
+            WHERE MaTC = @MaTC and MaKH = @MaKH
         `;
 
         const result = await pool.request()

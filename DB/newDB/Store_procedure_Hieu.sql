@@ -122,6 +122,4 @@ END;
 GO
 
 select *
-from TaiKhoan tk 
-join NguoiDung nd on nd.MaND = tk.MaND
-where nd.CCCD = '049205006893' OR nd.Email = 'vanphuhieu11@gmail.com'
+from Giong
