@@ -231,3 +231,8 @@ join ChiTietHoaDon ct on hd.MaHoaDon = ct.MaHoaDon
 join PhieuDatDV p on ct.MaPhieuDV = p.MaPhieuDV
 join DichVu dv on p.MaDV = dv.MaDV
 where dv.TenDV=N'Khám bệnh'
+
+select *
+from NguoiDung
+join TaiKhoan  t on NguoiDung.MaND = T.MaND
+where hoten like N'%Hảo%'
