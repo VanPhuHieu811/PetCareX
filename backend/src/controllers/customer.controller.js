@@ -67,11 +67,11 @@ export const updateCurrentCustomer = async (req, res) => {
   const { HoTen, NgaySinh, GioiTinh, SDT, CCCD } = req.body;
 
   const updateData = {
-    HoTen: HoTen || undefined,
-    NgaySinh: NgaySinh || undefined,
-    GioiTinh: GioiTinh || undefined,
-    SDT: SDT || undefined,
-    CCCD: CCCD || undefined,
+    HoTen: HoTen !== undefined && HoTen !== null ? HoTen : undefined,
+    NgaySinh: NgaySinh !== undefined && NgaySinh !== null ? NgaySinh : undefined,
+    GioiTinh: GioiTinh !== undefined && GioiTinh !== null ? GioiTinh : undefined,
+    SDT: SDT !== undefined && SDT !== null ? SDT : undefined,
+    CCCD: CCCD !== undefined && CCCD !== null ? CCCD : undefined,
   };
 
   const customer = await customerService.updateCurrentCustomer(pool, customerId, updateData);
