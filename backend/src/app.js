@@ -5,6 +5,8 @@ import receptionRoutes from './routes/reception.route.js';
 import salesRoutes from './routes/sales.route.js';
 import invoiceRoutes from './routes/invoice.route.js';
 import petRoutes from './routes/pet.route.js';
+import servicesRoutes from './routes/services.route.js';
+import packagesRoutes from './routes/packages.route.js';
 import { dbMiddleware } from './config/sqlserver.config.js';
 import branchRoutes from './routes/branch.route.js';
 import doctorRoutes from './routes/doctor.route.js';
@@ -27,5 +29,11 @@ app.use('/api/v1/pets', petRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/customers', customerRoutes);
+
+//services
+app.use('/api/v1/services', servicesRoutes);
+
+//packages
+app.use('/api/v1/packages', packagesRoutes);
 
 export default app;
