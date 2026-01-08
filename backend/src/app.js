@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import branchRoutes from './routes/branch.route.js';
+import petRoutes from './routes/pet.route.js';
 import { dbMiddleware } from './config/sqlserver.config.js';
 
 const app = express();
@@ -14,5 +15,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(dbMiddleware);
 
 app.use('/api/v1/branches', branchRoutes);
+app.use('/api/v1/pets', petRoutes); 
 
 export default app;
