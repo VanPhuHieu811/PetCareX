@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import branchRoutes from './routes/branch.route.js';
+import receptionRoutes from './routes/reception.route.js';
+import salesRoutes from './routes/sales.route.js';
+import invoiceRoutes from './routes/invoice.route.js';
 import { dbMiddleware } from './config/sqlserver.config.js';
 
 const app = express();
@@ -12,7 +15,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(dbMiddleware);
-
+app.use('/api/v1/sales', salesRoutes);
 app.use('/api/v1/branches', branchRoutes);
+app.use('/api/v1/reception', receptionRoutes);
+app.use('/api/v1/invoices', invoiceRoutes);
 
 export default app;
