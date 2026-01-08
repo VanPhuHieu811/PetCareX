@@ -4,7 +4,7 @@ export const login = async (pool, email, password) => {
   try {
     const request = pool.request();
     request.input('Email', email);
-    request.input('password', password);
+    request.input('Password', password);
     
     const result = await request.execute('sp_login');
 
