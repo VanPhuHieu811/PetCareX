@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import branchRoutes from './routes/branch.route.js';
 import petRoutes from './routes/pet.route.js';
 import { dbMiddleware } from './config/sqlserver.config.js';
 import branchRoutes from './routes/branch.route.js';

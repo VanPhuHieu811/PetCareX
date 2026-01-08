@@ -121,3 +121,8 @@ BEGIN
 END;
 GO
 
+
+select *
+from TaiKhoan tk 
+join NguoiDung nd on nd.MaND = tk.MaND
+join NhanVien nv on nv.Manv = nd.MaND

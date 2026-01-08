@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserAccount, AuthState, Role } from '../types';
 import { MOCK_ACCOUNTS } from '../services/mockDataQL';
-
+import { loginApi } from "../api/authApi";
 // Mở rộng interface AuthState để có thêm hàm register
 interface AuthContextType extends AuthState {
   register: (username: string, password: string, displayName: string) => Promise<boolean>;
@@ -20,17 +20,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Fake delay
-    const foundUser = accounts.find(u => u.username === username && u.password === password);
-    
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('petcare_user', JSON.stringify(foundUser));
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await loginApi(email, password);
+
+      if (!res.success) return false;
+
+      const { user, token } = res.data;
+
+      // Chuẩn hoá role cho FE (giữ logic điều hướng của bạn)
+      const normalizedUser = {
+        ...user,
+        role: user.VaiTro ?? user.role, // ưu tiên VaiTro backend
+      };
+
+      setUser(normalizedUser);
+      localStorage.setItem("petcare_user", JSON.stringify(normalizedUser));
+      localStorage.setItem("petcare_token", token);
+
       return true;
+    } catch (err) {
+      return false;
     }
-    return false;
-  };
+  };    
+
 
   const logout = () => {
     setUser(null);
