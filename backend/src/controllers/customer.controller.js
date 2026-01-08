@@ -71,7 +71,7 @@ export const updateCurrentCustomer = async (req, res) => {
       message: 'Customer not found',
     });
   }
-  
+
   return res.status(200).json({
     success: true,
     message: 'Customer updated successfully',
@@ -96,6 +96,35 @@ export const getCustomerReceipts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve receipts',
+      error: err.message,
+    });
+  }
+}
+
+export const getReceiptDetails = async (req, res) => {
+  const pool = req.db;
+  const customerId = req.user.id;
+  const receiptId = req.params.receiptId;
+
+  try {
+    const receiptDetails = await customerService.getReceiptDetails(pool, receiptId, customerId);
+
+    if (!receiptDetails) {
+      return res.status(404).json({
+        success: false,
+        message: 'Receipt not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Receipt details retrieved successfully',
+      data: receiptDetails,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve receipt details',
       error: err.message,
     });
   }

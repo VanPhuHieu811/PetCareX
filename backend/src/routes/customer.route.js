@@ -9,5 +9,6 @@ router.get('/', authenticate, authorizeManagerAndReceptionist, customerControlle
 router.get('/me', authenticate, customerController.getCurrentCustomer) // api/v1/customers/me
 router.put('/me', authenticate, customerController.updateCurrentCustomer) // api/v1/customers/me
 router.get('/receipts', authenticate, customerController.getCustomerReceipts) // api/v1/customers/receipts
+router.get('/receipts/:receiptId', authenticate, customerController.getReceiptDetails) // api/v1/customers/receipts/:receiptId
 
 export default router;
