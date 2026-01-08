@@ -3,8 +3,19 @@ import * as customerService from '../services/customer.service.js';
 export const getAllCustomers = async (req, res) => {
   try {
     const pool = req.db;
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    let page = parseInt(req.query.page, 10);
+    let limit = parseInt(req.query.limit, 10);
+
+    // Normalize pagination parameters
+    if (Number.isNaN(page) || page < 1) {
+      page = 1;
+    }
+
+    if (Number.isNaN(limit) || limit < 1) {
+      limit = 10;
+    } else if (limit > 100) {
+      limit = 100;
+    }
     const offset = (page - 1) * limit;
 
     const result = await customerService.getAllCustomers(pool, page, limit, offset)
@@ -56,28 +67,35 @@ export const updateCurrentCustomer = async (req, res) => {
   const { HoTen, NgaySinh, GioiTinh, SDT, CCCD } = req.body;
 
   const updateData = {
-    HoTen: HoTen || undefined,
-    NgaySinh: NgaySinh || undefined,
-    GioiTinh: GioiTinh || undefined,
-    SDT: SDT || undefined,
-    CCCD: CCCD || undefined,
+    HoTen: HoTen !== undefined && HoTen !== null ? HoTen : undefined,
+    NgaySinh: NgaySinh !== undefined && NgaySinh !== null ? NgaySinh : undefined,
+    GioiTinh: GioiTinh !== undefined && GioiTinh !== null ? GioiTinh : undefined,
+    SDT: SDT !== undefined && SDT !== null ? SDT : undefined,
+    CCCD: CCCD !== undefined && CCCD !== null ? CCCD : undefined,
   };
 
-  const customer = await customerService.updateCurrentCustomer(pool, customerId, updateData);
+  try {
+    const customer = await customerService.updateCurrentCustomer(pool, customerId, updateData);
 
-  if (!customer) {
-    return res.status(404).json({
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Customer updated successfully',
+      data: customer,
+    });
+  } catch (err) {
+    return res.status(500).json({
       success: false,
-      message: 'Customer not found',
+      message: 'Failed to update customer',
+      error: err.message,
     });
   }
-
-  return res.status(200).json({
-    success: true,
-    message: 'Customer updated successfully',
-    data: customer,
-  });
-
 }
 
 export const getCustomerReceipts = async (req, res) => {
