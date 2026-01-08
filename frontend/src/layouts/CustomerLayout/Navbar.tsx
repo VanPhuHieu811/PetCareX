@@ -70,7 +70,7 @@ export default function Navbar() {
                                 )}
                             </Link>
                             <span className="text-sm font-medium text-gray-700">{currentUser.name}</span>
-                            <Link to="/profile" className="cursor-pointer hover:opacity-80 transition-opacity">
+                            <Link to="/customer/profile" className="cursor-pointer hover:opacity-80 transition-opacity">
                                 <img
                                     className="h-8 w-8 rounded-full border border-gray-200"
                                     src={currentUser.avatar}
