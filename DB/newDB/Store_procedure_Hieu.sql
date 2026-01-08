@@ -121,8 +121,7 @@ BEGIN
 END;
 GO
 
-
 select *
 from TaiKhoan tk 
 join NguoiDung nd on nd.MaND = tk.MaND
-join NhanVien nv on nv.Manv = nd.MaND
+where nd.CCCD = '049205006893' OR nd.Email = 'vanphuhieu11@gmail.com'

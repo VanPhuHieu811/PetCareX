@@ -36,23 +36,31 @@ export const login = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, cccd } = req.body;
 
     if (
       typeof email !== 'string' ||
       typeof password !== 'string' ||
       typeof name !== 'string' ||
+      typeof cccd !== 'string' ||
       email.trim() === '' ||
       password.trim() === '' ||
-      name.trim() === ''
+      name.trim() === '' ||
+      cccd.trim() === ''
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email and password are required.'
+        message: 'Name, email, password and cccd are required.'
       });
     }
 
-    const newUser = await authService.register(req.db, email, password, name);
+    if (/[^0-9]/.test(cccd)) {
+      return res.status(400).json({
+        success: false,
+        message: 'CCCD must contain digits only.'
+      });
+    }
+    const newUser = await authService.register(req.db, email, password, name, cccd);
 
     return res.status(201).json({
       success: true,

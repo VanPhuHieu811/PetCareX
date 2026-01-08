@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserAccount, AuthState, Role } from '../types';
+import { UserAccount, AuthState } from '../types';
 import { MOCK_ACCOUNTS } from '../services/mockDataQL';
-import { loginApi } from "../api/authApi";
+import { loginApi, registerApi } from "../api/authApi";
 // Mở rộng interface AuthState để có thêm hàm register
-interface AuthContextType extends AuthState {
-  register: (username: string, password: string, displayName: string) => Promise<boolean>;
-}
+interface AuthContextType extends AuthState {}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -47,29 +45,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('petcare_user');
+    localStorage.removeItem("petcare_user");
+    localStorage.removeItem("petcare_token");
   };
 
   // Hàm Đăng ký: Mặc định role là "Khách hàng" để khớp với ProtectedRoute
-  const register = async (username: string, password: string, displayName: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
-    
-    // Kiểm tra trùng username
-    if (accounts.some(u => u.username === username)) {
-      return false; 
+  const register = async (email: string, password: string, name: string, cccd: string): Promise<boolean> => {
+    try {
+      const res = await registerApi(email, password, name, cccd);
+      return !!res?.success;
+    } catch {
+      return false;
     }
-
-    const newUser: UserAccount = {
-      username,
-      password,
-      displayName,
-      role: 'Khách hàng', // Mặc định là Khách hàng (trùng với MOCK_ACCOUNTS & ProtectedRoute)
-      linkedId: `KHNew${Date.now()}` // Fake ID
-    };
-
-    setAccounts([...accounts, newUser]); // Cập nhật danh sách tài khoản tạm thời
-    return true;
   };
+
+
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
