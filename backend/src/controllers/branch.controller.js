@@ -1,15 +1,14 @@
-import BranchService from '../services/branch.service.js';
+import * as branchService from '../services/branch.service.js';
 
-const BranchController = {
-	async getAllBranches(req, res) {
-		try {
-			const result = await BranchService.getAllBranches(req.db);
-			res.status(200).json(result);
-		} catch (err) {
-			res
-				.status(500)
-				.json({ error: 'Failed to retrieve branches', details: err.message });
-		}
-	}
-}
-export default BranchController;
+export const getAllBranches = async (req, res) => {
+  try {
+    const result = await branchService.getAllBranches(req.db);
+    res.status(200).json(result);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: 'Failed to retrieve branches', details: err.message });
+  }
+};
+
+export default { getAllBranches };

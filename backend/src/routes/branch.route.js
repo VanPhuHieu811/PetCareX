@@ -1,7 +1,8 @@
 import express from 'express';
-import BranchController from '../controllers/branch.controller.js';
+import * as branchController from '../controllers/branch.controller.js';
 
 const router = express.Router();
 
-router.get('/', BranchController.getAllBranches);
+router.get('/', branchController.getAllBranches);
+
 export default router;

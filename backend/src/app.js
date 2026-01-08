@@ -13,6 +13,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(dbMiddleware);
 
-app.use('/api/branches', branchRoutes);
+app.use('/api/v1/branches', branchRoutes);
 
 export default app;

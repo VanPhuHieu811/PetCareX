@@ -1,14 +1,12 @@
-import BranchModel from "../models/branch.model.js";
+export const getAllBranches = async (pool) => {
+  try {
+    const query = `SELECT * FROM ChiNhanh`;
 
-const BranchService = {
-	async getAllBranches(db) {
-		try {
-			const branches = await BranchModel.getAllBranches(db);
-			return branches;
-		}
-		catch (err) {
-			throw new Error(`Service error: ${err.message}`);
-		}
-	},
+    const result = await pool.request().query(query);
+    return result.recordset;
+  } catch (err) {
+    throw new Error(`Database query failed: ${err.message}`);
+  }
 };
-export default BranchService;
+
+export default { getAllBranches };
