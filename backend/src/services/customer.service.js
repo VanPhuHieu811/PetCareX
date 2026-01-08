@@ -47,28 +47,16 @@ export const getCurrentCustomer = async (pool, customerId) => {
 export const updateCurrentCustomer = async (pool, customerId, updateData) => {
   try {
     const request = pool.request();
+    
+    const allowedFields = ['HoTen', 'NgaySinh', 'GioiTinh', 'SDT', 'CCCD'];
     let updateFields = [];
     
-    if (updateData.HoTen) {
-      request.input('HoTen', updateData.HoTen);
-      updateFields.push('HoTen = @HoTen');
-    }
-    if (updateData.NgaySinh) {
-      request.input('NgaySinh', updateData.NgaySinh);
-      updateFields.push('NgaySinh = @NgaySinh');
-    }
-    if (updateData.GioiTinh) {
-      request.input('GioiTinh', updateData.GioiTinh);
-      updateFields.push('GioiTinh = @GioiTinh');
-    }
-    if (updateData.SDT) {
-      request.input('SDT', updateData.SDT);
-      updateFields.push('SDT = @SDT');
-    }
-    if (updateData.CCCD) {
-      request.input('CCCD', updateData.CCCD);
-      updateFields.push('CCCD = @CCCD');
-    }
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined && updateData[field] !== null) {
+        request.input(field, updateData[field]);
+        updateFields.push(`${field} = @${field}`);
+      }
+    });
 
     if (updateFields.length === 0) {
       throw new Error('No fields to update');
