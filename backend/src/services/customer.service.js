@@ -89,3 +89,21 @@ export const updateCurrentCustomer = async (pool, customerId, updateData) => {
     throw new Error(`Database update failed: ${err.message}`);
   }
 }
+
+export const getCustomerReceipts = async (pool, customerId) => {
+  try {
+    const request = pool.request();
+    const query = `
+      select *
+      from HoaDon hd
+      where hd.MaKH = @MaKH
+    `
+    request.input('MaKH', customerId);
+
+    const result = await request.query(query);
+    return result.recordset;
+  }
+  catch (err) {
+    throw new Error(`Database query failed: ${err.message}`);
+  }
+}

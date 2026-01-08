@@ -79,3 +79,24 @@ export const updateCurrentCustomer = async (req, res) => {
   });
 
 }
+
+export const getCustomerReceipts = async (req, res) => {
+  const pool = req.db;
+  const customerId = req.user.id;
+
+  try {
+    const receipts = await customerService.getCustomerReceipts(pool, customerId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Receipts retrieved successfully',
+      data: receipts,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve receipts',
+      error: err.message,
+    });
+  }
+}
