@@ -5,6 +5,7 @@ import { dbMiddleware } from './config/sqlserver.config.js';
 
 import branchRoutes from './routes/branch.route.js';
 import authRoutes from './routes/auth.route.js';
+import customerRoutes from './routes/customer.route.js';
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.use(dbMiddleware);
 
 app.use('/api/v1/branches', branchRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/customers', customerRoutes);
 
 export default app;
