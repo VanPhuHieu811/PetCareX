@@ -14,10 +14,20 @@ export const getAllCustomers = async (pool, page, limit, offset) => {
 
     const result = await request.query(query);
 
+    // Get total number of customers for pagination
+    const countRequest = pool.request();
+    const countQuery = `
+      select count(*) as total
+      from KhachHang
+    `;
+    const countResult = await countRequest.query(countQuery);
+    const total = countResult.recordset[0]?.total ?? 0;
+
     return {
       data: result.recordset,
       page: page,
-      limit: limit
+      limit: limit,
+      total: total
     }
   }
   catch (err) {
