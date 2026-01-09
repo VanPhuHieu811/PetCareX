@@ -85,18 +85,18 @@ export interface ThuCung {
 	TinhTrangTiem?: string;
 }
 
+export interface DoanhThuData {
+	time: string;
+	revenue: number;
+}
+
 export interface Vacxin {
 	MaVacXin: string;
 	TenVacXin: string;
 	NgaySanXuat: string;
 	GiaVacXin: number;
-	TonKho: number; // From Vacxin_ChiNhanh
-	LuotDat: number; // Calculated statistic
-}
-
-export interface DoanhThuData {
-	time: string;
-	revenue: number;
+	TonKho: number;
+	LuotDat: number;
 }
 
 export interface KhachHang {
@@ -114,6 +114,12 @@ export interface DoctorStat {
 	HoTen: string;
 	SoCaKham: number;
 	DoanhThu: number;
+}
+
+export interface VisitStat {
+	ThoiGian: string;
+	LuotKham: number;
+	LuotTiem: number;
 }
 
 export interface CurrentUser {
