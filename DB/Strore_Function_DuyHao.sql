@@ -236,3 +236,49 @@ select *
 from NguoiDung
 join TaiKhoan  t on NguoiDung.MaND = T.MaND
 where hoten like N'%Hảo%'
+
+go
+--function to receive feedback from customer
+CREATE FUNCTION dbo.FN_SubmitFeedback (
+    @MaPhieuDV NVARCHAR(50),
+    @NgayDanhGia DATETIME,
+    @DiemDanhGia INT,
+    @ThaiDoNhanVien INT,
+    @MucDoHaiLong NVARCHAR,
+    @BinhLuan NVarchar(500),
+    @MaKH NVARCHAR(50)
+)
+RETURNS TABLE
+AS
+RETURN
+(   
+    if @DiemDanhGia <0 or @DiemDanhGia >10 
+    begin
+        raiserror('DiemDanhGia phai trong khoang 0-10',16,1)
+        return
+    end
+    if @ThaiDoNhanVien <0 or @ThaiDoNhanVien >10
+    begin
+        raiserror('ThaiDoNhanVien phai trong khoang 0-10',16,1)
+        return
+    end
+
+    INSERT INTO DanhGia (MaPhieuDV, NgayDanhGia, DiemDanhGia, ThaiDoNhanVien, MucDoHaiLong, BinhLuan, MaKH )
+    VALUES (@MaPhieuDV, @NgayDanhGia, @DiemDanhGia, @ThaiDoNhanVien, @MucDoHaiLong, @BinhLuan, @MaKH);
+
+    SELECT 
+        ph.MaPhanHoi,
+        ph.MaKH,
+        ph.MaDV,
+        ph.Rating,
+        ph.Comments,
+        ph.NgayPhanHoi
+    FROM PhanHoiKH ph
+    WHERE ph.MaKH = @customerId AND ph.MaDV = @serviceId
+      AND ph.NgayPhanHoi = CAST(GETDATE() AS DATE)
+);
+
+go
+select *
+from DanhGia
+where MaPhieuDV='PDV000001' and MaKH='KH01655'
