@@ -12,6 +12,7 @@ import packagesRoutes from './routes/packages.route.js';
 import branchRoutes from './routes/branch.route.js';
 import doctorRoutes from './routes/doctor.route.js';
 import authRoutes from './routes/auth.route.js';
+import productRoutes from './routes/product.route.js';
 import customerRoutes from './routes/customer.route.js';
 import vacxinRoutes from './routes/vacxin.route.js';
 
@@ -36,6 +37,7 @@ app.use('/api/v1/pets', petRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/products', productRoutes);
 
 app.use('/api/v1/customers', customerRoutes);
 //services
