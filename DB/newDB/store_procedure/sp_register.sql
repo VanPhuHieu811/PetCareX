@@ -80,6 +80,9 @@ BEGIN
         INSERT INTO dbo.TaiKhoan (MaND, MatKhau, TrangThai, VaiTro, NgayTao)
         VALUES (@NewMaND, @MatKhau, N'Hoạt động', N'Khách hàng', GETDATE());
 
+        INSERT INTO dbo.KhachHang (MaKH, LanCuoiToiCuaHang, MaLoaiTV, DiemLoyalty)
+        VALUES (@NewMaND, NULL, 'LTV01', 0);
+
         COMMIT TRANSACTION;
 
         SELECT 

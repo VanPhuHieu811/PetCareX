@@ -1,0 +1,59 @@
+@baseUrl = http://localhost:3000/api/v1
+
+### 1. Login (Lấy Token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "cuog.nc116@gmail.com", 
+    "password": "123456"
+}
+
+### Lưu token từ phản hồi
+@token = {{login.response.body.$.data.token}}
+
+### 2. Xem Giỏ Hàng
+GET {{baseUrl}}/cart
+Authorization: Bearer {{token}}
+
+### 3. Thêm vào Giỏ (Tự tạo cart nếu chưa có)
+POST {{baseUrl}}/cart/add
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "branchId": "CN001",
+    "productId": "SP001",
+    "quantity": 1
+}
+
+### Thêm vào Giỏ (Thêm sản phẩm khác)
+POST {{baseUrl}}/cart/add
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "branchId": "CN001",
+    "productId": "SP002",
+    "quantity": 5
+}
+
+### 4. Xóa khỏi Giỏ
+POST {{baseUrl}}/cart/remove
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": "SP001"
+}
+
+### 5. Thanh Toán (Checkout)
+POST {{baseUrl}}/cart/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "branchId": "CN001",
+    "paymentMethod": "Chuyển khoản"
+}
