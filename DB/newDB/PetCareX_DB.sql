@@ -252,7 +252,7 @@ GO
 CREATE TABLE PhieuDatDV (
     MaPhieuDV varchar(10) NOT NULL,
     NgayDatDV datetime NOT NULL,
-    MaKH varchar(10) NOT NULL,
+    MaKH varchar(10),
     TenKhachHang nvarchar(50) NULL, 
     TenThuCung nvarchar(50) NULL,
     MaCN varchar(10) NOT NULL,
@@ -354,6 +354,8 @@ CREATE TABLE DonThuoc (
     DonGia_LucMua int DEFAULT 0,
     SoLuongMua int NOT NULL,
     ThanhTien int DEFAULT 0,
+    TanSuat int,
+    LieuDung nvarchar(50),
     CONSTRAINT PK_DonThuoc PRIMARY KEY (MaPhieuDV, MaSP),
     CONSTRAINT FK_DonThuoc_PhieuKham FOREIGN KEY (MaPhieuDV) REFERENCES DatKhamBenh(MaPhieuDV),
     CONSTRAINT FK_DonThuoc_SPCN FOREIGN KEY (MaSP, MaCN) REFERENCES SPCuaTungCN(MaSP, MaCN),
@@ -395,7 +397,7 @@ GO
 CREATE TABLE HoaDon (
     MaHoaDon varchar(10) NOT NULL,
     MaNVLap varchar(10) NOT NULL,
-    MaKH varchar(10) NOT NULL,
+    MaKH varchar(10),
     MaCN varchar(10) NOT NULL,
     MaKhuyenMai varchar(10) NULL,
     NgayLap datetime NOT NULL,

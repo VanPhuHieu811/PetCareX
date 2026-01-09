@@ -7,7 +7,7 @@ GO
    ========================================================= */
 
 -- 1. Tự động điền TenGiong, TenLoaiTC vào bảng ThuCung khi thêm mới/update
-CREATE TRIGGER TR_ThuCung_AutoFillNames
+CREATE OR ALTER TRIGGER TR_ThuCung_AutoFillNames
 ON ThuCung
 AFTER INSERT, UPDATE
 AS
@@ -25,7 +25,7 @@ END;
 GO
 
 -- 2. Tự động điền TenKhachHang, TenThuCung vào PhieuDatDV
-CREATE TRIGGER TR_PhieuDatDV_AutoFillNames
+CREATE OR ALTER TRIGGER TR_PhieuDatDV_AutoFillNames
 ON PhieuDatDV
 AFTER INSERT
 AS
@@ -46,7 +46,7 @@ END;
 GO
 
 -- 2b. (Bổ sung) Khi Insert DatKhamBenh -> Update TenThuCung vào bảng cha PhieuDatDV
-CREATE TRIGGER TR_DatKham_UpdateParentName
+CREATE OR ALTER TRIGGER TR_DatKham_UpdateParentName
 ON DatKhamBenh
 AFTER INSERT
 AS
@@ -61,7 +61,7 @@ END;
 GO
 
 -- 2c. (Bổ sung) Khi Insert DatTiemPhong -> Update TenThuCung vào bảng cha PhieuDatDV
-CREATE TRIGGER TR_DatTiem_UpdateParentName
+CREATE OR ALTER TRIGGER TR_DatTiem_UpdateParentName
 ON DatTiemPhong
 AFTER INSERT
 AS
@@ -76,7 +76,7 @@ END;
 GO
 
 -- 3. SNAPSHOT: Tự động lưu Giá và Tên SP vào DonThuoc (Khi kê đơn hoặc sửa số lượng)
-CREATE TRIGGER TR_DonThuoc_Snapshot
+CREATE OR ALTER TRIGGER TR_DonThuoc_Snapshot
 ON DonThuoc
 AFTER INSERT, UPDATE
 AS
@@ -112,7 +112,7 @@ END;
 GO
 
 -- 4. SNAPSHOT: Tự động lưu Giá và Tên SP vào DanhSachSP (Khi mua hàng)
-CREATE TRIGGER TR_DanhSachSP_Snapshot
+CREATE OR ALTER TRIGGER TR_DanhSachSP_Snapshot
 ON DanhSachSP
 AFTER INSERT
 AS
@@ -129,7 +129,7 @@ END;
 GO
 
 -- 5. SNAPSHOT: Tự động lưu Giá Vacxin vào DanhSachVacXin
-CREATE TRIGGER TR_DanhSachVX_Snapshot
+CREATE OR ALTER TRIGGER TR_DanhSachVX_Snapshot
 ON DanhSachVacXin
 AFTER INSERT
 AS
@@ -148,7 +148,7 @@ GO
    ========================================================= */
 
 -- 6. Kiểm tra Ngày vào làm > Ngày sinh (NhanVien)
-CREATE TRIGGER TR_NhanVien_CheckNgayVaoLam
+CREATE OR ALTER TRIGGER TR_NhanVien_CheckNgayVaoLam
 ON NhanVien
 AFTER INSERT, UPDATE
 AS
@@ -166,7 +166,7 @@ END;
 GO
 
 -- 7. Kiểm tra Người điều động phải là Quản lý
-CREATE TRIGGER TR_DieuDong_CheckQuanLy
+CREATE OR ALTER TRIGGER TR_DieuDong_CheckQuanLy
 ON DieuDong
 AFTER INSERT, UPDATE
 AS
@@ -190,7 +190,7 @@ END;
 GO
 
 -- 8. Kiểm tra Logic PhieuDatDV (Bác sĩ, Ngày đặt) - Đã cập nhật theo cấu trúc mới
-CREATE TRIGGER TR_PhieuDatDV_Validation
+CREATE OR ALTER TRIGGER TR_PhieuDatDV_Validation
 ON PhieuDatDV
 AFTER INSERT, UPDATE
 AS
@@ -220,7 +220,7 @@ END;
 GO
 
 -- 9. Kiểm tra Ngày Khám >= Ngày Đặt (Bảng DatKhamBenh)
-CREATE TRIGGER TR_DatKham_CheckDate
+CREATE OR ALTER TRIGGER TR_DatKham_CheckDate
 ON DatKhamBenh
 AFTER INSERT, UPDATE
 AS
@@ -241,7 +241,7 @@ END;
 GO
 
 -- 10. Kiểm tra Người lập Hóa đơn phải là Bán hàng
-CREATE TRIGGER TR_HoaDon_CheckNhanVien
+CREATE OR ALTER TRIGGER TR_HoaDon_CheckNhanVien
 ON HoaDon
 AFTER INSERT, UPDATE
 AS
@@ -262,7 +262,7 @@ END;
 GO
 
 -- 11. Đơn thuốc chỉ được kê loại sản phẩm là 'Thuốc'
-CREATE TRIGGER TR_DonThuoc_CheckLoaiSP
+CREATE OR ALTER TRIGGER TR_DonThuoc_CheckLoaiSP
 ON DonThuoc
 AFTER INSERT, UPDATE
 AS
@@ -281,7 +281,7 @@ END;
 GO
 
 -- 12. Kiểm tra thời gian tiêm phải nằm trong hạn Gói Tiêm (Nếu dùng gói)
-CREATE TRIGGER TR_TGTiem_CheckThoiGian
+CREATE OR ALTER TRIGGER TR_TGTiem_CheckThoiGian
 ON ThoiGianTiemChiDinh
 AFTER INSERT, UPDATE
 AS
@@ -300,7 +300,7 @@ END;
 GO
 
 -- 13. Tự động cộng dồn tiền từ Đơn Thuốc lên Phiếu Khám
-CREATE TRIGGER TR_DonThuoc_UpdateTongTien
+CREATE OR ALTER TRIGGER TR_DonThuoc_UpdateTongTien
 ON DonThuoc
 AFTER INSERT, UPDATE, DELETE
 AS
@@ -320,7 +320,7 @@ END;
 GO
 
 -- 14. Mỗi khi khách hàng thanh toán hóa đơn thì tự động cộng điểm 
-CREATE TRIGGER TR_HoaDon_AddLoyalty
+CREATE OR ALTER TRIGGER TR_HoaDon_AddLoyalty
 ON HoaDon
 AFTER INSERT
 AS
@@ -335,51 +335,9 @@ BEGIN
 END;
 GO
 
--- 15. Kiểm tra và thăng hạng thành viên (nếu đủ điều kiện) của khách hàng sau khi thanh toán hóa đơn
-CREATE TRIGGER TR_HoaDon_UpgradeMembership_Yearly
-ON HoaDon
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
 
-    DECLARE @NamHienTai INT = YEAR(GETDATE());
-
-    -- 1. Tính tổng chi tiêu CỦA NĂM NAY (Bao gồm cả hóa đơn vừa thêm)
-    DECLARE @ChiTieuNamNay TABLE (MaKH VARCHAR(10), TongTienNamNay BIGINT);
-    
-    INSERT INTO @ChiTieuNamNay (MaKH, TongTienNamNay)
-    SELECT h.MaKH, SUM(h.TongTien)
-    FROM HoaDon h
-    WHERE h.MaKH IN (SELECT MaKH FROM inserted) 
-      AND YEAR(h.NgayLap) = @NamHienTai -- Chỉ lấy hóa đơn trong năm nay
-    GROUP BY h.MaKH;
-
-    -- 2. Cập nhật thăng hạng (CHỈ TĂNG, KHÔNG GIẢM)
-    -- Mốc xét hạng: VIP (12tr), Thân thiết (5tr)
-    UPDATE kh
-    SET MaLoaiTV = CASE 
-        -- Nếu năm nay tiêu >= 12tr và chưa phải VIP -> Lên VIP (LTV03)
-        WHEN ct.TongTienNamNay >= 12000000 AND kh.MaLoaiTV IN ('LTV01', 'LTV02') THEN 'LTV03'
-        
-        -- Nếu năm nay tiêu >= 5tr và đang là Cơ bản -> Lên Thân thiết (LTV02)
-        WHEN ct.TongTienNamNay >= 5000000 AND kh.MaLoaiTV = 'LTV01' THEN 'LTV02'
-        
-        -- Các trường hợp khác: Giữ nguyên (Không hạ cấp lúc này)
-        ELSE kh.MaLoaiTV
-    END
-    FROM KhachHang kh
-    JOIN @ChiTieuNamNay ct ON kh.MaKH = ct.MaKH;
-END;
-GO
-
-USE db_ac329b_login; -- Đảm bảo chọn đúng Database của bạn
-GO
-
--- =============================================
--- 1. Trigger cho bảng DATKHAMBENH
--- =============================================
-CREATE TRIGGER TR_DatKham_AutoFillDoctor
+-- 15. Tự động cập nhật bác sĩ phụ trách vào bảng DatKhamBenh
+CREATE OR ALTER TRIGGER TR_DatKham_AutoFillDoctor
 ON DatKhamBenh
 AFTER INSERT
 AS
@@ -395,10 +353,8 @@ BEGIN
 END;
 GO
 
--- =============================================
--- 2. Trigger cho bảng DATTIEMPHONG
--- =============================================
-CREATE TRIGGER TR_DatTiem_AutoFillDoctor
+-- 16. Tự động cập nhật Bác sĩ phụ trách cho bảng DatTiemPhong
+CREATE OR ALTER TRIGGER TR_DatTiem_AutoFillDoctor
 ON DatTiemPhong
 AFTER INSERT
 AS
@@ -414,10 +370,57 @@ BEGIN
 END;
 GO
 
+-- 17. Trigger trừ kho khi Phiếu Dịch Vụ chuyển trạng thái thành 'Hoàn thành' hoặc 'Đã thanh toán'
+CREATE OR ALTER TRIGGER TR_PhieuDatDV_UpdateStock
+ON PhieuDatDV
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chỉ thực hiện khi trạng thái chuyển sang 'Hoàn thành' hoặc 'Đã thanh toán'
+    -- VÀ trạng thái cũ KHÔNG PHẢI là 2 trạng thái này (để tránh trừ kho 2 lần)
+    IF EXISTS (
+        SELECT 1 
+        FROM inserted i 
+        JOIN deleted d ON i.MaPhieuDV = d.MaPhieuDV
+        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán') 
+          AND d.TrangThai NOT IN (N'Hoàn thành', N'Đã thanh toán')
+    )
+    BEGIN
+        -- 1. Trừ kho Sản Phẩm từ Đơn Thuốc (Dịch vụ Khám bệnh)
+        UPDATE kho
+        SET kho.SoLuongTonKho = kho.SoLuongTonKho - dt.SoLuongMua
+        FROM SPCuaTungCN kho
+        JOIN DonThuoc dt ON kho.MaSP = dt.MaSP AND kho.MaCN = dt.MaCN
+        JOIN inserted i ON dt.MaPhieuDV = i.MaPhieuDV
+        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+
+        -- 2. Trừ kho Sản Phẩm từ DanhSachSP (Dịch vụ Mua hàng)
+        UPDATE kho
+        SET kho.SoLuongTonKho = kho.SoLuongTonKho - ds.SoLuongMua
+        FROM SPCuaTungCN kho
+        JOIN DanhSachSP ds ON kho.MaSP = ds.MaSP AND kho.MaCN = ds.MaCN
+        JOIN inserted i ON ds.MaPhieuDV = i.MaPhieuDV
+        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+
+        -- 3. Trừ kho Vắc-xin (Dịch vụ Tiêm phòng)
+        -- Lưu ý: Giả định 1 lần tiêm trong DanhSachVacXin là trừ 1 đơn vị tồn kho
+        -- Nếu cột LieuLuong mang ý nghĩa số lượng lọ (vial), hãy thay '1' bằng 'dsvx.LieuLuong'
+        UPDATE vx_kho
+        SET vx_kho.TonKho = vx_kho.TonKho - 1 
+        FROM VacXin_ChiNhanh vx_kho
+        JOIN DanhSachVacXin dsvx ON vx_kho.MaVacXin = dsvx.MaVacXin
+        JOIN inserted i ON dsvx.MaPhieuDV = i.MaPhieuDV
+        WHERE vx_kho.MaCN = i.MaCN -- PhieuDatDV chứa MaCN thực hiện
+          AND i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+    END
+END;
+GO
 
 --________________________________________________
 -- Kiểm các trigger đang có
-
+GO
 SELECT 
     name,
     type_desc,
