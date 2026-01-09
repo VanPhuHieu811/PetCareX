@@ -4,7 +4,7 @@ export interface UserAccount {
 	username: string;
 	password: string;
 	role: string;
-	displayName: string;
+	name: string;
 	linkedId?: string;
 }
 
@@ -13,6 +13,13 @@ export interface AuthState {
 	isAuthenticated: boolean;
 	login: (username: string, password: string) => Promise<boolean>;
 	logout: () => void;
+
+	register: (
+    email: string,
+    password: string,
+    name: string,
+    cccd: string
+  ) => Promise<boolean>;
 }
 
 export interface ChiNhanh {
@@ -107,12 +114,6 @@ export interface DoctorStat {
 	HoTen: string;
 	SoCaKham: number;
 	DoanhThu: number;
-}
-
-export interface VisitStat {
-	ThoiGian: string;
-	LuotKham: number;
-	LuotTiem: number;
 }
 
 export interface CurrentUser {

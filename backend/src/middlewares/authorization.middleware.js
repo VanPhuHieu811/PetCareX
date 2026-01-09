@@ -13,3 +13,5 @@ export const authorizeSeller = authorizeRoles('Bán hàng');
 
 // you can also create combined role authorizations if needed
 // export const authorizeManagerAndDoctor = authorizeRoles('Quản lý', 'Bác sĩ');
+
+export const authorizeManagerAndReceptionist = authorizeRoles('Quản lý', 'Tiếp tân');

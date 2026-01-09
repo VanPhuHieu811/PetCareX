@@ -14,9 +14,10 @@ AS
 BEGIN
     -- Chỉ kiểm tra nếu NgaySinh không NULL (vì DB mới cho phép NULL)
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN NguoiDung nd ON i.MaNV = nd.MaND
-        WHERE nd.NgaySinh IS NOT NULL AND i.NgayVaoLam <= nd.NgaySinh
+    WHERE nd.NgaySinh IS NOT NULL AND i.NgayVaoLam <= nd.NgaySinh
     )
     BEGIN
         RAISERROR(N'Lỗi: Ngày vào làm phải lớn hơn ngày sinh.', 16, 1);
@@ -37,9 +38,10 @@ AS
 BEGIN
     -- [SỬA] Không cần JOIN ChucVu, check thẳng cột TenChucVu
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN NhanVien nv ON i.MaNVDieuDong = nv.MaNV
-        WHERE nv.TenChucVu NOT LIKE N'%Quản lý%' -- DB mới dùng từ "Quản lý"
+    WHERE nv.TenChucVu NOT LIKE N'%Quản lý%' -- DB mới dùng từ "Quản lý"
     )
     BEGIN
         RAISERROR(N'Lỗi: Người điều động phải là Quản lý.', 16, 1);
@@ -47,7 +49,9 @@ BEGIN
         RETURN;
     END
 
-    IF EXISTS (SELECT 1 FROM inserted WHERE MaNV = MaNVDieuDong)
+    IF EXISTS (SELECT 1
+    FROM inserted
+    WHERE MaNV = MaNVDieuDong)
     BEGIN
         RAISERROR(N'Lỗi: Không thể tự điều động chính mình.', 16, 1);
         ROLLBACK TRANSACTION;
@@ -67,9 +71,10 @@ AS
 BEGIN
 
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN NhanVien nv ON i.BacSiPhuTrach = nv.MaNV
-        WHERE i.BacSiPhuTrach IS NOT NULL AND nv.TenChucVu <> N'Bác sĩ'
+    WHERE i.BacSiPhuTrach IS NOT NULL AND nv.TenChucVu <> N'Bác sĩ'
     )
     BEGIN
         RAISERROR(N'Lỗi: Người phụ trách phải là Bác sĩ.', 16, 1);
@@ -79,9 +84,10 @@ BEGIN
 
     -- Check ngày khám >= ngày đặt
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN PhieuDatDV pdv ON i.MaPhieuDV = pdv.MaPhieuDV
-        WHERE i.NgayKham < pdv.NgayDatDV
+    WHERE i.NgayKham < pdv.NgayDatDV
     )
     BEGIN
         RAISERROR(N'Lỗi: Ngày khám phải sau ngày đặt.', 16, 1);
@@ -102,9 +108,10 @@ AS
 BEGIN
     -- [SỬA] Check TenChucVu = 'Bán hàng' (theo DB mới)
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN NhanVien nv ON i.MaNVLap = nv.MaNV
-        WHERE nv.TenChucVu <> N'Bán hàng'
+    WHERE nv.TenChucVu <> N'Bán hàng'
     )
     BEGIN
         RAISERROR(N'Lỗi: Người lập hóa đơn phải là nhân viên Bán hàng.', 16, 1);
@@ -124,10 +131,11 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN SanPham sp ON i.MaSP = sp.MaSP
         JOIN LoaiSP lsp ON sp.MaLoaiSP = lsp.MaLoaiSP
-        WHERE lsp.TenLoaiSP <> N'Thuốc'
+    WHERE lsp.TenLoaiSP <> N'Thuốc'
     )
     BEGIN
         RAISERROR(N'Lỗi: Đơn thuốc chỉ được kê Thuốc.', 16, 1);
@@ -147,10 +155,11 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN DangKyGoiTP dk ON i.MaDK = dk.MaDK
-        WHERE i.ThangTiem IS NOT NULL 
-          AND (i.ThangTiem < dk.ThoiGianBD OR i.ThangTiem >= dk.ThoiGianKT)
+    WHERE i.ThangTiem IS NOT NULL
+        AND (i.ThangTiem < dk.ThoiGianBD OR i.ThangTiem >= dk.ThoiGianKT)
     )
     BEGIN
         RAISERROR(N'Lỗi: Thời gian tiêm phải nằm trong hạn gói.', 16, 1);
@@ -170,9 +179,10 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM inserted i
+        SELECT 1
+    FROM inserted i
         JOIN PhieuDatDV pdv ON i.MaPhieuDV = pdv.MaPhieuDV
-        WHERE i.NgayTiem < pdv.NgayDatDV
+    WHERE i.NgayTiem < pdv.NgayDatDV
     )
     BEGIN
         RAISERROR(N'Lỗi: Ngày tiêm phải sau ngày đặt.', 16, 1);
