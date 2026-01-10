@@ -18,13 +18,10 @@ const getCustomerDetails = async (req, res) => {
         if (!records || records.length === 0) {
             return res.status(404).json({ message: 'Không tìm thấy thông tin khách hàng' });
         }
-        const uniqueCustomers = Array.from(
-            new Map(records.map(item => [item.sdt, item])).values()
-        );
 
         res.status(200).json({
             success: true,
-            data: uniqueCustomers
+            data: records
         });
     } catch (error) {
         console.error('Error in getCustomerDetails:', error);
