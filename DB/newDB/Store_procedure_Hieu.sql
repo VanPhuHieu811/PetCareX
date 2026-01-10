@@ -129,7 +129,7 @@ from ChiNhanh
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau
 from NguoiDung nd 
 join TaiKhoan tk on tk.MaND = nd.MaND
-where tk.VaiTro = N'Quản lý'
+where tk.VaiTro = N'Bán hàng'
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau, hd.MaHoaDon, count(p.MaPhieuDV)
 from NguoiDung nd 
