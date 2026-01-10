@@ -39,6 +39,7 @@ type CustomerMe = {
   MaND: string;
   HoTen: string;
   Email: string;
+  Avatar?: string | null;
   NgaySinh?: string | null;
   GioiTinh?: string | null;
   SDT?: string | null;
@@ -372,9 +373,13 @@ export default function Profile() {
   // UI computed
   // ==========================
   const avatarUrl = useMemo(() => {
-    const seed = customer?.MaND || customer?.Email || "me";
-    return `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
-  }, [customer]);
+    if (customer?.Avatar) {
+      return customer.Avatar;
+    }
+
+    const name = customer?.HoTen || "Customer";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
+  }, [customer]); 
 
   const memberType = useMemo(() => customer?.TenLoaiTV ?? "Cơ bản", [customer]);
 
@@ -426,7 +431,11 @@ export default function Profile() {
         {/* User Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
           <div className="relative inline-block">
-            <img src={avatarUrl} alt={customer.HoTen} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-50" />
+            <img 
+              src={avatarUrl} 
+              alt={customer.HoTen} 
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-50 object-cover" 
+            />
             <div className="absolute bottom-2 right-0 bg-yellow-400 text-white p-1 rounded-full border-2 border-white" title={memberType}>
               <ShieldCheck className="w-4 h-4" />
             </div>
