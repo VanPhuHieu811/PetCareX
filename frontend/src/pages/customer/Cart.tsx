@@ -1,22 +1,50 @@
+import { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 
 export default function Cart() {
-    const { items, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+    const { items, removeFromCart, updateQuantity, getTotalPrice, clearCart, checkout, loading } = useCart();
+    const [address, setAddress] = useState('');
+    const [processingPayment, setProcessingPayment] = useState(false);
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         if (items.length === 0) return;
-        // TODO: Implement checkout logic
-        alert('Tính năng thanh toán đang được phát triển!');
+
+        // Validate address
+        if (!address.trim()) {
+            alert('Vui lòng nhập địa chỉ nhận hàng để tiếp tục.');
+            return;
+        }
+
+        // Use branch of the first item, or catch error if missing
+        const branchId = items[0]?.branchId;
+        if (!branchId) {
+            alert('Không tìm thấy thông tin chi nhánh. Vui lòng thử lại.');
+            return;
+        }
+
+        setProcessingPayment(true);
+        try {
+            await checkout(branchId, address);
+            // Wait a small moment so user sees the loading state (optional UX polish)
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            alert('Thanh toán thành công! Hóa đơn đã được tạo.');
+        } catch (error: any) {
+            console.error(error);
+            alert('Thanh toán thất bại: ' + (error.message || 'Lỗi không xác định'));
+        } finally {
+            setProcessingPayment(false);
+        }
     };
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
             <div className="mb-6">
                 <Link
-                    to="/products"
+                    to="/customer/products"
                     className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors mb-4"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -31,7 +59,7 @@ export default function Cart() {
                     <h2 className="text-xl font-semibold text-gray-700 mb-2">Giỏ hàng trống</h2>
                     <p className="text-gray-500 mb-6">Bạn chưa có sản phẩm nào trong giỏ hàng</p>
                     <Link
-                        to="/products"
+                        to="/customer/products"
                         className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                     >
                         Mua sắm ngay
@@ -151,11 +179,39 @@ export default function Cart() {
                                 </div>
                             </div>
 
+                            {/* Address Input */}
+                            <div className="mb-6">
+                                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Địa chỉ nhận hàng <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    id="address"
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Nhập địa chỉ giao hàng của bạn..."
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                ></textarea>
+                            </div>
+
                             <button
                                 onClick={handleCheckout}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mb-3"
+                                disabled={processingPayment}
+                                className={clsx(
+                                    "w-full py-3 rounded-lg font-semibold transition-colors mb-3 flex items-center justify-center",
+                                    processingPayment
+                                        ? "bg-blue-400 text-white cursor-not-allowed"
+                                        : "bg-blue-600 text-white hover:bg-blue-700"
+                                )}
                             >
-                                Thanh toán
+                                {processingPayment ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Thanh toán"
+                                )}
                             </button>
 
                             <button
