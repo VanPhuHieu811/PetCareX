@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 
 export default function Cart() {
     const { items, removeFromCart, updateQuantity, getTotalPrice, clearCart, checkout, loading } = useCart();
     const [address, setAddress] = useState('');
+    const [processingPayment, setProcessingPayment] = useState(false);
 
     const handleCheckout = async () => {
         if (items.length === 0) return;
@@ -24,12 +25,18 @@ export default function Cart() {
             return;
         }
 
+        setProcessingPayment(true);
         try {
             await checkout(branchId, address);
+            // Wait a small moment so user sees the loading state (optional UX polish)
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             alert('Thanh toán thành công! Hóa đơn đã được tạo.');
         } catch (error: any) {
             console.error(error);
             alert('Thanh toán thất bại: ' + (error.message || 'Lỗi không xác định'));
+        } finally {
+            setProcessingPayment(false);
         }
     };
 
@@ -52,7 +59,7 @@ export default function Cart() {
                     <h2 className="text-xl font-semibold text-gray-700 mb-2">Giỏ hàng trống</h2>
                     <p className="text-gray-500 mb-6">Bạn chưa có sản phẩm nào trong giỏ hàng</p>
                     <Link
-                        to="/products"
+                        to="/customer/products"
                         className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                     >
                         Mua sắm ngay
@@ -189,9 +196,22 @@ export default function Cart() {
 
                             <button
                                 onClick={handleCheckout}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mb-3"
+                                disabled={processingPayment}
+                                className={clsx(
+                                    "w-full py-3 rounded-lg font-semibold transition-colors mb-3 flex items-center justify-center",
+                                    processingPayment
+                                        ? "bg-blue-400 text-white cursor-not-allowed"
+                                        : "bg-blue-600 text-white hover:bg-blue-700"
+                                )}
                             >
-                                Thanh toán
+                                {processingPayment ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Thanh toán"
+                                )}
                             </button>
 
                             <button
