@@ -96,52 +96,130 @@ export const updatePet = async (pool, petData) => {
         throw new Error(`Falied update pet: ${error.message}`)
     }
 };
-
 export const getPetExamHistory = async (pool, petId) => {
     try {
         const query = `
-            Select  p.MaPhieuDV, kb.NgayKham, kb.MoTaTrieuChung, kb.MoTaChuanDoan,
-                    kb.NgayTaiKham, kb.TongTienDonThuoc, nv.HoTen as TenBacSi
-            From DatKhamBenh kb
-            Join PhieuDatDV p on p.MaPhieuDV = kb.MaPhieuDV
-            Join NguoiDung nv on kb.BacSiPhuTrach = nv.MaND
-            Join ChiNhanh cn on cn.MaCN = p.MaCN
-            Where kb.MaTC = @MaTC
-            Order by kb.NgayKham Desc
-            `;
+            SELECT 
+                kb.MaPhieuDV, 
+                kb.NgayKham, 
+                kb.MoTaTrieuChung, 
+                kb.MoTaChuanDoan,
+                kb.NgayTaiKham, 
+                kb.TongTienDonThuoc, 
+                nd.HoTen as TenBacSi,
+                (
+                    SELECT 
+                        dt.MaSP, 
+                        dt.TenSP_Snapshot AS TenThuoc, 
+                        dt.SoLuongMua, 
+                        dt.DonGia_LucMua AS DonGia, 
+                        dt.ThanhTien
+                    FROM DonThuoc dt
+                    WHERE dt.MaPhieuDV = kb.MaPhieuDV
+                    FOR JSON PATH
+                ) AS DonThuocList
+            FROM DatKhamBenh kb
+            JOIN PhieuDatDV p ON p.MaPhieuDV = kb.MaPhieuDV
+            LEFT JOIN NhanVien nv ON kb.BacSiPhuTrach = nv.MaNV
+            LEFT JOIN NguoiDung nd ON nv.MaNV = nd.MaND
+            WHERE kb.MaTC = @MaTC
+            ORDER BY kb.NgayKham DESC
+        `;
 
         const result = await pool.request()
-            .input('MaTC', petId)
+            .input('MaTC', sql.VarChar, petId)
             .query(query);
 
-        return result.recordset;
+        return result.recordset.map(record => ({
+            ...record,
+            DonThuocList: record.DonThuocList ? JSON.parse(record.DonThuocList) : []
+        }));
+
     } catch (error) {
         throw new Error('Error fetching pet exam history: ' + error.message);
     }
 }
 
-
 export const getPetVaccinationHistory = async (pool, petId) => {
     try {
         const query = `
-            Select dt.MaPhieuDV, dt.NgayTiem, vx.TenVacXin, ds.LieuLuong,
-                ds.DonGia, nd.HoTen AS TenBacSi
-            From DatTiemPhong dt
-            Join DanhSachVacXin ds on dt.MaPhieuDV = ds.MaPhieuDV
-            Join VacXin vx ON ds.MaVacXin = vx.MaVacXin
-            Left join NhanVien nv on dt.BacSiPhuTrach = nv.MaNV
-            Left join NguoiDung nd on nv.MaNV = nd.MaND
-            Where dt.MaTC = @MaTC
-            Order by dt.NgayTiem DESC
-            `;
+            SELECT 
+                dt.MaPhieuDV, 
+                dt.NgayTiem, 
+                nd.HoTen AS TenBacSi,
+                -- Subquery lấy chi tiết các mũi tiêm trong phiếu đó
+                (
+                    SELECT 
+                        vx.TenVacXin, 
+                        ds.LieuLuong, 
+                        ds.DonGia
+                    FROM DanhSachVacXin ds
+                    JOIN VacXin vx ON ds.MaVacXin = vx.MaVacXin
+                    WHERE ds.MaPhieuDV = dt.MaPhieuDV
+                    FOR JSON PATH
+                ) AS DanhSachVacXin
+            FROM DatTiemPhong dt
+            LEFT JOIN NhanVien nv ON dt.BacSiPhuTrach = nv.MaNV
+            LEFT JOIN NguoiDung nd ON nv.MaNV = nd.MaND
+            WHERE dt.MaTC = @MaTC
+            ORDER BY dt.NgayTiem DESC
+        `;
 
         const result = await pool.request()
-            .input('MaTC', petId)
+            .input('MaTC', sql.VarChar, petId)
             .query(query);
 
-        return result.recordset;
+        return result.recordset.map(record => ({
+            ...record,
+            DanhSachVacXin: record.DanhSachVacXin ? JSON.parse(record.DanhSachVacXin) : []
+        }));
+
     } catch (error) {
-        throw new Error('Error fetching pet exam history: ' + error.message);
+        throw new Error('Error fetching vaccination history: ' + error.message);
     }
-}   
-export default {getAllPetsByUserId, getPetById, createPet, deletePet, updatePet, getPetVaccinationHistory};
+}
+
+
+export const getAllPetTypes = async (pool) => {
+    try {
+        const query = `
+            Select MaLoaiTC, TenLoaiTC
+            From LoaiThuCung
+        `;
+
+        const result = await pool.request().query(query);
+        return result.recordset;
+    } catch (err) {
+        throw new Error(`Fail to get list Pet type! ${err.message}`);
+    }
+};
+
+export const getBreedsByTypeId = async (pool, typeId) => {
+    try {
+        const query = `
+            Select MaGiong, TenGiong 
+            From Giong 
+            Where MaLoaiTC = @MaLoaiTC
+        `;
+
+        const result = await pool.request()
+        .input('MaLoaiTC', sql.VarChar, typeId)
+        .query(query);
+
+        return result.recordset;
+    } catch (err) {
+        throw new Error(`Lỗi lấy danh sách giống: ${err.message}`);
+    }
+};
+
+
+export default {
+    getAllPetsByUserId,      
+    getPetById, 
+    createPet, 
+    deletePet, 
+    updatePet, 
+    getPetVaccinationHistory,
+    getAllPetTypes,
+    getBreedsByTypeId,
+};

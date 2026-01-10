@@ -1,141 +1,255 @@
+// src/components/customer/pets/PetMedicalHistory.tsx
 import { MedicalRecord, Pet } from "../../../types";
-import { Clock, ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, Calendar, User, Stethoscope, Syringe, Pill, Activity, AlertCircle } from "lucide-react";
 
 interface PetMedicalHistoryProps {
   pet: Pet | null;
   records: MedicalRecord[];
   onBack: () => void;
-  onRecordClick: (record: MedicalRecord) => void;
+  // Đã bỏ onRecordClick vì hiển thị chi tiết luôn
+}
+
+function formatVND(n?: number | null) {
+  const val = typeof n === "number" ? n : 0;
+  return val.toLocaleString("vi-VN") + "đ";
+}
+
+function safeDate(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("vi-VN");
+}
+
+function formatDateFull(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 export default function PetMedicalHistory({
   pet,
   records,
   onBack,
-  onRecordClick,
 }: PetMedicalHistoryProps) {
   if (!pet) return null;
 
-  // records đã là của pet đang chọn (Profile đã load theo petId)
-  const petRecords = records;
+  // Tách records thành 2 mảng dựa trên serviceType
+  // Lưu ý: Đảm bảo logic map ở Profile.tsx gán đúng "Khám bệnh" và "Tiêm phòng"
+  const examRecords = records.filter((r) => r.serviceType === "Khám bệnh");
+  const vaccineRecords = records.filter((r) => r.serviceType === "Tiêm phòng");
+
+  // Thông tin thú cưng
+  const initials = (pet.name || "P").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* Header với nút quay lại */}
-      <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+    <div className="space-y-8 animate-in fade-in duration-300">
+      {/* --- HEADER: THÔNG TIN THÚ CƯNG --- */}
+      <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          title="Quay lại"
+        >
+          <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-4">
-            {pet.avatar ? (
-              <img
-                src={pet.avatar}
-                alt={pet.name}
-                className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-gray-100"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-sm">
-                {pet.name.charAt(0)}
-              </div>
-            )}
-
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
-              <p className="text-gray-600">
-                {pet.species} • {pet.breed}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {pet.gender} • {pet.weight}kg
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-md ring-4 ring-blue-50">
+            {initials}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
+            <p className="text-gray-500 text-sm">
+              {pet.breed} • {pet.gender} 
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Lịch sử */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Lịch sử khám / tiêm
-        </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* ========================================================= */}
+        {/* CỘT 1: LỊCH SỬ KHÁM BỆNH & ĐƠN THUỐC                    */}
+        {/* ========================================================= */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+              <Stethoscope className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Lịch sử Khám bệnh</h3>
+          </div>
 
-        {petRecords.length > 0 ? (
-          <div className="space-y-4">
-            {petRecords.map((record) => (
-              <div
-                key={record.id}
-                onClick={() => onRecordClick(record)}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex items-center gap-2 text-blue-600 font-medium">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-sm">
-                          {new Date(record.date).toLocaleDateString("vi-VN", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </span>
+          {examRecords.length === 0 ? (
+            <div className="bg-gray-50 rounded-xl p-8 text-center border border-dashed border-gray-200">
+              <p className="text-gray-400 text-sm">Chưa có lịch sử khám bệnh.</p>
+            </div>
+          ) : (
+            examRecords.map((rec) => (
+              <div key={rec.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                {/* Card Header */}
+                <div className="bg-emerald-50/50 px-5 py-3 border-b border-emerald-100 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-emerald-800 font-medium">
+                    <Calendar className="w-4 h-4" />
+                    {formatDateFull(rec.date)}
+                  </div>
+                  <span className="text-xs font-mono text-emerald-600 bg-white px-2 py-1 rounded border border-emerald-200">
+                    {rec.id}
+                  </span>
+                </div>
+
+                {/* Card Body: Chẩn đoán & Triệu chứng */}
+                <div className="p-5 space-y-4">
+                  <div className="flex items-start gap-2">
+                    <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <span className="text-sm text-gray-600">Bác sĩ: <span className="font-medium text-gray-900">{rec.doctorName}</span></span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Triệu chứng */}
+                    <div className="bg-orange-50 border-l-4 border-orange-300 p-3 rounded-r-md">
+                      <div className="flex items-center gap-2 text-orange-800 text-xs font-bold uppercase mb-1">
+                        <AlertCircle className="w-3 h-3" /> Triệu chứng
                       </div>
-
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {record.serviceType}
-                      </span>
+                      <div className="text-sm text-gray-800">{rec.symptoms}</div>
                     </div>
-
-                    <p className="text-sm text-gray-600 mb-3">
-                      <span className="font-medium">Bác sĩ:</span> {record.doctorName}
-                    </p>
-
-                    {record.symptoms && (
-                      <div className="mb-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
-                        <p className="text-xs font-medium text-yellow-800 mb-1">Triệu chứng:</p>
-                        <p className="text-sm text-gray-700">{record.symptoms}</p>
+                    
+                    {/* Chẩn đoán */}
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
+                      <div className="flex items-center gap-2 text-blue-800 text-xs font-bold uppercase mb-1">
+                        <Activity className="w-3 h-3" /> Chẩn đoán
                       </div>
-                    )}
-
-                    <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
-                      <p className="text-xs font-medium text-red-800 mb-1">Chẩn đoán:</p>
-                      <p className="text-sm text-gray-700 font-medium">{record.diagnosis}</p>
+                      <div className="text-sm text-gray-800 font-medium">{rec.diagnosis}</div>
                     </div>
+                  </div>
 
-                    {record.nextAppointment && (
-                      <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                        <p className="text-xs font-medium text-blue-800 mb-1">Lịch tái khám:</p>
-                        <p className="text-sm text-gray-700">
-                          {new Date(record.nextAppointment).toLocaleDateString("vi-VN", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
+                  {/* Đơn thuốc (Table) */}
+                  <div className="pt-2">
+                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
+                      <Pill className="w-4 h-4 text-gray-500" /> Đơn thuốc
+                    </div>
+                    
+                    {(!rec.prescription || rec.prescription.length === 0) ? (
+                      <div className="text-sm text-gray-400 italic pl-6">Không có đơn thuốc.</div>
+                    ) : (
+                      <div className="overflow-hidden rounded-lg border border-gray-100">
+                        <table className="w-full text-sm text-left">
+                          <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                            <tr>
+                              <th className="px-3 py-2 font-medium">Tên thuốc</th>
+                              <th className="px-3 py-2 font-medium text-center">SL</th>
+                              <th className="px-3 py-2 font-medium text-right">Thành tiền</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {rec.prescription.map((drug: any, idx: number) => (
+                              <tr key={idx} className="bg-white">
+                                <td className="px-3 py-2 text-gray-800">
+                                  {drug.TenThuoc || drug.name}
+                                </td>
+                                <td className="px-3 py-2 text-center text-gray-600">
+                                  {drug.SoLuongMua || drug.quantity}
+                                </td>
+                                <td className="px-3 py-2 text-right text-gray-800 font-medium">
+                                  {formatVND(drug.ThanhTien || (drug.DonGia * drug.SoLuongMua))}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
+            ))
+          )}
+        </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Click để xem chi tiết →
-                  </p>
+        {/* ========================================================= */}
+        {/* CỘT 2: LỊCH SỬ TIÊM PHÒNG                                 */}
+        {/* ========================================================= */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+              <Syringe className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Lịch sử Tiêm phòng</h3>
+          </div>
+
+          {vaccineRecords.length === 0 ? (
+            <div className="bg-gray-50 rounded-xl p-8 text-center border border-dashed border-gray-200">
+              <p className="text-gray-400 text-sm">Chưa có lịch sử tiêm phòng.</p>
+            </div>
+          ) : (
+            vaccineRecords.map((rec) => (
+              <div key={rec.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                {/* Card Header */}
+                <div className="bg-purple-50/50 px-5 py-3 border-b border-purple-100 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-purple-800 font-medium">
+                    <Calendar className="w-4 h-4" />
+                    {formatDateFull(rec.date)}
+                  </div>
+                  <span className="text-xs font-mono text-purple-600 bg-white px-2 py-1 rounded border border-purple-200">
+                    {rec.id}
+                  </span>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-5 space-y-4">
+                  <div className="flex items-start gap-2">
+                    <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <span className="text-sm text-gray-600">Bác sĩ: <span className="font-medium text-gray-900">{rec.doctorName}</span></span>
+                  </div>
+
+                  {/* Danh sách Vắc-xin (Table) */}
+                  <div className="pt-1">
+                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
+                      <Syringe className="w-4 h-4 text-gray-500" /> Chi tiết Vắc-xin
+                    </div>
+
+                    {(!rec.vaccines || rec.vaccines.length === 0) ? (
+                      <div className="text-sm text-gray-400 italic pl-6">Không có thông tin vắc-xin.</div>
+                    ) : (
+                      <div className="overflow-hidden rounded-lg border border-gray-100">
+                        <table className="w-full text-sm text-left">
+                          <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                            <tr>
+                              <th className="px-3 py-2 font-medium">Tên Vắc-xin</th>
+                              <th className="px-3 py-2 font-medium text-center">Liều</th>
+                              <th className="px-3 py-2 font-medium text-right">Đơn giá</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {rec.vaccines.map((vac: any, idx: number) => (
+                              <tr key={idx} className="bg-white">
+                                <td className="px-3 py-2 text-gray-800">
+                                  {vac.TenVacXin || vac.name}
+                                </td>
+                                <td className="px-3 py-2 text-center text-gray-600">
+                                  {vac.LieuLuong || 1}
+                                </td>
+                                <td className="px-3 py-2 text-right text-gray-800 font-medium">
+                                  {formatVND(vac.DonGia)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium mb-2">Chưa có lịch sử</p>
-            <p className="text-gray-400 text-sm">Thú cưng này chưa có lịch sử khám/tiêm.</p>
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

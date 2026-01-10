@@ -39,10 +39,14 @@ export const getCurrentCustomer = async (pool, customerId) => {
   try {
     const request = pool.request();
     const query = `
-    select tk.MaND, nd.HoTen, nd.Email, nd.NgaySinh, nd.GioiTinh, nd.SDT, nd.CCCD, nd.LoaiND, tk.NgayTao, tk.TrangThai
+    select tk.MaND, nd.HoTen, nd.Email, nd.NgaySinh, nd.GioiTinh, 
+          nd.SDT, nd.CCCD, nd.LoaiND, tk.NgayTao, tk.TrangThai, 
+          kh.DiemLoyalty, l.TenLoaiTV
     from TaiKhoan tk
     join NguoiDung nd on tk.MaND = nd.MaND
-    where tk.MaND = @MaND
+    join KhachHang kh on kh.MaKH = nd.MaND
+    join LoaiThanhVien l on l.MaLoaiTV = kh.MaLoaiTV
+    where tk.MaND = @MaND  
     `;
     request.input('MaND', customerId);
 
