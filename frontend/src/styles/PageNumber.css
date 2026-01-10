@@ -1,0 +1,52 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center pagination horizontally */
+  gap: 8px; /* Khoảng cách giữa các nút */
+  font-family: Arial, sans-serif;
+  margin-top: 20px;
+}
+
+
+/* Style chung cho các nút */
+.pageBtn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--word-gray);
+  padding: 5px 10px;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+/* Style cho nút mũi tên (First, Prev, Next, Last) */
+.navBtn {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--green); /* Màu xanh lá cây */
+}
+
+.navBtn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Style cho số trang đang được chọn (Active) */
+.active {
+  font-weight: bold;
+  font-size: 18px;
+  color: black;
+  border-bottom: 2px solid transparent; /* Giữ vị trí tránh nhảy layout */
+}
+
+/* Dấu ba chấm */
+.dots {
+  color: var(--word-gray);
+  letter-spacing: 2px;
+}

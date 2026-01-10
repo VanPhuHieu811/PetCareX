@@ -64,7 +64,7 @@ export const addVaccineToBranch = async (pool, branchId, vacxinId, tonKho) => {
 	}
 };
 
-export const deleteVaccxinByBranch = async (pool, branchId, vacxinId) => {
+export const deleteVacxinByBranch = async (pool, branchId, vacxinId) => {
 	try {
 		const query = `
 			DELETE FROM VacXin_ChiNhanh
@@ -80,10 +80,33 @@ export const deleteVaccxinByBranch = async (pool, branchId, vacxinId) => {
 	}
 };
 
+export const getBranchVacxinUseRate = async (pool, branchId) => {
+	try {
+		const query = `
+			select vc.MaVacXin, vc.TenVacXin, count(distinct tp.MaPhieuDV) as LuotSuDung
+			from vacxin vc, danhsachvacxin ds, phieudatdv tp
+			where ds.MaPhieuDV = tp.MaPhieuDV
+				and ds.MaVacXin = vc.MaVacXin
+				and (tp.TrangThai = N'Đã thanh toán' or tp.TrangThai = N'Đang thực hiện')
+				and tp.MaCN = @macn
+			group by vc.MaVacXin, vc.TenVacXin
+		`;
+		const result = await pool
+			.request()
+			.input('macn', mssql.VarChar(10), branchId)
+			.query(query);
+		return result.recordset;
+	}
+	catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
 export default {
 	getAllVaccines,
 	addVaccine,
 	getVaccineByBranch,
 	addVaccineToBranch,
-	deleteVaccxinByBranch
+	deleteVacxinByBranch,
+	getBranchVacxinUseRate
 };

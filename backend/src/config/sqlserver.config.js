@@ -12,31 +12,47 @@ const config = {
   options: {
     encrypt: true,
     trustServerCertificate: true,
+    enableArithAbort: true,
   },
   pool: {
     max: 10,
     min: 0,
     idleTimeoutMillis: 30000,
   },
+  connectionTimeout: 30000,
+  requestTimeout: 30000,
 };
-let poolPromise;
+
+let pool;
 
 export const getPool = async () => {
-  if (!poolPromise) {
-    console.log('Connecting to SQL Server...');
-    poolPromise = new sql.ConnectionPool(config)
-      .connect()
-      .then((pool) => {
-        console.log('SQL Server connection established');
-        return pool;
-      })
-      .catch((err) => {
-        console.error('SQL Server connection failed:', err.message);
-        poolPromise = undefined;
-        throw err;
+  try {
+    if (!pool) {
+      console.log('Creating SQL Server connection pool...');
+      pool = new sql.ConnectionPool(config);
+      
+      pool.on('error', (err) => {
+        console.error('Database pool error:', err);
+        pool = null;
       });
+
+      await pool.connect();
+      console.log('SQL Server connection pool established');
+    }
+
+    // Kiểm tra pool có còn connected không
+    if (!pool.connected) {
+      console.log('Pool disconnected, reconnecting...');
+      pool = null;
+      return getPool(); // Recursive call để tạo lại pool
+    }
+
+    return pool;
+  } catch (err) {
+    console.error('SQL Server connection failed:', err.message);
+    pool = null;
+    throw err;
   }
-  return poolPromise;
 };
 
 export const dbMiddleware = async (req, _res, next) => {
