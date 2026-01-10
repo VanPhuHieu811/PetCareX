@@ -291,3 +291,15 @@ where MaPhieuDV='PDV000001' and MaKH='KH01655'
 select *
 from NguoiDung
 where SDT='0936363636'
+
+select p.NgayDatDV, count(*)
+from PhieuDatDV pgit 
+group by p.NgayDatDV
+
+select *
+from PhieuDatDV 
+where NgayDatDV='2020-07-29 00:00:00.000'
+
+select* 
+from PhieuDatDV
+where NgayDatDV='2026-01-'
