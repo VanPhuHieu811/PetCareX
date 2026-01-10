@@ -272,3 +272,5 @@ BEGIN CATCH
 END CATCH;
 
 
+select *
+from LoaiSP
