@@ -40,16 +40,6 @@ export const getBranchProduct = async (req, res) => {
 	}
 };
 
-export const getLatestProductsId = async (req, res) => {
-	try {
-		const pool = req.db;
-		const result = await productService.getLatestProductsId(pool);
-		return res.status(200).json(result);
-	} catch (error) {
-		return res.status(500).json({ error: 'Failed to retrieve latest products', details: error.message });
-	}
-};
-
 export const addProductToBranch = async (req, res) => {
 	try {
 		const pool = req.db;
@@ -70,6 +60,17 @@ export const deleteProductFromBranch = async (req, res) => {
 	}
 	catch (error) {
 		return res.status(500).json({ error: 'Failed to delete product from branch', details: error.message });
+	}
+};
+export const recoverProductToBranch = async (req, res) => {
+	try {
+		const pool = req.db;
+		const { branchId, productId } = req.body;
+		await productService.recoverProductToBranch(pool, branchId, productId);
+		return res.status(200).json({ message: 'Product recovered to branch successfully' });
+	}	
+	catch (error) {
+		return res.status(500).json({ error: 'Failed to recover product to branch', details: error.message });
 	}
 };
 
@@ -109,10 +110,10 @@ export const countAllProducts = async (req, res) => {
 
 export default {
 	getAllProducts,
-	getLatestProductsId,
 	getBranchProduct,
 	addProductToBranch,
 	deleteProductFromBranch,
+	recoverProductToBranch,
 	addBranchProductStock,
 	countBranchProducts,
 	countAllProducts

@@ -9,15 +9,15 @@ export const getAllProducts = async (pool, page, limit, offset, keyword) => {
 		const query = `
       with ProductList as (
         select sp.MaSP, sp.TenSP, sp.GiaBan, sp.DonViTinh, lsp.TenLoaiSP,
-               ROW_NUMBER() OVER (ORDER BY sp.MaSP) AS RowNum,
-               COUNT(*) OVER () as TotalCount
+							ROW_NUMBER() OVER (ORDER BY sp.MaSP) AS RowNum,
+							COUNT(*) OVER () as TotalCount
         from SanPham sp
         join LoaiSP lsp on sp.MaLoaiSP = lsp.MaLoaiSP
         WHERE (@keyword IS NULL OR sp.TenSP LIKE N'%' + @keyword + '%') 
       )
 
       select pl.MaSP, pl.TenSP, pl.GiaBan, pl.DonViTinh, pl.TenLoaiSP, pl.TotalCount,
-             spc.MaCN, spc.SoLuongTonKho
+						spc.MaCN, spc.SoLuongTonKho
       from ProductList pl
       left join SPCuaTungCN spc on spc.MaSP = pl.MaSP
       where pl.RowNum > @offset and pl.RowNum <= @offset + @limit
@@ -71,20 +71,6 @@ export const getAllProducts = async (pool, page, limit, offset, keyword) => {
 	}
 }
 
-export const getLatestProductsId = async (pool) => {
-	try {
-		const query = `
-			select top 1 sp.MaSP
-			from SanPham sp
-			order by sp.MaSP desc
-		`;
-		const result = await pool.request().query(query);
-		return result.recordset;
-	} catch (err) {
-		throw new Error(`Database query fail: ${err.message}`);
-	}
-};
-
 export const getBranchProduct = async (pool, page, limit, branchId) => {
 	try {
 		const query = `
@@ -93,7 +79,8 @@ export const getBranchProduct = async (pool, page, limit, branchId) => {
 				lsp.TenLoaiSP, 
 				sp.GiaBan, 
 				sp.DonViTinh, 
-				spcn.SoLuongTonKho
+				spcn.SoLuongTonKho,
+				spcn.TrangThai
 			from SanPham sp, LoaiSP lsp, SPCuaTungCN spcn
 			where sp.MaLoaiSP = lsp.MaLoaiSP
 				and sp.MaSP = spcn.MaSP
@@ -135,7 +122,24 @@ export const addProductToBranch = async (pool, branchId, productId, tonKho) => {
 export const deleteProductFromBranch = async (pool, branchId, productId) => {
 	try {
 		const query = `
-			DELETE FROM SPCuaTungCN
+			UPDATE SPCuaTungCN
+			SET TrangThai = 1
+			WHERE MaCN = @macn AND MaSP = @masp
+		`;
+		await pool
+			.request()
+			.input('macn', branchId)
+			.input('masp', productId)
+			.query(query);
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+export const recoverProductToBranch = async (pool, branchId, productId) => {
+	try {
+		const query = `
+			UPDATE SPCuaTungCN
+			SET TrangThai = 0
 			WHERE MaCN = @macn AND MaSP = @masp
 		`;
 		await pool
@@ -152,7 +156,7 @@ export const addBranchProductStock = async (pool, branchId, productId, quantity)
 	try {
 		const query = `
 			UPDATE SPCuaTungCN
-			SET SoLuongTonKho = SoLuongTonKho + @quantity
+			SET SoLuongTonKho = @quantity
 			WHERE MaCN = @macn AND MaSP = @masp
 		`;
 		await pool
@@ -172,6 +176,7 @@ export const countBranchProducts = async (pool, branchId) => {
 			SELECT COUNT(MaSP) AS total
 			FROM SPCuaTungCN
 			WHERE MaCN = @branchId
+				and TrangThai = 0
 		`;
 		const result = await pool
 			.request()
@@ -198,10 +203,10 @@ export const countAllProducts = async (pool) => {
 
 export default {
 	getAllProducts,
-	getLatestProductsId,
 	getBranchProduct,
 	addProductToBranch,
 	deleteProductFromBranch,
+	recoverProductToBranch,
 	addBranchProductStock,
 	countBranchProducts,
 	countAllProducts

@@ -18,7 +18,8 @@ function productForm(product, currentProduct, setCurrentProduct) {
 				TenLoaiSP: product.TenLoaiSP,
 				GiaBan: product.GiaBan,
 				DonViTinh: product.DonViTinh,
-				SoLuongTonKho: 0
+				SoLuongTonKho: 0,
+				TrangThai: 0
 			})}
 		>
 			<Cat size={30} className="text-gray-400 mx-auto" />
@@ -48,12 +49,14 @@ export default function Inventory() {
 		TenLoaiSP: '',
 		GiaBan: 0,
 		DonViTinh: '',
-		SoLuongTonKho: 0
+		SoLuongTonKho: 0,
+		TrangThai: 0,
 	});
 
 	// Lấy dữ liệu branch của người dùng
 	const [branchID, setBranchID] = useState("");
 	const [products, setProducts] = useState([]); // product trong chi nhánh
+	const [deletedProducts, setDeletedProducts] = useState([]); // tất cả product nhánh có TrangThai = 1)
 	useEffect(() => {
 		async function fetchStaffBranch() {
 			try {
@@ -101,15 +104,16 @@ export default function Inventory() {
 				const res = await fetch(`${BASEURL}/products/branch?branchId=${branchID}&page=${currentPage}&limit=20`);
 				if (!res.ok)
 					throw new Error(`Failed to fetch branch products: ${res.status} ${res.statusText}`);
-				const data = await res.json();
-				setProducts(data);
+				const data = await res.json(); 
+				setProducts(data.filter(p => p.TrangThai === false)); // Lọc những sản phẩm chưa bị xóa
+				setDeletedProducts(data.filter(p => p.TrangThai === true)); // Bao gồm cả sản phẩm bị xóa (TrangThai = true)
 			} catch (error) {
 				console.error('Error fetching branch products:', error);
 			}
 		};
 		fetchBranchProducts();
 
-		const fetchCountBranchPages = async () => { // TotalAllPages (20)
+		const fetchCountBranchTotalPages = async () => { // TotalAllPages (20)
 			if (!branchID) return;
 			try {
 				const res = await fetch(`${BASEURL}/products/countbranch?branchId=${branchID}`);
@@ -123,7 +127,7 @@ export default function Inventory() {
 				console.error('Error fetching branch product count:', error);
 			}
 		};
-		fetchCountBranchPages();
+		fetchCountBranchTotalPages();
 	}, [branchID]);
 
 	const filteredProducts = products.filter(p =>
@@ -156,12 +160,34 @@ export default function Inventory() {
 		}
 	};
 
-
-
-	// Xử lý chọn sản phẩm từ danh sách
-	const handleSelectProduct = () => {
+	// Xử lý chọn sản phẩm để thêm mới từ danh sách
+	const handleSelectProduct = async () => {
 		if (!currentProduct.MaSP) {
 			alert("Vui lòng chọn sản phẩm để nhập hàng!");
+			return;
+		}
+
+		if(deletedProducts.find(p => p.MaSP === currentProduct.MaSP && p.TrangThai === true)) {
+			try {
+				console.log("Đang khôi phục sản phẩm đã xóa trước đó...");
+				// Đổi trạng thái sản phẩm của chi nhánh qua 0 (đang hoạt động)
+				await fetch(`${BASEURL}/products/branch/recover`, {
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						branchId: branchID,
+						productId: currentProduct.MaSP
+					})
+				});
+				alert("Sản phẩm đã bị xóa trước đó, khôi phục lại sản phẩm!");
+			}
+			catch (error) {
+				alert("Lỗi khi khôi phục sản phẩm về chi nhánh");
+				console.error('Error recovering product to branch:', error);
+			}
+			setIsModalOpen(false);
 			return;
 		}
 
@@ -173,12 +199,14 @@ export default function Inventory() {
 		setIsModalOpen(false);
 		setIsSelectAmountOpen(true);
 	}
-	// Xử lý lưu sản phẩm mới
+
+	// Xử lý thêm sản phẩm mới
 	const handleSave = async () => {
 		if (currentProduct.SoLuongTonKho <= 0) {
 			alert("Vui lòng nhập số lượng lớn hơn 0");
 			return;
 		}
+
 		try {
 			const res = await fetch(`${BASEURL}/products/branch`, {
 				method: 'POST',
@@ -207,19 +235,20 @@ export default function Inventory() {
 
 	// Mở modal để chỉnh sửa
 	const [addedStock, setAddedStock] = useState(0);
-	const handleEdit = () => {
+	const handleEdit = (product) => {
 		setAddedStock(0);
+		setCurrentProduct(product);
 		setIsEditing(true);
 	};
 
-	const handleAddingStock = async () => {
+	const handleAddingStock = async () => { // Cần fix!!!!!
 		if (addedStock <= 0) {
 			alert("Vui lòng nhập số lượng lớn hơn 0");
 			return;
 		}
 		try {
 			const res = await fetch(`${BASEURL}/products/branch/stock`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json'
 				},
@@ -370,7 +399,7 @@ export default function Inventory() {
 									<span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">{product.TenLoaiSP}</span>
 								</td>
 								<td className="px-6 py-4 text-sm text-gray-800 text-right">
-									{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.GiaBan)}
+									{formatVND(product.GiaBan)}
 								</td>
 								<td className="px-6 py-4 text-sm text-gray-800 text-center">{product.DonViTinh}</td>
 								<td className="px-6 py-4 text-sm text-center">
@@ -476,8 +505,8 @@ export default function Inventory() {
 							className="w-[90%] border border-gray-300 rounded-lg p-3 my-4 outline-none focus:ring-2 focus:ring-blue-500"
 							style={{ margin: '20px auto', display: 'block' }}
 							placeholder="Nhập số lượng tồn kho"
-							value={currentVacxin.SoLuongTonKho}
-							onChange={(e) => setCurrentVacxin({ ...currentVacxin, SoLuongTonKho: parseInt(e.target.value) })}
+							value={currentProduct.SoLuongTonKho}
+							onChange={(e) => setcurrentProduct({ ...currentProduct, SoLuongTonKho: parseInt(e.target.value) })}
 						/>
 
 						<div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
