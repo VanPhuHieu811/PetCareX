@@ -13,6 +13,8 @@ export const authenticate = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = {
       id: decoded.id,
+      name: decoded.name,
+      email: decoded.email,
       role: decoded.role
     }
     next();
@@ -20,22 +22,22 @@ export const authenticate = (req, res, next) => {
   catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
-          success: false,
-          message: 'Invalid token'
+        success: false,
+        message: 'Invalid token'
       });
     }
     
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
-          success: false,
-          message: 'Token expired'
+        success: false,
+        message: 'Token expired'
       });
     }
 
     return res.status(500).json({
-        success: false,
-        message: 'Authentication error',
-        error: error.message
+      success: false,
+      message: 'Authentication error',
+      error: error.message
     });
   }
 }
