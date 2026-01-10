@@ -77,11 +77,10 @@ export default function Products() {
         }
     };
 
-    const fetchProducts = async (page: number, searchKeyword: string = '') => {
+    const fetchProducts = async (page: number, searchKeyword: string = '', category: string = '') => {
         setLoadingProducts(true);
         try {
-            // CẬP NHẬT: Thay đổi limit từ 8 lên 12
-            const data = await productApi.getAll(page, 12, searchKeyword);
+            const data = await productApi.getAll(page, 12, searchKeyword, category);
 
             if (data.success) {
                 const productArray = Array.isArray(data.data) ? data.data : (data.data.data || []);
@@ -105,13 +104,13 @@ export default function Products() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setCurrentPage(1);
-            fetchProducts(1, searchQuery);
+            fetchProducts(1, searchQuery, selectedCategory);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [searchQuery, selectedCategory]);
 
     useEffect(() => {
-        fetchProducts(currentPage, searchQuery);
+        fetchProducts(currentPage, searchQuery, selectedCategory);
     }, [currentPage]);
 
     // Xử lý click outside dropdown
@@ -150,21 +149,6 @@ export default function Products() {
             isInStock: stock > 0,
             branchStock: item.SoLuongTonKho
         };
-    }).filter(product => {
-        let matchCategory = false;
-
-        if (selectedCategory === 'All') {
-            matchCategory = true;
-        } else {
-            const categoryInDB = product.category ? product.category.toLowerCase() : '';
-            const categoryFilter = selectedCategory.toLowerCase();
-
-            matchCategory = categoryInDB.includes(categoryFilter);
-        }
-
-        const matchSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-        return matchCategory && matchSearch;
     });
 
     const currentBranchName = branchList.find(b => b.MaCN === selectedBranch)?.TenCN || 'Đang chọn...';
@@ -263,7 +247,7 @@ export default function Products() {
             {loadingProducts ? (
                 <div className="flex flex-col justify-center items-center py-20 min-h-[400px]">
                     <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-                    <span className="text-gray-500 font-medium">Đang tải dữ liệu từ kho...</span>
+                    <span className="text-gray-500 font-medium">Đang tải dữ liệu...</span>
                 </div>
             ) : (
                 <>

@@ -6,17 +6,18 @@ export const getAllProducts = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const offset = (page - 1) * limit;
-    
-    // Lấy từ khóa tìm kiếm từ query param (?search=...)
-    const keyword = req.query.search || ''; 
 
-    // Truyền thêm keyword vào service
-    const result = await productService.getAllProducts(pool, page, limit, offset, keyword);
+    // Lấy từ khóa tìm kiếm từ query param (?search=...)
+    const keyword = req.query.search || '';
+    const category = req.query.category || ''; // Lấy category filter
+
+    // Truyền thêm keyword và category vào service
+    const result = await productService.getAllProducts(pool, page, limit, offset, keyword, category);
 
     return res.status(200).json({
       success: true,
       message: 'Products retrieved successfully',
-      data: result 
+      data: result
     });
   } catch (error) {
     return res.status(500).json({
