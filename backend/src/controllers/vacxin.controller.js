@@ -1,4 +1,5 @@
 import * as vacxinService from '../services/vacxin.service.js';
+import * as branchService from '../services/branch.service.js';
 
 export const getAllVacxins = async (req, res) => {
 	try {
@@ -52,7 +53,7 @@ export const deleteVacxinByBranch = async (req, res) => {
 	try {
 		const branchID = req.query.branchId;
 		const vacxinID = req.query.vacxinId;
-		await vacxinService.deleteVaccxinByBranch(req.db, branchID, vacxinID);
+		await vacxinService.deleteVacxinByBranch(req.db, branchID, vacxinID);
 		res.status(200).json({ message: 'Vaccine deleted from branch successfully' });
 	}
 	catch (err) {
@@ -62,10 +63,24 @@ export const deleteVacxinByBranch = async (req, res) => {
 	}
 };
 
+export const getBranchVacxinUseRate = async (req, res) => {
+	try {
+		const branchID = req.query.id;
+		const result = await vacxinService.getBranchVacxinUseRate(req.db, branchID);
+		res.status(200).json(result);
+	}
+	catch (err) {
+		res
+			.status(500)
+			.json({ error: 'Failed to retrieve vaccine use rate by branch', details: err.message });
+	}
+};
+
 export default {
 	getAllVacxins,
 	addVaccine,
 	getVacxinsByBranch,
 	addVacxinToBranch,
-	deleteVacxinByBranch
+	deleteVacxinByBranch,
+	getBranchVacxinUseRate
 };

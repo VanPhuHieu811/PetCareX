@@ -22,3 +22,94 @@ export const getAllProducts = async (req, res) => {
     });
   }
 }
+
+export const getBranchProduct = async (req, res) => {
+	try {
+		const pool = req.db;
+		const branchId = req.query.branchId;
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const result = await productService.getBranchProduct(pool, page, limit, branchId);
+		return res.status(200).json(result);
+	} catch (error) {
+		return res.status(500).json({ error: 'Failed to retrieve products by branch', details: error.message });
+	}
+};
+
+export const getLatestProductsId = async (req, res) => {
+	try {
+		const pool = req.db;
+		const result = await productService.getLatestProductsId(pool);
+		return res.status(200).json(result);
+	} catch (error) {
+		return res.status(500).json({ error: 'Failed to retrieve latest products', details: error.message });
+	}
+};
+
+export const addProductToBranch = async (req, res) => {
+	try {
+		const pool = req.db;
+		const { branchId, productId, tonKho } = req.body;
+		await productService.addProductToBranch(pool, branchId, productId, tonKho);
+		return res.status(200).json({ message: 'Product added to branch successfully' });
+	} catch (error) {
+		return res.status(500).json({ error: 'Failed to add product to branch', details: error.message });
+	}
+};
+
+export const deleteProductFromBranch = async (req, res) => {
+	try {
+		const pool = req.db;
+		const { branchId, productId } = req.body;
+		await productService.deleteProductFromBranch(pool, branchId, productId);
+		return res.status(200).json({ message: 'Product deleted from branch successfully' });
+	}
+	catch (error) {
+		return res.status(500).json({ error: 'Failed to delete product from branch', details: error.message });
+	}
+};
+
+export const addBranchProductStock = async (req, res) => {
+	try {
+		const pool = req.db;
+		const { branchId, productId, quantity } = req.body;
+		await productService.addBranchProductStock(pool, branchId, productId, quantity);
+		return res.status(200).json({ message: 'Branch product stock updated successfully' });
+	}
+	catch (error) {
+		return res.status(500).json({ error: 'Failed to update branch product stock', details: error.message });
+	}
+};
+
+export const countBranchProducts = async (req, res) => {
+	try {
+		const pool = req.db;
+		const branchId = req.query.branchId;
+		const count = await productService.countBranchProducts(pool, branchId);
+		return res.status(200).json({ totalProducts: count });
+	}
+	catch (error) {
+		return res.status(500).json({ error: 'Failed to count branch products', details: error.message });
+	}
+};
+
+export const countAllProducts = async (req, res) => {
+	try {
+		const pool = req.db;
+		const count = await productService.countAllProducts(pool);
+		return res.status(200).json({ totalProducts: count });
+	} catch (error) {
+		return res.status(500).json({ error: 'Failed to count products', details: error.message });
+	}
+};
+
+export default {
+	getAllProducts,
+	getLatestProductsId,
+	getBranchProduct,
+	addProductToBranch,
+	deleteProductFromBranch,
+	addBranchProductStock,
+	countBranchProducts,
+	countAllProducts
+};
