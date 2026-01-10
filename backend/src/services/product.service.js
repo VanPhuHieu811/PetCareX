@@ -71,3 +71,144 @@ export const getAllProducts = async (pool, page, limit, offset, keyword, categor
     throw new Error('Error fetching products: ' + error.message);
   }
 }
+
+export const getBranchProduct = async (pool, page, limit, branchId) => {
+	try {
+		const query = `
+			select sp.MaSP, 
+				sp.TenSP, 
+				lsp.TenLoaiSP, 
+				sp.GiaBan, 
+				sp.DonViTinh, 
+				spcn.SoLuongTonKho,
+				spcn.TrangThai
+			from SanPham sp, LoaiSP lsp, SPCuaTungCN spcn
+			where sp.MaLoaiSP = lsp.MaLoaiSP
+				and sp.MaSP = spcn.MaSP
+				and spcn.MaCN = @branchId
+			order by sp.MaSP
+			offset @offset rows
+			fetch next @limit rows only
+		`;
+		const offset = (page - 1) * limit;
+		const result = await pool
+			.request()
+			.input('offset', offset)
+			.input('limit', limit)
+			.input('branchId', branchId)
+			.query(query);
+		return result.recordset;
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const addProductToBranch = async (pool, branchId, productId, tonKho) => {
+	try {
+		const query = `
+			INSERT INTO SPCuaTungCN (MaCN, MaSP, SoLuongTonKho)
+			VALUES (@macn, @masp, @tonkho)
+		`;
+		await pool
+			.request()
+			.input('macn', branchId)
+			.input('masp', productId)
+			.input('tonkho', tonKho)
+			.query(query);
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const deleteProductFromBranch = async (pool, branchId, productId) => {
+	try {
+		const query = `
+			UPDATE SPCuaTungCN
+			SET TrangThai = 1
+			WHERE MaCN = @macn AND MaSP = @masp
+		`;
+		await pool
+			.request()
+			.input('macn', branchId)
+			.input('masp', productId)
+			.query(query);
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+export const recoverProductToBranch = async (pool, branchId, productId) => {
+	try {
+		const query = `
+			UPDATE SPCuaTungCN
+			SET TrangThai = 0
+			WHERE MaCN = @macn AND MaSP = @masp
+		`;
+		await pool
+			.request()
+			.input('macn', branchId)
+			.input('masp', productId)
+			.query(query);
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const addBranchProductStock = async (pool, branchId, productId, quantity) => {
+	try {
+		const query = `
+			UPDATE SPCuaTungCN
+			SET SoLuongTonKho = @quantity
+			WHERE MaCN = @macn AND MaSP = @masp
+		`;
+		await pool
+			.request()
+			.input('macn', branchId)
+			.input('masp', productId)
+			.input('quantity', quantity)
+			.query(query);
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const countBranchProducts = async (pool, branchId) => {
+	try {
+		const query = `
+			SELECT COUNT(MaSP) AS total
+			FROM SPCuaTungCN
+			WHERE MaCN = @branchId
+				and TrangThai = 0
+		`;
+		const result = await pool
+			.request()
+			.input('branchId', branchId)
+			.query(query);
+		return result.recordset[0].total;
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const countAllProducts = async (pool) => {
+	try {
+		const query = `
+			SELECT COUNT(*) AS total
+			FROM SanPham
+		`;
+		const result = await pool.request().query(query);
+		return result.recordset[0].total;
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export default {
+	getAllProducts,
+	getBranchProduct,
+	addProductToBranch,
+	deleteProductFromBranch,
+	recoverProductToBranch,
+	addBranchProductStock,
+	countBranchProducts,
+	countAllProducts
+};
