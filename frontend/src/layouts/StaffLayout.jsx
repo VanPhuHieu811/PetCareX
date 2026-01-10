@@ -63,7 +63,6 @@ const StaffLayout = () => {
     { icon: Calendar, label: "Lịch hẹn", path: "/staff/appointments" },
     { icon: Search, label: "Tra cứu thú cưng", path: "/staff/search" },
     { icon: Users, label: "Khách hàng", path: "/staff/customers" },
-    { icon: PawPrint, label: "Thú cưng", path: "/staff/pets" },
   ];
 
   const salesMenu = [

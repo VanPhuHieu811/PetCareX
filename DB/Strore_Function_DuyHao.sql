@@ -23,7 +23,12 @@ RETURN
     FROM NguoiDung nd
     JOIN khachhang kh ON nd.MaND = kh.makh
     LEFT JOIN thucung tt ON kh.makh = tt.makh
-    WHERE (nd.sdt = @identifier OR nd.cccd = @identifier or nd.Email = @identifier)
+    WHERE (
+        nd.sdt LIKE '%' + @identifier + '%' 
+        OR nd.cccd LIKE '%' + @identifier + '%' 
+        OR nd.Email LIKE '%' + @identifier + '%'
+        OR nd.HoTen LIKE '%' + @identifier + '%' -- Thêm tìm kiếm theo tên cho tiện
+    )
       AND nd.LoaiND = N'Khách hàng'
 );
 
@@ -282,3 +287,7 @@ go
 select *
 from DanhGia
 where MaPhieuDV='PDV000001' and MaKH='KH01655'
+
+select *
+from NguoiDung
+where SDT='0936363636'

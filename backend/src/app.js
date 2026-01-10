@@ -1,8 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { dbMiddleware } from './config/sqlserver.config.js';
-
 import receptionRoutes from './routes/reception.route.js';
 import salesRoutes from './routes/sales.route.js';
 import invoiceRoutes from './routes/invoice.route.js';
