@@ -2,7 +2,8 @@ import * as servicesService from '../services/services.service.js';
 
 export const getDashboard = async (req, res) => {
   try {
-    const { doctorId } = req.body; 
+    // const { doctorId } = req.body; 
+    const doctorId = req.user.id;
     if (!doctorId) return res.status(400).json({ error: 'Missing doctorId' });
 
     const data = await servicesService.getDoctorDashboard(req.db, doctorId);
