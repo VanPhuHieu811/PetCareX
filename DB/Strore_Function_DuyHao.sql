@@ -29,6 +29,7 @@ RETURN
         OR nd.cccd LIKE '%' + @identifier + '%' 
         OR nd.Email LIKE '%' + @identifier + '%'
         OR nd.HoTen LIKE '%' + @identifier + '%' -- Thêm tìm kiếm theo tên cho tiện
+        OR tt.MaTC = @identifier
     )
       AND nd.LoaiND = N'Khách hàng'
 );
