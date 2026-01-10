@@ -384,8 +384,8 @@ BEGIN
         SELECT 1 
         FROM inserted i 
         JOIN deleted d ON i.MaPhieuDV = d.MaPhieuDV
-        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán') 
-          AND d.TrangThai NOT IN (N'Hoàn thành', N'Đã thanh toán')
+        WHERE i.TrangThai IN (N'Đã thanh toán') 
+          AND d.TrangThai NOT IN (N'Đã thanh toán')
     )
     BEGIN
         -- 1. Trừ kho Sản Phẩm từ Đơn Thuốc (Dịch vụ Khám bệnh)
@@ -394,7 +394,7 @@ BEGIN
         FROM SPCuaTungCN kho
         JOIN DonThuoc dt ON kho.MaSP = dt.MaSP AND kho.MaCN = dt.MaCN
         JOIN inserted i ON dt.MaPhieuDV = i.MaPhieuDV
-        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+        WHERE i.TrangThai IN (N'Đã thanh toán');
 
         -- 2. Trừ kho Sản Phẩm từ DanhSachSP (Dịch vụ Mua hàng)
         UPDATE kho
@@ -402,7 +402,7 @@ BEGIN
         FROM SPCuaTungCN kho
         JOIN DanhSachSP ds ON kho.MaSP = ds.MaSP AND kho.MaCN = ds.MaCN
         JOIN inserted i ON ds.MaPhieuDV = i.MaPhieuDV
-        WHERE i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+        WHERE i.TrangThai IN (N'Đã thanh toán');
 
         -- 3. Trừ kho Vắc-xin (Dịch vụ Tiêm phòng)
         -- Lưu ý: Giả định 1 lần tiêm trong DanhSachVacXin là trừ 1 đơn vị tồn kho
@@ -413,7 +413,7 @@ BEGIN
         JOIN DanhSachVacXin dsvx ON vx_kho.MaVacXin = dsvx.MaVacXin
         JOIN inserted i ON dsvx.MaPhieuDV = i.MaPhieuDV
         WHERE vx_kho.MaCN = i.MaCN -- PhieuDatDV chứa MaCN thực hiện
-          AND i.TrangThai IN (N'Hoàn thành', N'Đã thanh toán');
+          AND i.TrangThai IN (N'Đã thanh toán');
     END
 END;
 GO

@@ -95,32 +95,6 @@ export const deletePet = async (req, res) => {
     }
 }
 
-export const getPetExamHistory = async (req, res) =>{
-    try {
-        const customerId = req.user?.id;        
-
-        const {id} = req.params;
-
-        if (!id) {
-            return res.status(400).json({error: 'getPetExamHistory. Pet ID is required'});
-        }
-
-        const pet = await petService.getPetById(req.db, id, customerId);
-        if (!pet) return res.status(404).json({ error: 'Pet not found' });
-        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
-        
-        const exams = await petService.getPetExamHistory(req.db, id, customerId);
-
-        res.status(200).json({
-            success: true,
-            length: exams.length,
-            data: exams
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Fail to retrieve pet exam history', detail: error.message });
-    }
-}
-
 export const updatePet = async (req, res) => {
     try {
         const customerId = req.user?.id;
@@ -156,6 +130,32 @@ export const updatePet = async (req, res) => {
 }
 
 
+export const getPetExamHistory = async (req, res) =>{
+    try {
+        const customerId = req.user?.id;        
+
+        const {id} = req.params;
+
+        if (!id) {
+            return res.status(400).json({error: 'getPetExamHistory. Pet ID is required'});
+        }
+
+        const pet = await petService.getPetById(req.db, id, customerId);
+        if (!pet) return res.status(404).json({ error: 'Pet not found' });
+        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+        
+        const exams = await petService.getPetExamHistory(req.db, id, customerId);
+
+        res.status(200).json({
+            success: true,
+            length: exams.length,
+            data: exams
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Fail to retrieve pet exam history', detail: error.message });
+    }
+}
+
 export const getPetVaccinationHistory = async (req, res) => {
     try {
         const customerId = req.user?.id;
@@ -184,5 +184,56 @@ export const getPetVaccinationHistory = async (req, res) => {
         details: err.message 
         });
     }
-    };
-export default { getPets, getPetDetail, createNewPet, deletePet,updatePet, getPetExamHistory, getPetVaccinationHistory };
+};
+
+export const getPetTypes = async (req, res) => {
+  try {
+    const types = await petService.getAllPetTypes(req.db);
+    
+    res.status(200).json({
+      success: true,
+      count: types.length,
+      data: types
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      error: 'Fail to get list pet types', 
+      details: err.message 
+    });
+  }
+};
+
+export const getPetBreeds = async (req, res) => {
+  try {
+    const { typeId } = req.query;
+
+    if (!typeId) {
+      return res.status(400).json({ error: 'PetTypeId is required' });
+    }
+
+    const breeds = await petService.getBreedsByTypeId(req.db, typeId);
+    
+    res.status(200).json({
+      success: true,
+      count: breeds.length,
+      data: breeds
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      error: 'Fail to get pet breeds', 
+      details: err.message 
+    });
+  }
+};
+
+export default { 
+    getPets, 
+    getPetDetail, 
+    createNewPet, 
+    deletePet,
+    updatePet, 
+    getPetExamHistory, 
+    getPetVaccinationHistory,
+    getPetTypes,
+    getPetBreeds
+};
