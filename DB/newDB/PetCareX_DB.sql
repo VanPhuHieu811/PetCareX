@@ -210,6 +210,7 @@ CREATE TABLE SPCuaTungCN (
     MaSP varchar(10) NOT NULL,
     MaCN varchar(10) NOT NULL,
     SoLuongTonKho int NOT NULL,
+	TrangThai bit default 0,
     CONSTRAINT PK_SPCuaTungCN PRIMARY KEY (MaSP, MaCN),
     CONSTRAINT FK_SPCuaTungCN_SP FOREIGN KEY (MaSP) REFERENCES SanPham(MaSP),
     CONSTRAINT FK_SPCuaTungCN_CN FOREIGN KEY (MaCN) REFERENCES ChiNhanh(MaCN),
