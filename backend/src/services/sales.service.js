@@ -19,7 +19,7 @@ const getInvoiceList = async (pool, { branchId, date, customerName }) => {
             FROM HoaDon hd
             LEFT JOIN KhachHang kh ON hd.MaKH = kh.MaKH
             LEFT JOIN NguoiDung nd ON kh.MaKH = nd.MaND
-            WHERE hd.MaCN = 'CN003'
+            WHERE hd.MaCN = @MaCN
                   AND CAST(hd.NgayLap AS DATE) = @Ngay
                   AND (nd.HoTen LIKE @TenKH OR @TenKH = '%%')
             ORDER BY hd.NgayLap DESC
@@ -32,4 +32,32 @@ const getInvoiceList = async (pool, { branchId, date, customerName }) => {
     }
 };
 
-export default { getInvoiceList };
+
+export const getDailySalesStatistics = async (pool, branchId, targetDate) => {
+    try {
+        const query = `
+            SELECT 
+                COALESCE(SUM(hd.TongTien), 0) AS DoanhThuNgay,
+                COUNT(hd.MaHoaDon) AS SoLuongHoaDon
+            FROM HoaDon hd
+            WHERE 
+                -- 1. Lọc theo chi nhánh (Nếu null thì lấy hết)
+                (@MaCN IS NULL OR hd.MaCN = @MaCN)
+                
+                -- 2. Lọc theo ngày (Nếu targetDate null thì lấy hôm nay)
+                AND CAST(hd.NgayLap AS DATE) = COALESCE(@Ngay, CAST(GETDATE() AS DATE))
+        `;
+
+        const result = await pool.request()
+            .input('MaCN', sql.VarChar, branchId || null)
+            // Truyền ngày vào (định dạng YYYY-MM-DD hoặc null)
+            .input('Ngay', sql.Date, targetDate || null) 
+            .query(query);
+
+        return result.recordset[0];
+    } catch (error) {
+        throw new Error(`Lỗi lấy thống kê doanh thu: ${error.message}`);
+    }
+};
+
+export default { getInvoiceList, getDailySalesStatistics };

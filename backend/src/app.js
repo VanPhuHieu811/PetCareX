@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import customerRoutes from './routes/customer.route.js';
 import vacxinRoutes from './routes/vacxin.route.js';
+import staffRoutes from './routes/staff.route.js';
 
 const app = express();
 
@@ -47,4 +48,5 @@ app.use('/api/v1/packages', packagesRoutes);
 
 app.use('/api/v1/vacxin', vacxinRoutes);
 
+app.use('/api/v1/staff', staffRoutes);
 export default app;

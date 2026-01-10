@@ -44,3 +44,12 @@ export async function apiPut(path, body) {
   });
   return handle(res);
 }
+
+export async function apiPatch(path, body) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "PATCH",
+    headers: buildHeaders(),
+    body: JSON.stringify(body),
+  });
+  return handle(res);
+}
