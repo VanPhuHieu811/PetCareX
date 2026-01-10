@@ -1,35 +1,46 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserAccount, AuthState } from '../types';
-import { MOCK_ACCOUNTS } from '../services/mockDataQL';
 import { loginApi, registerApi } from "../api/authApi";
-// Mở rộng interface AuthState để có thêm hàm register
-interface AuthContextType extends AuthState {}
+
+// 1. Thêm loading vào Interface
+interface AuthContextType extends AuthState {
+  loading: boolean; // <--- Thêm dòng này
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserAccount | null>(null);
-  
-  // Dùng state nội bộ để lưu danh sách tài khoản (bao gồm cả tài khoản mới đăng ký)
-  const [accounts, setAccounts] = useState<UserAccount[]>(MOCK_ACCOUNTS);
+  // 2. Thêm state loading, mặc định là TRUE (đang tải)
+  const [loading, setLoading] = useState<boolean>(true); 
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('petcare_user');
-    if (storedUser) setUser(JSON.parse(storedUser));
+    const checkUser = async () => {
+      try {
+        const storedUser = localStorage.getItem('petcare_user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error("Lỗi đọc local storage", error);
+      } finally {
+        // 3. QUAN TRỌNG: Dù có user hay không, sau khi check xong thì tắt loading
+        setLoading(false);
+      }
+    };
+
+    checkUser();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const res = await loginApi(email, password);
-
       if (!res.success) return false;
 
       const { user, token } = res.data;
-
-      // Chuẩn hoá role cho FE (giữ logic điều hướng của bạn)
       const normalizedUser = {
         ...user,
-        role: user.VaiTro ?? user.role, // ưu tiên VaiTro backend
+        role: user.VaiTro ?? user.role,
       };
 
       setUser(normalizedUser);
@@ -40,8 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (err) {
       return false;
     }
-  };    
-
+  };
 
   const logout = () => {
     setUser(null);
@@ -49,7 +59,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem("petcare_token");
   };
 
-  // Hàm Đăng ký: Mặc định role là "Khách hàng" để khớp với ProtectedRoute
   const register = async (email: string, password: string, name: string, cccd: string): Promise<boolean> => {
     try {
       const res = await registerApi(email, password, name, cccd);
@@ -59,10 +68,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-
-
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
+    // 4. Truyền loading xuống Provider
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register, loading }}>
       {children}
     </AuthContext.Provider>
   );

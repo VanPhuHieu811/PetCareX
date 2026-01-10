@@ -5,6 +5,7 @@ export const getCart = async (pool, customerId) => {
           p.MaPhieuDV, 
           p.TrangThai, 
           d.MaSP,
+          d.MaCN,
           d.TenSP_SnapShot as TenSP,
           d.DonGia_LucMua as DonGia,
           d.SoLuongMua
@@ -92,11 +93,12 @@ export const removeFromCart = async (pool, cartId, productId) => {
   }
 };
 
-export const checkout = async (pool, cartId, branchId) => {
+export const checkout = async (pool, cartId, branchId, address) => {
   try {
     const request = pool.request();
     request.input('cartId', cartId);
     request.input('branchId', branchId);
+    request.input('address', address);
     const result = await request.execute('sp_checkout');
     return result.recordset[0];
   } catch (err) {

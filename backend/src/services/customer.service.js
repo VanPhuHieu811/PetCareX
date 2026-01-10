@@ -61,10 +61,10 @@ export const getCurrentCustomer = async (pool, customerId) => {
 export const updateCurrentCustomer = async (pool, customerId, updateData) => {
   try {
     const request = pool.request();
-    
+
     const allowedFields = ['HoTen', 'NgaySinh', 'GioiTinh', 'SDT', 'CCCD'];
     let updateFields = [];
-    
+
     allowedFields.forEach(field => {
       if (updateData[field] !== undefined && updateData[field] !== null) {
         request.input(field, updateData[field]);
@@ -99,6 +99,7 @@ export const getCustomerReceipts = async (pool, customerId) => {
       select *
       from HoaDon hd
       where hd.MaKH = @MaKH
+      order by hd.NgayLap desc
     `
     request.input('MaKH', customerId);
 
@@ -163,11 +164,13 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
         pd.MaCN,
         pd.TenKhachHang,
         pd.TenThuCung,
-        ndBS.HoTen AS TenBacSi
+        ndBS.HoTen AS TenBacSi,
+        dmh.DiaChiNhanHang
       FROM ChiTietHoaDon cthd
       JOIN PhieuDatDV pd           ON pd.MaPhieuDV = cthd.MaPhieuDV
       LEFT JOIN NhanVien bs        ON bs.MaNV = pd.BacSiPhuTrach
       LEFT JOIN NguoiDung ndBS     ON ndBS.MaND = bs.MaNV
+      LEFT JOIN DatMuaHang dmh     ON dmh.MaPhieuDV = pd.MaPhieuDV
       WHERE cthd.MaHoaDon = @MaHoaDon
       ORDER BY cthd.MaPhieuDV
     `;
@@ -229,13 +232,13 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
         return acc;
       }, {});
 
-    const mapMuaHang   = groupByPhieu(muaHangRs.recordset);
-    const mapKhamBenh  = groupByPhieu(khamBenhRs.recordset);
+    const mapMuaHang = groupByPhieu(muaHangRs.recordset);
+    const mapKhamBenh = groupByPhieu(khamBenhRs.recordset);
     const mapTiemPhong = groupByPhieu(tiemPhongRs.recordset);
 
     const services = servicesRs.recordset.map(s => {
       let items = [];
-      if (s.LoaiDichVu === 'Mua hàng')     items = mapMuaHang[s.MaPhieuDV]  || [];
+      if (s.LoaiDichVu === 'Mua hàng') items = mapMuaHang[s.MaPhieuDV] || [];
       else if (s.LoaiDichVu === 'Khám bệnh') items = mapKhamBenh[s.MaPhieuDV] || [];
       else if (s.LoaiDichVu === 'Tiêm phòng') items = mapTiemPhong[s.MaPhieuDV] || [];
       return { ...s, items };

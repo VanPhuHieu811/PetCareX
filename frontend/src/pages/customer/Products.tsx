@@ -42,23 +42,23 @@ const QUICK_FILTERS = [
 
 export default function Products() {
     const { addToCart } = useCart();
-    
+
     // --- State Dữ liệu ---
     const [rawProducts, setRawProducts] = useState<BackendProduct[]>([]);
     const [branchList, setBranchList] = useState<Branch[]>([]);
-    
+
     const [loadingProducts, setLoadingProducts] = useState(false);
     const [loadingBranches, setLoadingBranches] = useState(false);
-    
+
     const [pagination, setPagination] = useState<PaginationMeta | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
 
     // --- State Bộ lọc & UI ---
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedBranch, setSelectedBranch] = useState<string>(''); 
+    const [selectedBranch, setSelectedBranch] = useState<string>('');
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
-    
+
     const branchDropdownRef = useRef<HTMLDivElement>(null);
 
     // --- Hàm gọi API ---
@@ -81,12 +81,12 @@ export default function Products() {
         setLoadingProducts(true);
         try {
             // CẬP NHẬT: Thay đổi limit từ 8 lên 12
-            const data = await productApi.getAll(page, 12, searchKeyword); 
+            const data = await productApi.getAll(page, 12, searchKeyword);
 
             if (data.success) {
                 const productArray = Array.isArray(data.data) ? data.data : (data.data.data || []);
                 setRawProducts(productArray);
-                
+
                 if (data.data.pagination) setPagination(data.data.pagination);
                 else setPagination(data.pagination);
             }
@@ -104,12 +104,12 @@ export default function Products() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setCurrentPage(1); 
+            setCurrentPage(1);
             fetchProducts(1, searchQuery);
         }, 500);
         return () => clearTimeout(timer);
     }, [searchQuery]);
-    
+
     useEffect(() => {
         fetchProducts(currentPage, searchQuery);
     }, [currentPage]);
@@ -128,7 +128,7 @@ export default function Products() {
     // --- Logic hiển thị ---
     const displayProducts: Product[] = rawProducts.map(item => {
         let stock = 0;
-        
+
         if (selectedBranch && selectedBranch !== 'All') {
             stock = item.SoLuongTonKho[selectedBranch] || 0;
         } else {
@@ -152,18 +152,18 @@ export default function Products() {
         };
     }).filter(product => {
         let matchCategory = false;
-        
+
         if (selectedCategory === 'All') {
             matchCategory = true;
         } else {
             const categoryInDB = product.category ? product.category.toLowerCase() : '';
             const categoryFilter = selectedCategory.toLowerCase();
-            
+
             matchCategory = categoryInDB.includes(categoryFilter);
         }
 
         const matchSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-        
+
         return matchCategory && matchSearch;
     });
 
@@ -192,7 +192,7 @@ export default function Products() {
                             ) : (
                                 <MapPin className="h-5 w-5 text-gray-500" />
                             )}
-                            
+
                             <span className="text-sm font-medium text-gray-700">
                                 {selectedBranch === 'All' ? 'Toàn bộ hệ thống' : currentBranchName}
                             </span>
@@ -208,7 +208,7 @@ export default function Products() {
                                     <span className="font-medium">Toàn bộ hệ thống</span>
                                     {selectedBranch === 'All' && <Check className="w-5 h-5 text-blue-600" />}
                                 </button>
-                                
+
                                 {branchList.map(branch => (
                                     <button
                                         key={branch.MaCN}
@@ -301,8 +301,8 @@ export default function Products() {
                                             "text-xs font-medium px-2 py-1 rounded",
                                             product.isInStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                         )}>
-                                            {product.isInStock 
-                                                ? `Sẵn sàng: ${product.stock} ${product.description ? `(${product.description.split(': ')[1]})` : ''}` 
+                                            {product.isInStock
+                                                ? `Sẵn sàng: ${product.stock} ${product.description ? `(${product.description.split(': ')[1]})` : ''}`
                                                 : 'Tạm hết hàng'}
                                         </span>
                                     </div>
@@ -310,7 +310,11 @@ export default function Products() {
                                     <button
                                         disabled={!product.isInStock}
                                         onClick={() => {
-                                            addToCart(product, 1);
+                                            if (!selectedBranch || selectedBranch === 'All') {
+                                                alert('Vui lòng chọn một chi nhánh cụ thể để thêm vào giỏ hàng.');
+                                                return;
+                                            }
+                                            addToCart(product, 1, selectedBranch);
                                             alert(`Đã thêm ${product.name} vào giỏ!`);
                                         }}
                                         className={clsx(
@@ -333,7 +337,7 @@ export default function Products() {
                         <div className="text-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             <div className="text-gray-400 mb-2 text-4xl">📦</div>
                             <p className="text-gray-500">
-                                {selectedCategory !== 'All' 
+                                {selectedCategory !== 'All'
                                     ? `Không có sản phẩm thuộc danh mục "${QUICK_FILTERS.find(f => f.id === selectedCategory)?.label}"`
                                     : 'Không tìm thấy sản phẩm nào phù hợp.'}
                             </p>
@@ -350,7 +354,7 @@ export default function Products() {
                             >
                                 <ChevronLeft className="w-4 h-4" /> Trang trước
                             </button>
-                            
+
                             <span className="text-sm font-medium text-gray-700">
                                 Trang <span className="text-blue-600 font-bold">{pagination.page}</span> / {pagination.totalPages}
                             </span>

@@ -1,6 +1,7 @@
 create or alter procedure sp_checkout
     @cartId varchar(10),
-    @branchId varchar(10)
+    @branchId varchar(10),
+    @address nvarchar(200)
 as
 begin
     set nocount on;
@@ -17,6 +18,11 @@ begin
         begin
              raiserror(N'Phiếu dịch vụ không ở trạng thái Đang chờ.', 16, 1);
         end
+
+        -- UPDATE DIA CHI NHAN HANG
+        update dbo.DatMuaHang
+        set DiaChiNhanHang = @address
+        where MaPhieuDV = @cartId;
 
         select @CustomerId = MaKH 
         from dbo.PhieuDatDV 
@@ -48,7 +54,7 @@ begin
 
         -- 3. Tạo Hóa Đơn
         insert into dbo.HoaDon (MaHoaDon, MaNVLap, MaKH, MaCN, MaKhuyenMai, NgayLap, TongTien, HinhThucThanhToan)
-        values (@NewMaHD, null, @CustomerId, null, null, getdate(), @TongTien, @paymentMethod);
+        values (@NewMaHD, null, @CustomerId, @branchId, null, getdate(), @TongTien, @paymentMethod);
 
         -- 4. Tạo Chi Tiết Hóa Đơn
         insert into dbo.ChiTietHoaDon (MaHoaDon, MaPhieuDV, TongTienDV)

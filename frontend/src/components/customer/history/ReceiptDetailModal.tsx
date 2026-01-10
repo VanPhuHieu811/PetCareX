@@ -53,6 +53,7 @@ export type ServiceBase = {
   TenKhachHang: string;
   TenThuCung: string | null;
   TenBacSi: string | null;
+  DiaChiNhanHang?: string | null;
   items: (KhamBenhItem | TiemPhongItem | MuaHangItem)[];
 };
 
@@ -203,7 +204,7 @@ function RenderServiceContent({ s }: { s: ServiceBase }) {
   if (type.includes("khám")) return <RenderKhamBenhItems items={s.items as KhamBenhItem[]} />;
   if (type.includes("tiêm")) return <RenderTiemPhongItems items={s.items as TiemPhongItem[]} />;
   if (type.includes("mua")) return <RenderMuaHangItems items={s.items as MuaHangItem[]} />;
-  
+
   // Fallback nếu có loại dịch vụ lạ
   return <div className="p-4 text-sm text-gray-500">Chi tiết dịch vụ chưa được hỗ trợ hiển thị.</div>;
 }
@@ -216,7 +217,7 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -235,8 +236,8 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
         <div className="overflow-y-auto p-6 space-y-6 bg-gray-50 flex-1">
           {loading && (
             <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-               Đang tải dữ liệu...
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              Đang tải dữ liệu...
             </div>
           )}
 
@@ -252,14 +253,14 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar className="w-5 h-5"/></div>
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar className="w-5 h-5" /></div>
                     <div>
                       <div className="text-xs text-gray-500">Ngày lập</div>
                       <div className="font-medium text-gray-900">{formatDateTime(header.NgayLapDon)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg"><User className="w-5 h-5"/></div>
+                    <div className="p-2 bg-green-50 text-green-600 rounded-lg"><User className="w-5 h-5" /></div>
                     <div>
                       <div className="text-xs text-gray-500">Nhân viên lập</div>
                       <div className="font-medium text-gray-900">{header.TenNVLap}</div>
@@ -269,14 +270,14 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
 
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><MapPin className="w-5 h-5"/></div>
+                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><MapPin className="w-5 h-5" /></div>
                     <div>
                       <div className="text-xs text-gray-500">Chi nhánh</div>
                       <div className="font-medium text-gray-900">{header.TenCN}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><CreditCard className="w-5 h-5"/></div>
+                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><CreditCard className="w-5 h-5" /></div>
                     <div>
                       <div className="text-xs text-gray-500">Thanh toán</div>
                       <div className="font-medium text-gray-900">{header.HinhThucThanhToan}</div>
@@ -294,7 +295,7 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
               {/* Danh sách phiếu dịch vụ */}
               <div className="space-y-4">
                 <h3 className="font-bold text-gray-900 text-lg">Danh sách phiếu dịch vụ ({services.length})</h3>
-                
+
                 {services.length === 0 && <div className="text-gray-500 italic">Không có dịch vụ nào trong hóa đơn này.</div>}
 
                 {services.map((s, index) => {
@@ -309,7 +310,7 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
                           </div>
                           <div>
                             <div className="font-bold text-gray-900 flex items-center gap-2">
-                              {s.LoaiDichVu} 
+                              {s.LoaiDichVu}
                               <span className="px-2 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500 border border-gray-200 font-mono">
                                 {s.MaPhieuDV}
                               </span>
@@ -317,6 +318,7 @@ export default function ReceiptDetailModal({ open, loading, error, data, onClose
                             <div className="text-sm text-gray-500 mt-1 space-y-0.5">
                               {s.TenThuCung && <p>Thú cưng: <span className="font-medium text-gray-700">{s.TenThuCung}</span></p>}
                               {s.TenBacSi && <p>Bác sĩ: <span className="font-medium text-gray-700">{s.TenBacSi}</span></p>}
+                              {s.DiaChiNhanHang && <p>Địa chỉ nhận hàng: <span className="font-medium text-gray-700">{s.DiaChiNhanHang}</span></p>}
                             </div>
                           </div>
                         </div>

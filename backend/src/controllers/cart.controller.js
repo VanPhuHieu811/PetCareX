@@ -84,12 +84,19 @@ export const removeFromCart = async (req, res) => {
 export const checkout = async (req, res) => {
   try {
     const customerId = req.user.id;
-    const { branchId } = req.body;
+    const { branchId, address } = req.body;
 
     if (!branchId) {
       return res.status(400).json({
         success: false,
         message: 'Missing required field: branchId'
+      });
+    }
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập địa chỉ nhận hàng'
       });
     }
 
@@ -104,7 +111,7 @@ export const checkout = async (req, res) => {
 
     const cartId = cartItems[0].MaPhieuDV;
 
-    const invoice = await CartService.checkout(req.db, cartId, branchId);
+    const invoice = await CartService.checkout(req.db, cartId, branchId, address);
 
     return res.status(200).json({
       success: true,
