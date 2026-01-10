@@ -3,6 +3,7 @@ import sql from 'mssql';
 export const getAllBranches = async (pool) => {
   try {
     const query = `SELECT * FROM ChiNhanh`;
+
     const result = await pool.request().query(query);
     return result.recordset;
   } catch (err) {

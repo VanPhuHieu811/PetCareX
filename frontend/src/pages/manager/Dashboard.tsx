@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_DOCTOR_STATS } from '../../services/mockDataQL';
 import { Calendar, DollarSign, Users, Stethoscope, Syringe, ShoppingBag, TrendingUp } from 'lucide-react';
-import { formatVND } from '../../components/moneyFormat'
-import { formatDate } from '../../components/dateFormat';
+import { formatVND } from '../../components/formatter'
+import { formatDate } from '../../components/formatter';
 
 const BASEURL = "http://localhost:3000/api/v1"
 

@@ -2,14 +2,17 @@ import * as petService from '../services/pet.service.js';
 
 export const getPets = async (req, res) => {
     try {
-        const userId = req.body.userId;
+        const userId = req.user.id;
 
         if(!userId) {
             return res.status(400).json({ message: 'getPets. User ID is required' });
         }
 
         const results = await petService.getAllPetsByUserId(req.db, userId);
-        res.status(200).json(results);
+        return res.status(200).json({
+            success: true,
+            data: results,
+        }); 
     } catch (error) {
         res.status(500).json({ error: 'Fail to retrieve pets', detail: error.message });
     }
@@ -17,17 +20,20 @@ export const getPets = async (req, res) => {
 
 export const getPetDetail = async (req, res) => {
     try {
+        const userId = req.user?.id
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'getPetDetail. Pet ID is required'});
         }
 
-        const pet = await petService.getPetById(req.db, id);
+        const pet = await petService.getPetById(req.db, id, userId);
+        if (!pet) return res.status(404).json({ error: 'Pet not found' });
 
-        if(!pet) {
-            return res.status(404).json({error: 'getPetDetail. Pet not found'});
-        } 
+        if (pet.MaKH !== userId) return res.status(403).json({ error: 'Forbidden' });
         res.status(200).json(pet);
     } catch (error) {
         res.status(500).json({ error: 'Fail to retrieve pet detail', detail: error.message });
@@ -36,13 +42,13 @@ export const getPetDetail = async (req, res) => {
 
 export const createNewPet = async (req, res) => {
     try {
-        console.log("Dữ liệu nhận được:", req.body);
-        const { TenTC, MaGiong, NgaySinh, TinhTrangSucKhoe, GioiTinh, MaKH } = req.body;
+        const customerId = req.user.id;        
+        const { TenTC, MaGiong, NgaySinh, TinhTrangSucKhoe, GioiTinh} = req.body;
 
-        if (!TenTC || !MaGiong || !NgaySinh || !GioiTinh || !MaKH) {
+        if (!TenTC || !MaGiong || !NgaySinh || !GioiTinh || !customerId) {
             return res.status(400).json({ error: 'Missing required pet data' });
         }
-        const newPet = await petService.createPet(req.db, {TenTC, MaGiong, NgaySinh, TinhTrangSucKhoe, GioiTinh, MaKH});
+        const newPet = await petService.createPet(req.db, {TenTC, MaGiong, NgaySinh, TinhTrangSucKhoe, GioiTinh, MaKH:customerId});
 
         res.status(201).json({
             success: true,
@@ -50,19 +56,28 @@ export const createNewPet = async (req, res) => {
             data: newPet
         });
     } catch (error) {
-        throw new Error('Error creating pet: ' + error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating pet',
+            detail: error.message,
+        });
     }
 };
 
 export const deletePet = async (req, res) => {
     try {
+        const customerId = req.user?.id;        
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'deletePet. Pet ID is required'});
         }
 
-        const deletedCount = await petService.deletePet(req.db, id);
+        const pet = await petService.getPetById(req.db, id, customerId);
+        if (!pet) return res.status(404).json({ error: 'deletePet. Pet not found' });
+        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+
+        const deletedCount = await petService.deletePet(req.db, id, customerId);
 
         if (deletedCount === 0) {
             return res.status(404).json({error: 'deletePet. Pet not found'});
@@ -82,13 +97,19 @@ export const deletePet = async (req, res) => {
 
 export const getPetExamHistory = async (req, res) =>{
     try {
+        const customerId = req.user?.id;        
+
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'getPetExamHistory. Pet ID is required'});
         }
 
-        const exams = await petService.getPetExamHistory(req.db, id);
+        const pet = await petService.getPetById(req.db, id, customerId);
+        if (!pet) return res.status(404).json({ error: 'Pet not found' });
+        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+        
+        const exams = await petService.getPetExamHistory(req.db, id, customerId);
 
         res.status(200).json({
             success: true,
@@ -102,13 +123,23 @@ export const getPetExamHistory = async (req, res) =>{
 
 export const updatePet = async (req, res) => {
     try {
+        const customerId = req.user?.id;
+
+        if (!customerId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
         const {MaTC, ...updateData} = req.body;
 
         if (!MaTC){
             return res.status(400).json({error: 'updatePet. Pet ID is required'});
         }
 
-        const rowsAffected = await petService.updatePet(req.db, { MaTC, ...updateData });
+        const pet = await petService.getPetById(req.db, MaTC, customerId);
+        if (!pet) return res.status(404).json({ error: 'updatePet. Pet not found' });
+        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+
+        const rowsAffected = await petService.updatePet(req.db, { MaTC, MaKH: customerId, ...updateData });
 
         if (rowsAffected === 0){
             return res.status(404).json({error: 'updatePet. Pet not found'});
@@ -127,11 +158,17 @@ export const updatePet = async (req, res) => {
 
 export const getPetVaccinationHistory = async (req, res) => {
     try {
+        const customerId = req.user?.id;
+
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'getPetVXHistory. Pet ID is required'})
         }
+
+        const pet = await petService.getPetById(req.db, id, customerId);
+        if (!pet) return res.status(404).json({ error: 'updatePet. Pet not found' });
+        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
 
         const vaccinations = await petService.getPetVaccinationHistory(req.db, id);
 
