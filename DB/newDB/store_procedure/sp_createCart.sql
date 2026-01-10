@@ -57,6 +57,9 @@ begin
     insert into DanhSachSP values 
     (@NewMaPDV, @productId, @branchId, @tenSP, @DonGia, @quantity)
 
+    -- Return the new Cart ID and Product Name
+    select @NewMaPDV as MaPhieuDV, @tenSP as TenSP;
+
     COMMIT TRANSACTION;
   end try
   begin catch

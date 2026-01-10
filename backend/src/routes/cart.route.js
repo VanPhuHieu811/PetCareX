@@ -5,13 +5,11 @@ import { dbMiddleware } from '../config/sqlserver.config.js';
 
 const router = express.Router();
 
-// Apply DB and Auth middleware to all cart routes
 router.use(dbMiddleware);
-router.use(authenticate);
 
-router.get('/', CartController.getCart);
-router.post('/add', CartController.addToCart);
-router.post('/remove', CartController.removeFromCart);
-router.post('/checkout', CartController.checkout);
+router.get('/', authenticate, CartController.getCart);
+router.post('/add', authenticate, CartController.addToCart);
+router.post('/remove', authenticate, CartController.removeFromCart);
+router.post('/checkout', authenticate, CartController.checkout);
 
 export default router;

@@ -1,13 +1,13 @@
 create or alter procedure sp_checkout
     @cartId varchar(10),
-    @staffId varchar(10),
-    @branchId varchar(10),
-    @paymentMethod nvarchar(15)
+    @branchId varchar(10)
 as
 begin
     set nocount on;
     begin try
         begin transaction;
+
+        declare @paymentMethod nvarchar(15) = N'Chuyển khoản';
 
         -- 1. Lấy thông tin cần thiết từ PhieuDatDV và DatMuaHang
         declare @TongTien int, @CustomerId varchar(10);
@@ -48,7 +48,7 @@ begin
 
         -- 3. Tạo Hóa Đơn
         insert into dbo.HoaDon (MaHoaDon, MaNVLap, MaKH, MaCN, MaKhuyenMai, NgayLap, TongTien, HinhThucThanhToan)
-        values (@NewMaHD, @staffId, @CustomerId, @branchId, null, getdate(), @TongTien, @paymentMethod);
+        values (@NewMaHD, null, @CustomerId, null, null, getdate(), @TongTien, @paymentMethod);
 
         -- 4. Tạo Chi Tiết Hóa Đơn
         insert into dbo.ChiTietHoaDon (MaHoaDon, MaPhieuDV, TongTienDV)
@@ -56,23 +56,26 @@ begin
 
         -- 5. Cập nhật trạng thái PhieuDatDV
         update dbo.PhieuDatDV
-        set TrangThai = N'Đã thanh toán' -- Hoặc 'Hoàn thành'
+        set TrangThai = N'Đã thanh toán'
         where MaPhieuDV = @cartId;
 
-        -- 6. Trừ Tồn Kho (SPCuaTungCN)
-        update Kho
-        set Kho.SoLuongTonKho = Kho.SoLuongTonKho - Gio.SoLuongMua
-        from dbo.SPCuaTungCN Kho
-        inner join dbo.DanhSachSP Gio on Kho.MaSP = Gio.MaSP and Kho.MaCN = Gio.MaCN
-        where Gio.MaPhieuDV = @cartId;
+        -- -- 6. Trừ Tồn Kho (SPCuaTungCN)
+        -- update Kho
+        -- set Kho.SoLuongTonKho = Kho.SoLuongTonKho - Gio.SoLuongMua
+        -- from dbo.SPCuaTungCN Kho
+        -- inner join dbo.DanhSachSP Gio on Kho.MaSP = Gio.MaSP and Kho.MaCN = Gio.MaCN
+        -- where Gio.MaPhieuDV = @cartId;
 
-        -- Kiểm tra nếu tồn kho bị âm -> Rollback
-        if exists (select 1 from dbo.SPCuaTungCN where SoLuongTonKho < 0)
-        begin
-             raiserror(N'Số lượng tồn kho không đủ để thanh toán.', 16, 1);
-             rollback transaction;
-             return;
-        end
+        -- -- Kiểm tra nếu tồn kho bị âm -> Rollback
+        -- if exists (select 1 from dbo.SPCuaTungCN where SoLuongTonKho < 0)
+        -- begin
+        --      raiserror(N'Số lượng tồn kho không đủ để thanh toán.', 16, 1);
+        --      rollback transaction;
+        --      return;
+        -- end
+
+        -- Return newly created Invoice
+        select * from dbo.HoaDon where MaHoaDon = @NewMaHD;
 
         commit transaction;
     end try

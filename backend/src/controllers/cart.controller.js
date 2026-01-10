@@ -29,11 +29,13 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    await CartService.addToCart(req.db, customerId, customerName, branchId, productId, quantity);
+    const result = await CartService.addToCart(req.db, customerId, customerName, branchId, productId, quantity);
 
     return res.status(200).json({
       success: true,
-      message: 'Item added to cart successfully'
+      message: 'Item added to cart successfully',
+      cartId: result.cartId,
+      productName: result.productName || null
     });
   } catch (error) {
     return res.status(500).json({
@@ -58,11 +60,18 @@ export const removeFromCart = async (req, res) => {
 
     const cartId = cartItems[0].MaPhieuDV; // All items share the same MaPhieuDV
 
-    await CartService.removeFromCart(req.db, cartId, productId);
+    const result = await CartService.removeFromCart(req.db, cartId, productId);
+
+    let message = `Item '${result.ProductName || productId}' removed from cart`;
+    if (result.DeletedCartId) {
+      message += `. Cart ${result.DeletedCartId} was also removed as it became empty`;
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Item removed from cart'
+      message: message,
+      productName: result.ProductName || null,
+      deletedCartId: result.DeletedCartId || null
     });
   } catch (error) {
     return res.status(500).json({
@@ -75,12 +84,12 @@ export const removeFromCart = async (req, res) => {
 export const checkout = async (req, res) => {
   try {
     const customerId = req.user.id;
-    const { branchId, paymentMethod } = req.body;
+    const { branchId } = req.body;
 
-    if (!branchId || !paymentMethod) {
+    if (!branchId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: branchId, paymentMethod'
+        message: 'Missing required field: branchId'
       });
     }
 
@@ -95,19 +104,12 @@ export const checkout = async (req, res) => {
 
     const cartId = cartItems[0].MaPhieuDV;
 
-    // StaffId can be null if online self-checkout? 
-    // sp_checkout takes @staffId. If online, who is the staff?
-    // Maybe NULL is allowed? schema: MaNVLap varchar(10) NOT NULL in HoaDon...
-    // Wait, HoaDon.MaNVLap is NOT NULL.
-    // So we need a default "System" staff or "Online" staff.
-
-    const staffId = 'NV0087';
-
-    await CartService.checkout(req.db, cartId, staffId, branchId, paymentMethod);
+    const invoice = await CartService.checkout(req.db, cartId, branchId);
 
     return res.status(200).json({
       success: true,
-      message: 'Checkout successful'
+      message: 'Checkout successful',
+      invoice: invoice || null
     });
 
   } catch (error) {

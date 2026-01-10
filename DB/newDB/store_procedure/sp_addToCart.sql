@@ -46,6 +46,8 @@ begin
         set TongTien = @TongTien
         where MaPhieuDV = @cartId;
 
+        select @TenSP as TenSP; -- return product name for confirmation
+
         commit transaction;
     end try
     begin catch

@@ -41,6 +41,8 @@ export const addToCart = async (pool, customerId, customerName, branchId, produc
 
     let cartId = null;
 
+    let productName = null;
+
     if (checkResult.recordset.length > 0) {
       // Cart exists -> Call sp_addToCart
       cartId = checkResult.recordset[0].MaPhieuDV;
@@ -51,11 +53,12 @@ export const addToCart = async (pool, customerId, customerName, branchId, produc
       requestAdd.input('branchId', branchId);
       requestAdd.input('quantity', quantity);
 
-      await requestAdd.execute('sp_addToCart');
+      const resultAdd = await requestAdd.execute('sp_addToCart');
+      if (resultAdd.recordset && resultAdd.recordset.length > 0) {
+        productName = resultAdd.recordset[0].TenSP;
+      }
     } else {
       // Cart does not exist -> Call sp_createCart
-      // sp_createCart creates cart AND adds the first item
-
       const requestCreate = pool.request();
       requestCreate.input('customerId', customerId);
       requestCreate.input('nameCustomer', customerName);
@@ -63,8 +66,14 @@ export const addToCart = async (pool, customerId, customerName, branchId, produc
       requestCreate.input('branchId', branchId);
       requestCreate.input('quantity', quantity);
 
-      await requestCreate.execute('sp_createCart');
+      const resultCreate = await requestCreate.execute('sp_createCart');
+      if (resultCreate.recordset && resultCreate.recordset.length > 0) {
+        cartId = resultCreate.recordset[0].MaPhieuDV;
+        productName = resultCreate.recordset[0].TenSP;
+      }
     }
+
+    return { cartId, productName };
   } catch (err) {
     throw new Error(`Add to cart failed: ${err.message}`);
   }
@@ -75,20 +84,21 @@ export const removeFromCart = async (pool, cartId, productId) => {
     const request = pool.request();
     request.input('cartId', cartId);
     request.input('productId', productId);
-    await request.execute('sp_removeFromCart');
+    const result = await request.execute('sp_removeFromCart');
+    // result.recordset -> [{ ProductName: '...', DeletedCartId: '...' }]
+    return result.recordset[0];
   } catch (err) {
     throw new Error(`Remove from cart failed: ${err.message}`);
   }
 };
 
-export const checkout = async (pool, cartId, staffId, branchId, paymentMethod) => {
+export const checkout = async (pool, cartId, branchId) => {
   try {
     const request = pool.request();
     request.input('cartId', cartId);
-    request.input('staffId', staffId);
     request.input('branchId', branchId);
-    request.input('paymentMethod', paymentMethod);
-    await request.execute('sp_checkout');
+    const result = await request.execute('sp_checkout');
+    return result.recordset[0];
   } catch (err) {
     throw new Error(`Checkout failed: ${err.message}`);
   }
