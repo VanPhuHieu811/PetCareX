@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { petHistories, petVaccinePackages } from '../../services/mockDataBS';
+import { getPetExams, getPetVaccinations } from "../../api/petApi";
+import { getCustomerDetails } from "../../api/receptionAPI";
 import VaccinePackage from '../../components/doctor/common/VaccinePackage';
 
 const PetDetail = () => {
