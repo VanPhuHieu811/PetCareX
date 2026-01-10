@@ -121,14 +121,15 @@ BEGIN
 END;
 GO
 
+
+
 select *
-from LoaiThanhVien
+from ChiNhanh
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau
 from NguoiDung nd 
 join TaiKhoan tk on tk.MaND = nd.MaND
-join KhachHang k on k.MaKH = nd.MaND
-where nd.MaND = 'kh02251' or nd.HoTen = N'Văn Phú Hiệu'
+where tk.VaiTro = N'Quản lý'
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau, hd.MaHoaDon, count(p.MaPhieuDV)
 from NguoiDung nd 

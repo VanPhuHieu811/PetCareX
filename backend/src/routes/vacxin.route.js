@@ -8,4 +8,5 @@ router.post('/', vacxinController.addVaccine);
 router.get('/branch', vacxinController.getVacxinsByBranch);
 router.post('/branch', vacxinController.addVacxinToBranch);
 router.delete('/branch', vacxinController.deleteVacxinByBranch);
+router.get('/branch/use-rate', vacxinController.getBranchVacxinUseRate);
 export default router;

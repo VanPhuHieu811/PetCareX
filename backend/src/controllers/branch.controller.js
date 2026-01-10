@@ -51,9 +51,22 @@ export const getDateStatistics = async (req, res) => {
 	}
 };
 
+export const getStaffBranch = async (req, res) => {
+	try {
+		const userId = req.user?.id;
+		const result = await branchService.getStaffBranch(req.db, userId);
+		res.status(200).json(result);
+	} catch (err) {
+		res
+			.status(500)
+			.json({ error: 'Failed to retrieve staff branch', details: err.message });
+	}
+};
+
 export default { 
 	getAllBranches, 
 	getBranchRevenue,
 	getBranchServiceUsage,
-	getDateStatistics
+	getDateStatistics,
+	getStaffBranch
 };
