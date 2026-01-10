@@ -1,12 +1,17 @@
-import express from 'express'
-const router = express.Router()
+import express from 'express';
+import * as CartController from '../controllers/cart.controller.js';
+import { authenticate } from '../middlewares/authentication.middleware.js';
+import { dbMiddleware } from '../config/sqlserver.config.js';
 
-// khach hang an vao them san pham vao gio hang
-// -> them san pham vao gio hang (phieu dat dv) va tao phieu dat dv neu chua co
-// neu ma gio hang (phieu dat dv) da ton tai thi chi can them san pham vao phieu dat dv do
-// neu khach hang xoa san pham trong gio hang thi xoa san pham do khoi phieu dat dv, neu gio hang ko con san pham nao thi xoa phieu dat dv do luon
-// khach hang an thanh toan gio hang -> cap nhat trang thai phieu dat dv thanh da thanh toan va tao hoa don + chi tiet hoa don
+const router = express.Router();
 
-router.post('/', ) // api/v1/cart - them san pham vao gio hang lan dau -> tao phieu dat dv va san pham dau tien
-router.put('/:maphieudatdv', ) // api/v1/cart/:cartId - cap nhat gio hang (them bot san pham/dv)
-router.get('/:maphieudatdv', ) // api/v1/cart/:cartId - lay thong tin gio hang hien tai
+// Apply DB and Auth middleware to all cart routes
+router.use(dbMiddleware);
+router.use(authenticate);
+
+router.get('/', CartController.getCart);
+router.post('/add', CartController.addToCart);
+router.post('/remove', CartController.removeFromCart);
+router.post('/checkout', CartController.checkout);
+
+export default router;

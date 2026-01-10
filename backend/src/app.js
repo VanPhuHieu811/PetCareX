@@ -14,7 +14,7 @@ import doctorRoutes from './routes/doctor.route.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import customerRoutes from './routes/customer.route.js';
-import cartRoutes from './routes/cart.routes.js';
+import cartRoutes from './routes/cart.route.js';
 import vacxinRoutes from './routes/vacxin.route.js';
 
 const app = express();
