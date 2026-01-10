@@ -21,3 +21,11 @@ export function getPetExams(petId: string) {
 export function getPetVaccinations(petId: string) {
   return apiGet(`/api/v1/pets/vaccinations/${petId}`);
 }
+
+export function getPetTypes() {
+  return apiGet("/api/v1/pets/types");
+}
+
+export function getPetBreeds(typeId: string) {
+  return apiGet(`/api/v1/pets/breeds?typeId=${encodeURIComponent(typeId)}`);
+}

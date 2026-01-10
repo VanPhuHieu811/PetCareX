@@ -17,3 +17,7 @@ export function updateCustomerMe(payload: {
 export function getCustomerReceipts() {
   return apiGet("/api/v1/customers/receipts");
 }
+
+export function getReceiptDetailsApi(receiptId: string) {
+  return apiGet(`/api/v1/customers/receipts/${receiptId}`);
+}

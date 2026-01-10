@@ -3,16 +3,20 @@ import * as productService from '../services/product.service.js';
 export const getAllProducts = async (req, res) => {
   try {
     const pool = req.db;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const offset = (page - 1) * limit;
+    
+    // Lấy từ khóa tìm kiếm từ query param (?search=...)
+    const keyword = req.query.search || ''; 
 
-    const result = await productService.getAllProducts(pool, page, limit, offset);
+    // Truyền thêm keyword vào service
+    const result = await productService.getAllProducts(pool, page, limit, offset, keyword);
 
     return res.status(200).json({
       success: true,
       message: 'Products retrieved successfully',
-      data: result
+      data: result 
     });
   } catch (error) {
     return res.status(500).json({
