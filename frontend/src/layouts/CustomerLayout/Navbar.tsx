@@ -1,14 +1,35 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, Calendar, User, Menu, X, Home, PawPrint, Package } from 'lucide-react';
-import { useState } from 'react';
-import { currentUser } from '../../services/mockDataKH';
+import { useState, useMemo } from 'react'; // Nhớ import useMemo
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import clsx from 'clsx';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
     const { getTotalItems } = useCart();
+    const { user } = useAuth();
+
+    // ===============================================
+    // LOGIC ĐỒNG BỘ AVATAR VỚI PROFILE
+    // ===============================================
+    const { displayName, avatarUrl } = useMemo(() => {
+        const u = user as any;
+        // 1. Lấy tên hiển thị
+        const name = u?.HoTen || u?.name || "Khách hàng";
+        
+        // 2. Xử lý Avatar: Nếu không có ảnh thật -> Dùng ui-avatars
+        let src = u?.Avatar;
+        if (!src) {
+            // Tham số background=random sẽ tạo màu ngẫu nhiên dựa trên tên
+            // Đảm bảo logic này giống hệt bên file Profile.tsx
+            src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
+        }
+
+        return { displayName: name, avatarUrl: src };
+    }, [user]);
+    // ===============================================
 
     const navigation = [
         { name: 'Trang chủ', href: '/customer/home', icon: Home },
@@ -53,12 +74,12 @@ export default function Navbar() {
                         })}
                     </div>
 
-                    {/* User Info & Mobile Button */}
+                    {/* User Info & Cart */}
                     <div className="flex items-center">
                         <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-gray-200 ml-4">
                             {/* Cart Icon */}
                             <Link
-							to="/customer/cart"
+                                to="/customer/cart"
                                 className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors"
                                 title="Giỏ hàng"
                             >
@@ -69,15 +90,27 @@ export default function Navbar() {
                                     </span>
                                 )}
                             </Link>
-                            <span className="text-sm font-medium text-gray-700">{currentUser.name}</span>
-                            <Link to="/customer/profile" className="cursor-pointer hover:opacity-80 transition-opacity">
-                                <img
-                                    className="h-8 w-8 rounded-full border border-gray-200"
-                                    src={currentUser.avatar}
-                                    alt={currentUser.name}
+
+                            {/* Link User Info */}
+                            <Link 
+                                to="/customer/profile" 
+                                className="flex items-center gap-2 hover:bg-gray-50 py-1 px-2 rounded-full transition-all group"
+                                title="Trang cá nhân"
+                            >
+                                {/* Luôn luôn hiển thị thẻ IMG vì avatarUrl luôn có giá trị */}
+                                <img 
+                                    src={avatarUrl} 
+                                    alt="Avatar" 
+                                    className="h-9 w-9 rounded-full object-cover border border-gray-200"
                                 />
+                                
+                                <span className="text-sm font-medium text-gray-700 max-w-[150px] truncate group-hover:text-blue-700">
+                                    {displayName}
+                                </span>
                             </Link>
                         </div>
+
+                        {/* Mobile Menu Button */}
                         <div className="-mr-2 flex items-center sm:hidden">
                             <button
                                 onClick={() => setIsOpen(!isOpen)}
@@ -91,8 +124,24 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu */}
-                <div className={clsx('sm:hidden', isOpen ? 'block' : 'hidden')}>
+            <div className={clsx('sm:hidden', isOpen ? 'block' : 'hidden')}>
                 <div className="pt-2 pb-3 space-y-1">
+                    {/* User Info in Mobile Menu Header */}
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
+                        {/* Mobile Avatar */}
+                        <img 
+                            src={avatarUrl} 
+                            alt="Avatar" 
+                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                        />
+                        <div>
+                            <div className="font-medium text-gray-800">{displayName}</div>
+                            <Link to="/customer/profile" className="text-xs text-blue-600 hover:underline" onClick={() => setIsOpen(false)}>
+                                Xem hồ sơ
+                            </Link>
+                        </div>
+                    </div>
+
                     {/* Cart Link in Mobile */}
                     <Link
                         to="/customer/cart"
@@ -111,6 +160,7 @@ export default function Navbar() {
                             )}
                         </div>
                     </Link>
+
                     {navigation.map((item) => (
                         <Link
                             key={item.name}

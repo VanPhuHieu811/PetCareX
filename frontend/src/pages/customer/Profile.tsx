@@ -14,36 +14,41 @@ import {
   X,
   RefreshCcw,
   AlertCircle,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
+// Components
 import MedicalRecordDetailModal from "../../components/customer/history/MedicalRecordDetailModal";
 import AddPetModal, { PetFormData } from "../../components/customer/pets/AddPetModal";
 import PetList from "../../components/customer/pets/PetList";
 import PetMedicalHistory from "../../components/customer/pets/PetMedicalHistory";
-import { MedicalRecord } from "../../types";
-
-import { getCustomerMe, getCustomerReceipts, updateCustomerMe } from "../../api/customerApi";
+// APIs & Types
+import { MedicalRecord, Pet } from "../../types";
+import ReceiptDetailModal, { ReceiptDetail } from "../../components/customer/history/ReceiptDetailModal";
+import { getCustomerMe, getCustomerReceipts, updateCustomerMe, getReceiptDetailsApi } from "../../api/customerApi";
 import { getMyPets, createPet, getPetExams, getPetVaccinations } from "../../api/petApi";
-import { getInvoiceFull, InvoiceFullRow } from "../../api/invoiceApi";
 
 // ==========================
-// Types: minimal
+// Types: Local (User Info & List Rows)
 // ==========================
 type Tab = "orders" | "pets" | "info";
 
 type CustomerMe = {
-  MaKH?: string;
-  MaND?: string;
+  MaND: string;
   HoTen: string;
   Email: string;
-  SDT?: string | null;
-  CCCD?: string | null;
+  Avatar?: string | null;
   NgaySinh?: string | null;
   GioiTinh?: string | null;
-  VaiTro?: string;
-  TrangThai?: string;
-  LoaiTV?: string;
-  DiemTichLuy?: number;
+  SDT?: string | null;
+  CCCD?: string | null;
+  LoaiND?: string | null;
+  NgayTao?: string | null;
+  TrangThai?: string | null;
+  DiemLoyalty?: number | null;
+  TenLoaiTV?: string | null;
 };
 
 type ReceiptRow = {
@@ -61,11 +66,27 @@ type PetRow = {
   MaTC: string;
   TenTC: string;
   MaGiong?: string;
+  TenGiong?: string;
+  TenLoaiTC?: string
   NgaySinh?: string;
-  GioiTinh?: string;
   TinhTrangSucKhoe?: string | null;
   MaKH?: string;
+  GioiTinh?: string;
 };
+
+function mapPetRowToPet(p: PetRow): Pet {
+  return {
+    id: p.MaTC,
+    name: p.TenTC,
+    breedId: p.MaGiong || "—",
+    breed: p.TenGiong || "—",
+    species: p.TenLoaiTC || "—",
+    dob: p.NgaySinh ? String(p.NgaySinh).slice(0, 10) : "",
+    health: p.TinhTrangSucKhoe ?? "—",
+    customerId: p.MaKH || "",
+    gender: (p.GioiTinh === "Cái" ? "Cái" : "Đực"),
+  };
+}
 
 type ExamRow = {
   MaPhieuDV: string;
@@ -108,35 +129,10 @@ function normalizeList<T = any>(payload: any): T[] {
   return [];
 }
 
-// ==========================
-// Invoice FULL -> grouped view for UI
-// ==========================
-type InvoiceFullGroup = {
-  MaPhieuDV: string;
-  TenDV: string;
-  items: InvoiceFullRow[];
-};
-
-function groupInvoiceRows(rows: InvoiceFullRow[]): InvoiceFullGroup[] {
-  const map = new Map<string, InvoiceFullGroup>();
-
-  for (const r of rows) {
-    const key = r.MaPhieuDV || "UNKNOWN";
-    if (!map.has(key)) {
-      map.set(key, {
-        MaPhieuDV: r.MaPhieuDV,
-        TenDV: r.TenDV,
-        items: [],
-      });
-    }
-    map.get(key)!.items.push(r);
-  }
-
-  return Array.from(map.values());
-}
-
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("orders");
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // global loading/error
   const [loading, setLoading] = useState(true);
@@ -148,24 +144,22 @@ export default function Profile() {
   // editable info
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [userInfo, setUserInfo] = useState({
-    HoTen: "",
-    Email: "",
-    SDT: "",
-    CCCD: "",
-    NgaySinh: "",
-    GioiTinh: "",
+    HoTen: "", Email: "", SDT: "", CCCD: "", NgaySinh: "", GioiTinh: "",
   });
   const [savingInfo, setSavingInfo] = useState(false);
 
-  // receipts
+  // receipts list
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
 
-  // invoice detail modal (NEW)
-  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
-  const [invoiceRows, setInvoiceRows] = useState<InvoiceFullRow[] | null>(null);
-  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  // ==========================
+  // STATE CHO MODAL HÓA ĐƠN MỚI
+  // ==========================
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [receiptDetail, setReceiptDetail] = useState<ReceiptDetail | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
 
-  // pets
+  // pets list
   const [pets, setPets] = useState<PetRow[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
 
@@ -174,7 +168,7 @@ export default function Profile() {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [petHistoryLoading, setPetHistoryLoading] = useState(false);
 
-  // medical record modal
+  // medical record modal (của thú cưng)
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
 
@@ -188,20 +182,19 @@ export default function Profile() {
   const loadAll = async () => {
     setLoading(true);
     setError(null);
-
     try {
       // 1) me
       const meRes = await getCustomerMe();
-      const me: CustomerMe = (meRes as any)?.data ?? meRes;
+      const me: CustomerMe = (meRes as any)?.data;
       setCustomer(me);
 
       setUserInfo({
-        HoTen: me?.HoTen || "",
-        Email: me?.Email || "",
-        SDT: (me?.SDT as any) || "",
-        CCCD: (me?.CCCD as any) || "",
+        HoTen: me?.HoTen ?? "",
+        Email: me?.Email ?? "",
+        SDT: me?.SDT ?? "",
+        CCCD: me?.CCCD ?? "",
         NgaySinh: me?.NgaySinh ? String(me.NgaySinh).slice(0, 10) : "",
-        GioiTinh: (me?.GioiTinh as any) || "",
+        GioiTinh: me?.GioiTinh ?? "",
       });
 
       // 2) receipts + pets in parallel
@@ -221,39 +214,27 @@ export default function Profile() {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ==========================
-  // Invoice details via /api/v1/invoices/full
+  // HÀM MỞ HÓA ĐƠN (GỌI API MỚI)
   // ==========================
   const openReceipt = async (receiptId: string) => {
-    setSelectedReceiptId(receiptId);
-    setInvoiceRows(null);
-    setInvoiceLoading(true);
-    setError(null);
+    setIsReceiptModalOpen(true);
+    setReceiptLoading(true);
+    setReceiptError(null);
+    setReceiptDetail(null);
 
     try {
-      const rs = await getInvoiceFull(receiptId);
-      const rows: InvoiceFullRow[] = (rs as any)?.data ?? rs;
-
-      if (!Array.isArray(rows) || rows.length === 0) {
-        setInvoiceRows([]);
-      } else {
-        setInvoiceRows(rows);
-      }
+      const res = await getReceiptDetailsApi(receiptId);
+      // Giả sử API trả về { success: true, data: { ... } }
+      const detailData = (res as any)?.data ?? res;
+      setReceiptDetail(detailData);
     } catch (e: any) {
-      setError(e?.message || "Không lấy được chi tiết hóa đơn (invoices/full)");
-      setInvoiceRows(null);
+      setReceiptError(e?.message || "Không lấy được chi tiết hóa đơn");
     } finally {
-      setInvoiceLoading(false);
+      setReceiptLoading(false);
     }
-  };
-
-  const closeReceipt = () => {
-    setSelectedReceiptId(null);
-    setInvoiceRows(null);
-    setInvoiceLoading(false);
   };
 
   // ==========================
@@ -263,16 +244,13 @@ export default function Profile() {
     setPetHistoryLoading(true);
     setMedicalRecords([]);
     setError(null);
-
     try {
       const [examRes, vxRes] = await Promise.all([getPetExams(petId), getPetVaccinations(petId)]);
-
       const examRows: ExamRow[] = normalizeList<ExamRow>((examRes as any)?.data ?? examRes);
       const vxRows: VaccinationRow[] = normalizeList<VaccinationRow>((vxRes as any)?.data ?? vxRes);
-
       const pet = pets.find((p) => p.MaTC === petId);
 
-      const mappedExams: MedicalRecord[] = examRows.map((x) => ({
+      const mappedExams: MedicalRecord[] = examRows.map((x: any) => ({
         id: x.MaPhieuDV,
         date: x.NgayKham,
         petId,
@@ -282,10 +260,10 @@ export default function Profile() {
         diagnosis: x.MoTaChuanDoan || "—",
         symptoms: x.MoTaTrieuChung || "—",
         nextAppointment: x.NgayTaiKham || undefined,
-        prescription: [],
+        prescription: x.DonThuocList || [],
       }));
 
-      const mappedVaccines: MedicalRecord[] = vxRows.map((v) => ({
+      const mappedVaccines: MedicalRecord[] = vxRows.map((v: any) => ({
         id: v.MaPhieuDV,
         date: v.NgayTiem,
         petId,
@@ -294,7 +272,7 @@ export default function Profile() {
         doctorName: v.TenBacSi || "Bác sĩ",
         diagnosis: "Tiêm phòng",
         symptoms: "—",
-        vaccines: [{ name: v.TenVacXin, batch: "" }],
+        vaccines: v.DanhSachVacXin || [],
       }));
 
       const all = [...mappedExams, ...mappedVaccines].sort((a, b) => {
@@ -302,7 +280,6 @@ export default function Profile() {
         const tb = new Date(b.date).getTime();
         return tb - ta;
       });
-
       setMedicalRecords(all);
     } catch (e: any) {
       setError(e?.message || "Không lấy được lịch sử khám/tiêm");
@@ -311,38 +288,34 @@ export default function Profile() {
     }
   };
 
-  // ==========================
-  // Record modal
-  // ==========================
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   const handleRecordClick = (record: MedicalRecord) => {
     setSelectedRecord(record);
     setIsRecordModalOpen(true);
   };
 
   // ==========================
-  // Add pet (FIXED LOGIC)
+  // Add pet 
   // ==========================
   const handleAddPet = async (data: PetFormData) => {
     setAddingPet(true);
     setError(null);
-
     try {
-      // Backend yêu cầu TenTC, MaGiong, NgaySinh, GioiTinh
       await createPet({
         TenTC: data.name,
         MaGiong: data.breedId,
         NgaySinh: data.dob,
-        GioiTinh: data.gender, // "Đực" | "Cái"
+        GioiTinh: data.gender,
         TinhTrangSucKhoe: data.healthStatus || null,
       });
-
-      // refresh pets list
       setPetsLoading(true);
       const pRes = await getMyPets();
       setPets(normalizeList<PetRow>(pRes));
       setPetsLoading(false);
-
-      // close modal ONLY HERE (parent)
       setIsAddPetModalOpen(false);
     } catch (e: any) {
       setError(e?.message || "Thêm thú cưng thất bại");
@@ -357,7 +330,6 @@ export default function Profile() {
   const handleSaveInfo = async () => {
     setSavingInfo(true);
     setError(null);
-
     try {
       const rs = await updateCustomerMe({
         HoTen: userInfo.HoTen,
@@ -366,10 +338,8 @@ export default function Profile() {
         SDT: userInfo.SDT || null,
         CCCD: userInfo.CCCD || null,
       });
-
       const updated: CustomerMe = (rs as any)?.data ?? rs;
       setCustomer(updated);
-
       setUserInfo({
         HoTen: updated?.HoTen || "",
         Email: updated?.Email || userInfo.Email || "",
@@ -378,7 +348,6 @@ export default function Profile() {
         NgaySinh: updated?.NgaySinh ? String(updated.NgaySinh).slice(0, 10) : userInfo.NgaySinh,
         GioiTinh: (updated?.GioiTinh as any) || "",
       });
-
       setIsEditingInfo(false);
     } catch (e: any) {
       setError(e?.message || "Cập nhật thất bại");
@@ -404,33 +373,22 @@ export default function Profile() {
   // UI computed
   // ==========================
   const avatarUrl = useMemo(() => {
-    const seed = customer?.MaKH || customer?.MaND || customer?.Email || "me";
-    return `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
-  }, [customer]);
+    if (customer?.Avatar) {
+      return customer.Avatar;
+    }
 
-  const memberType = useMemo(() => {
-    const loai = (customer as any)?.LoaiTV;
-    return loai || "VIP";
-  }, [customer]);
+    const name = customer?.HoTen || "Customer";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
+  }, [customer]); 
+
+  const memberType = useMemo(() => customer?.TenLoaiTV ?? "Cơ bản", [customer]);
 
   const loyaltyPoints = useMemo(() => {
-    const v = Number((customer as any)?.DiemTichLuy ?? 0);
+    const v = Number(customer?.DiemLoyalty ?? 0);
     return Number.isFinite(v) ? v : 0;
   }, [customer]);
 
-  const uiPets = useMemo(() => {
-    return pets.map((p) => ({
-      id: p.MaTC,
-      name: p.TenTC,
-      species: "—",
-      breed: p.MaGiong || "—",
-      dob: p.NgaySinh ? String(p.NgaySinh).slice(0, 10) : "",
-      gender: (p.GioiTinh as any) || "—",
-      weight: 0,
-      avatar:
-        "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=300",
-    }));
-  }, [pets]);
+  const uiPets = useMemo<Pet[]>(() => pets.map(mapPetRowToPet), [pets]);
 
   // ==========================
   // Loading / empty states
@@ -454,16 +412,9 @@ export default function Profile() {
           <div>
             <div className="font-bold text-gray-900">Không lấy được thông tin khách hàng</div>
             <div className="text-sm text-gray-600 mt-1">{error || "Vui lòng đăng nhập lại."}</div>
-            <button
-              onClick={loadAll}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Thử lại
+            <button onClick={loadAll} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700">
+              <RefreshCcw className="w-4 h-4" /> Thử lại
             </button>
-            <div className="text-xs text-gray-500 mt-3">
-              Lưu ý: AuthContext của bạn đang lưu token ở <b>petcare_token</b>.
-            </div>
           </div>
         </div>
       </div>
@@ -473,14 +424,6 @@ export default function Profile() {
   // ==========================
   // Main render
   // ==========================
-  const invoiceGroups = invoiceRows ? groupInvoiceRows(invoiceRows) : [];
-
-  const invoiceHeader = invoiceRows && invoiceRows.length > 0 ? invoiceRows[0] : null;
-  const invoiceTotal =
-    invoiceRows && invoiceRows.length > 0
-      ? invoiceRows.reduce((sum, r) => sum + (Number(r.ThanhTien) || 0), 0)
-      : 0;
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Sidebar */}
@@ -488,21 +431,17 @@ export default function Profile() {
         {/* User Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
           <div className="relative inline-block">
-            <img
-              src={avatarUrl}
-              alt={customer.HoTen}
-              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-50"
+            <img 
+              src={avatarUrl} 
+              alt={customer.HoTen} 
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-blue-50 object-cover" 
             />
-            <div
-              className="absolute bottom-2 right-0 bg-yellow-400 text-white p-1 rounded-full border-2 border-white"
-              title={memberType}
-            >
+            <div className="absolute bottom-2 right-0 bg-yellow-400 text-white p-1 rounded-full border-2 border-white" title={memberType}>
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <h2 className="text-xl font-bold text-gray-900">{customer.HoTen}</h2>
           <p className="text-sm text-gray-500">{customer.Email}</p>
-
           <div className="mt-4 inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
             {loyaltyPoints.toLocaleString("vi-VN")} điểm thưởng
           </div>
@@ -522,9 +461,7 @@ export default function Profile() {
             onClick={() => setActiveTab("orders")}
             className={clsx(
               "w-full flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors border-l-4",
-              activeTab === "orders"
-                ? "bg-blue-50 border-blue-600 text-blue-700"
-                : "border-transparent text-gray-600 hover:bg-gray-50"
+              activeTab === "orders" ? "bg-blue-50 border-blue-600 text-blue-700" : "border-transparent text-gray-600 hover:bg-gray-50"
             )}
           >
             <Package className="w-5 h-5" /> Lịch sử hóa đơn
@@ -538,9 +475,7 @@ export default function Profile() {
             }}
             className={clsx(
               "w-full flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors border-l-4",
-              activeTab === "pets"
-                ? "bg-blue-50 border-blue-600 text-blue-700"
-                : "border-transparent text-gray-600 hover:bg-gray-50"
+              activeTab === "pets" ? "bg-blue-50 border-blue-600 text-blue-700" : "border-transparent text-gray-600 hover:bg-gray-50"
             )}
           >
             <FileText className="w-5 h-5" /> Hồ sơ thú cưng
@@ -550,12 +485,17 @@ export default function Profile() {
             onClick={() => setActiveTab("info")}
             className={clsx(
               "w-full flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors border-l-4",
-              activeTab === "info"
-                ? "bg-blue-50 border-blue-600 text-blue-700"
-                : "border-transparent text-gray-600 hover:bg-gray-50"
+              activeTab === "info" ? "bg-blue-50 border-blue-600 text-blue-700" : "border-transparent text-gray-600 hover:bg-gray-50"
             )}
           >
             <User className="w-5 h-5" /> Thông tin cá nhân
+          </button>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5" /> Đăng xuất
           </button>
         </div>
       </div>
@@ -584,143 +524,28 @@ export default function Profile() {
                     <button
                       key={id}
                       onClick={() => openReceipt(id)}
-                      className="w-full text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:border-blue-200 transition"
+                      className="w-full text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:border-blue-200 transition group"
                     >
                       <div className="bg-gray-50 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                           <span className="text-sm text-gray-500">
-                            Mã hóa đơn:{" "}
-                            <span className="font-mono text-gray-900 font-semibold">#{id}</span>
+                            Mã hóa đơn: <span className="font-mono text-gray-900 font-semibold group-hover:text-blue-600">#{id}</span>
                           </span>
                           <div className="text-xs text-gray-400 mt-1">
                             {safeDate(date)} {r.TenCN ? `• ${r.TenCN}` : ""}
                           </div>
                         </div>
-
                         <div className="flex items-center gap-3">
                           <span className="text-lg font-bold text-blue-600">{formatVND(total)}</span>
                         </div>
                       </div>
-
-                      <div className="px-6 py-4 text-sm text-gray-600">
-                        Bấm để xem chi tiết hóa đơn
+                      <div className="px-6 py-4 text-sm text-gray-600 flex justify-between items-center">
+                         <span>Xem chi tiết dịch vụ & đơn thuốc</span>
+                         <span className="text-blue-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Mở →</span>
                       </div>
                     </button>
                   );
                 })}
-              </div>
-            )}
-
-            {/* Invoice details modal (NEW) */}
-            {selectedReceiptId && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-                onClick={closeReceipt}
-              >
-                <div
-                  className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl flex items-center justify-between">
-                    <div>
-                      <div className="text-2xl font-bold">Chi tiết hóa đơn</div>
-                      <div className="text-blue-100 mt-1">#{selectedReceiptId}</div>
-                    </div>
-                    <button onClick={closeReceipt} className="p-2 hover:bg-blue-800 rounded-full">
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
-
-                  <div className="p-6 space-y-6">
-                    {invoiceLoading && (
-                      <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center gap-2">
-                        <RefreshCcw className="w-4 h-4 animate-spin" />
-                        <span className="text-gray-700 font-medium">Đang tải chi tiết...</span>
-                      </div>
-                    )}
-
-                    {!invoiceLoading && invoiceRows && (
-                      <>
-                        {invoiceRows.length === 0 ? (
-                          <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-red-700">
-                            Không có dữ liệu chi tiết hóa đơn.
-                          </div>
-                        ) : (
-                          <>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div className="bg-gray-50 p-4 rounded-xl">
-                                <div className="text-sm text-gray-500">Thông tin chung</div>
-                                <div className="font-bold text-gray-900">
-                                  Nhân viên lập: {invoiceHeader?.MaNVLap || "—"}
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  Ngày lập: {invoiceHeader?.NgayLap ? safeDate(invoiceHeader.NgayLap) : "—"}
-                                </div>
-                              </div>
-                              <div className="bg-gray-50 p-4 rounded-xl">
-                                <div className="text-sm text-gray-500">Tổng tiền (tính từ chi tiết)</div>
-                                <div className="text-2xl font-black text-blue-600">{formatVND(invoiceTotal)}</div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  Lưu ý: Tổng này cộng từ các dòng invoices/full.
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-4">
-                              {invoiceGroups.map((g) => (
-                                <div
-                                  key={g.MaPhieuDV}
-                                  className="border border-gray-100 rounded-2xl overflow-hidden"
-                                >
-                                  <div className="bg-gray-50 px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                    <div>
-                                      <div className="font-bold text-gray-900">
-                                        {g.TenDV} • Mã PDV: <span className="font-mono">{g.MaPhieuDV}</span>
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        Số dòng chi tiết: {g.items.length}
-                                      </div>
-                                    </div>
-                                    <div className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 w-fit">
-                                      {g.TenDV}
-                                    </div>
-                                  </div>
-
-                                  <div className="p-6 divide-y divide-gray-100">
-                                    {g.items.map((it, idx) => {
-                                      const qty = it.SoLuong ?? 1;
-                                      const price = it.DonGia ?? 0;
-                                      const total = it.ThanhTien ?? (price * (qty || 1));
-                                      return (
-                                        <div key={idx} className="flex justify-between py-3 first:pt-0 last:pb-0">
-                                          <div>
-                                            <div className="font-medium text-gray-900">{it.TenChiTiet}</div>
-                                            <div className="text-sm text-gray-500">
-                                              {it.LoaiChiTiet} • SL: {it.SoLuong ?? "—"} • Đơn giá: {formatVND(price)}
-                                            </div>
-                                          </div>
-                                          <div className="text-gray-900 font-semibold">{formatVND(total)}</div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </>
-                    )}
-
-                    {!invoiceLoading && invoiceRows === null && (
-                      <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-red-700">
-                        Không có dữ liệu chi tiết hóa đơn.
-                      </div>
-                    )}
-
-                    <div className="flex justify-end" />
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -731,14 +556,12 @@ export default function Profile() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Hồ sơ sức khỏe</h2>
-
               {!selectedPetId && (
                 <button
                   onClick={() => setIsAddPetModalOpen(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                 >
-                  <Plus className="w-5 h-5" />
-                  Thêm thú cưng
+                  <Plus className="w-5 h-5" /> Thêm thú cưng
                 </button>
               )}
             </div>
@@ -759,9 +582,7 @@ export default function Profile() {
                     setSelectedPetId(null);
                     setMedicalRecords([]);
                   }}
-                  onRecordClick={handleRecordClick}
                 />
-
                 {petHistoryLoading && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex items-center gap-2">
                     <RefreshCcw className="w-4 h-4 animate-spin" />
@@ -787,14 +608,12 @@ export default function Profile() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h2>
-
               {!isEditingInfo ? (
                 <button
                   onClick={() => setIsEditingInfo(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  Chỉnh sửa
+                  <Edit2 className="w-4 h-4" /> Chỉnh sửa
                 </button>
               ) : (
                 <div className="flex gap-2">
@@ -803,16 +622,14 @@ export default function Profile() {
                     disabled={savingInfo}
                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-60"
                   >
-                    <X className="w-4 h-4" />
-                    Hủy
+                    <X className="w-4 h-4" /> Hủy
                   </button>
                   <button
                     onClick={handleSaveInfo}
                     disabled={savingInfo}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-60"
                   >
-                    <Save className="w-4 h-4" />
-                    {savingInfo ? "Đang lưu..." : "Lưu"}
+                    <Save className="w-4 h-4" /> {savingInfo ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>
               )}
@@ -830,9 +647,7 @@ export default function Profile() {
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Loại thành viên</div>
                     <div className="text-lg font-bold text-gray-900">{memberType}</div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {loyaltyPoints.toLocaleString("vi-VN")} điểm thưởng
-                    </div>
+                    <div className="text-sm text-gray-500 mt-1">{loyaltyPoints.toLocaleString("vi-VN")} điểm thưởng</div>
                   </div>
                 </div>
 
@@ -856,11 +671,6 @@ export default function Profile() {
                       <Mail className="w-4 h-4" /> Email
                     </label>
                     <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">{customer.Email}</div>
-                    {isEditingInfo && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Email hiện đang không hỗ trợ cập nhật (backend chưa cho update Email).
-                      </div>
-                    )}
                   </div>
 
                   <div>
@@ -926,13 +736,6 @@ export default function Profile() {
                       <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">{customer.GioiTinh || "—"}</div>
                     )}
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Mã khách hàng</label>
-                    <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900 font-mono">
-                      {(customer as any).MaKH || (customer as any).MaND || "—"}
-                    </div>
-                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-gray-100">
@@ -940,9 +743,7 @@ export default function Profile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                       <div className="text-sm text-blue-600 font-medium mb-1">Điểm thưởng</div>
-                      <div className="text-2xl font-bold text-blue-700">
-                        {loyaltyPoints.toLocaleString("vi-VN")}
-                      </div>
+                      <div className="text-2xl font-bold text-blue-700">{loyaltyPoints.toLocaleString("vi-VN")}</div>
                       <div className="text-xs text-blue-500 mt-1">Có thể dùng để đổi quà</div>
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg border border-green-100">
@@ -952,18 +753,26 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modal chi tiết lịch sử khám bệnh */}
+      {/* Modal chi tiết lịch sử khám bệnh thú cưng (cũ) */}
       <MedicalRecordDetailModal
         record={selectedRecord}
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}
+      />
+
+      {/* MODAL CHI TIẾT HÓA ĐƠN (MỚI) */}
+      <ReceiptDetailModal
+        open={isReceiptModalOpen}
+        loading={receiptLoading}
+        error={receiptError}
+        data={receiptDetail}
+        onClose={() => setIsReceiptModalOpen(false)}
       />
 
       {/* Modal thêm thú cưng */}
