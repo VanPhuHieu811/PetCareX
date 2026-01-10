@@ -396,7 +396,7 @@ GO
 
 CREATE TABLE HoaDon (
     MaHoaDon varchar(10) NOT NULL,
-    MaNVLap varchar(10) NOT NULL,
+    MaNVLap varchar(10),
     MaKH varchar(10),
     MaCN varchar(10) NOT NULL,
     MaKhuyenMai varchar(10) NULL,
