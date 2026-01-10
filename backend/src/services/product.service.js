@@ -1,12 +1,12 @@
 import sql from 'mssql';
 
 export const getAllProducts = async (pool, page, limit, offset, keyword) => {
-  try {
-    const request = pool.request();
-    
-    // Logic: Nếu có keyword thì lọc, nếu không (keyword rỗng) thì lấy hết
-    // Dùng N'%' + @keyword + '%' để tìm kiếm tiếng Việt tương đối
-    const query = `
+	try {
+		const request = pool.request();
+
+		// Logic: Nếu có keyword thì lọc, nếu không (keyword rỗng) thì lấy hết
+		// Dùng N'%' + @keyword + '%' để tìm kiếm tiếng Việt tương đối
+		const query = `
       with ProductList as (
         select sp.MaSP, sp.TenSP, sp.GiaBan, sp.DonViTinh, lsp.TenLoaiSP,
                ROW_NUMBER() OVER (ORDER BY sp.MaSP) AS RowNum,
@@ -23,52 +23,52 @@ export const getAllProducts = async (pool, page, limit, offset, keyword) => {
       where pl.RowNum > @offset and pl.RowNum <= @offset + @limit
       order by pl.MaSP
     `;
-    
-    request.input('offset', sql.Int, offset);
-    request.input('limit', sql.Int, limit);
-    request.input('keyword', sql.NVarChar, keyword || null);
 
-    const result = await request.query(query);
-    
-    if (result.recordset.length === 0) {
-      return {
-        data: [],
-        pagination: { page, limit, totalRecords: 0, totalPages: 0 }
-      };
-    }
+		request.input('offset', sql.Int, offset);
+		request.input('limit', sql.Int, limit);
+		request.input('keyword', sql.NVarChar, keyword || null);
 
-    const totalRecords = result.recordset[0].TotalCount;
-    const productsMap = {};
-    
-    result.recordset.forEach(row => {
-      if (!productsMap[row.MaSP]) {
-        productsMap[row.MaSP] = {
-            MaSP: row.MaSP,
-            TenSP: row.TenSP,
-            GiaBan: row.GiaBan,
-            DonViTinh: row.DonViTinh,
-            TenLoaiSP: row.TenLoaiSP,
-            SoLuongTonKho: {}
-        };
-      }
-      if (row.MaCN) {
-        productsMap[row.MaSP].SoLuongTonKho[row.MaCN] = row.SoLuongTonKho;
-      }
-    });
+		const result = await request.query(query);
 
-    return {
-      data: Object.values(productsMap),
-      pagination: {
-        page: page,
-        limit: limit,
-        totalRecords: totalRecords,
-        totalPages: Math.ceil(totalRecords / limit)
-      }
-    };
+		if (result.recordset.length === 0) {
+			return {
+				data: [],
+				pagination: { page, limit, totalRecords: 0, totalPages: 0 }
+			};
+		}
 
-  } catch (error) {
-    throw new Error('Error fetching products: ' + error.message);
-  }  
+		const totalRecords = result.recordset[0].TotalCount;
+		const productsMap = {};
+
+		result.recordset.forEach(row => {
+			if (!productsMap[row.MaSP]) {
+				productsMap[row.MaSP] = {
+					MaSP: row.MaSP,
+					TenSP: row.TenSP,
+					GiaBan: row.GiaBan,
+					DonViTinh: row.DonViTinh,
+					TenLoaiSP: row.TenLoaiSP,
+					SoLuongTonKho: {}
+				};
+			}
+			if (row.MaCN) {
+				productsMap[row.MaSP].SoLuongTonKho[row.MaCN] = row.SoLuongTonKho;
+			}
+		});
+
+		return {
+			data: Object.values(productsMap),
+			pagination: {
+				page: page,
+				limit: limit,
+				totalRecords: totalRecords,
+				totalPages: Math.ceil(totalRecords / limit)
+			}
+		};
+
+	} catch (error) {
+		throw new Error('Error fetching products: ' + error.message);
+	}
 }
 
 export const getLatestProductsId = async (pool) => {
