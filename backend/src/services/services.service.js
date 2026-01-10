@@ -87,3 +87,70 @@ export const getVaccinesInStock = async (pool, branchId) => {
     throw new Error(`Lỗi lấy danh sách vắc-xin: ${err.message}`);
   }
 };
+
+export const createExamAppointment = async (pool, data) => {
+  try {
+    const result = await pool.request()
+      .input('MaKH', data.maKH)
+      .input('MaCN', data.maCN)
+      .input('MaDV', data.maDV)
+      .input('HinhThucDat', data.hinhThucDat)
+      .input('BacSiPhuTrach', data.bacSiPhuTrach)
+      .input('MaTC', data.maTC)
+      .input('NgayKham', data.ngayKham) // Định dạng ISO: "2026-01-10T09:30:00"
+      .execute('sp_TaoLichHenKhamBenh');
+      
+    return result.recordset[0];
+  } catch (err) {
+    throw new Error(`Lỗi đặt lịch khám: ${err.message}`);
+  }
+};
+
+export const createVaccineAppointment = async (pool, data) => {
+    const result = await pool.request()
+        .input('MaKH', data.maKH)
+        .input('MaCN', data.maCN)
+        .input('MaDV', data.maDV)
+        .input('HinhThucDat', data.hinhThucDat)
+        .input('BacSiPhuTrach', data.bacSiPhuTrach)
+        .input('MaTC', data.maTC)
+        .input('NgayTiem', data.ngayTiem)
+        .input('MaDK', data.maDK || null)
+        .execute('sp_TaoLichHenTiemPhong');
+    return result.recordset[0];
+};
+
+// src/services/medical.service.js
+export const getServiceDetail = async (pool, maPhieuDV) => {
+  try {
+    const result = await pool.request()
+      .input('MaPhieuDV', maPhieuDV)
+      .execute('sp_LayChiTietDichVu');
+
+    if (result.recordsets[0].length === 0) return null;
+
+    const generalInfo = result.recordsets[0][0];
+    const detailInfo = result.recordsets[1][0] || {};
+    const subList = result.recordsets[2] || []; // Đơn thuốc hoặc danh sách vắc-xin
+
+    return {
+      ...generalInfo,
+      details: detailInfo,
+      items: subList
+    };
+  } catch (err) {
+    throw new Error(`Lỗi lấy chi tiết dịch vụ: ${err.message}`);
+  }
+};
+
+export const cancelAppointment = async (pool, maPhieuDV) => {
+  try {
+    const result = await pool.request()
+      .input('MaPhieuDV', maPhieuDV)
+      .execute('sp_HuyLichHenDichVu');
+      
+    return { success: true, message: result.recordset[0].Message };
+  } catch (err) {
+    throw new Error(`Lỗi khi hủy lịch: ${err.message}`);
+  }
+};
