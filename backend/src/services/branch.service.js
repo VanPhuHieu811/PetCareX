@@ -61,9 +61,30 @@ export const getDateStatistics = async (pool, branchId, year = 0, month = 0, day
 	}
 }
 
+export const getStaffBranch = async (pool, userId) => {
+	try {
+		const query = `
+			SELECT cn.MaCN
+			FROM ChiNhanh cn
+			JOIN NhanVien nv ON cn.MaCN = nv.MaCN
+			WHERE nv.MaNV = @userId
+		`;
+		const result = await pool
+			.request()
+			.input('userId', sql.VarChar(10), userId)
+			.query(query);
+
+		const data = result.recordset;
+		return data;
+	} catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
 export default { 
 	getAllBranches,
 	getBranchRevenue,
 	getBranchServiceUsage,
 	getDateStatistics,
+	getStaffBranch,
 };

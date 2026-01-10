@@ -57,15 +57,12 @@ export const getAllProducts = async (pool, page, limit, offset, keyword, categor
       }
     });
 
-    return {
-      data: Object.values(productsMap),
-      pagination: {
-        page: page,
-        limit: limit,
-        totalRecords: totalRecords,
-        totalPages: Math.ceil(totalRecords / limit)
-      }
-    };
+		if (result.recordset.length === 0) {
+			return {
+				data: [],
+				pagination: { page, limit, totalRecords: 0, totalPages: 0 }
+			};
+		}
 
   } catch (error) {
     throw new Error('Error fetching products: ' + error.message);
