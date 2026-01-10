@@ -117,6 +117,18 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
     reqHeader.input('MaHoaDon', receiptId);
     if (customerId) reqHeader.input('MaKH', customerId);
 
+    // check truoc xem hoa don co thuoc ve khach hang ko
+    const receiptCheckSql = `
+      SELECT MaHoaDon
+      FROM HoaDon
+      WHERE MaHoaDon = @MaHoaDon
+      ${customerId ? 'AND MaKH = @MaKH' : ''}
+    `;
+    const receiptCheckRs = await reqHeader.query(receiptCheckSql);
+    if (!receiptCheckRs.recordset?.length) {
+      throw new Error('Receipt not found or access denied');
+    }
+
     const headerSql = `
       SELECT 
         hd.MaHoaDon AS MaHD,
@@ -130,13 +142,13 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
         hd.HinhThucThanhToan,
         cn.TenCN
       FROM HoaDon hd
-      JOIN NhanVien nv       ON nv.MaNV = hd.MaNVLap
-      JOIN NguoiDung ndNV    ON ndNV.MaND = nv.MaNV
-      JOIN NguoiDung ndKH    ON ndKH.MaND = hd.MaKH
-      JOIN ChiNhanh cn       ON cn.MaCN = hd.MaCN
+      LEFT JOIN NhanVien nv       ON nv.MaNV = hd.MaNVLap
+      LEFT JOIN NguoiDung ndNV    ON ndNV.MaND = nv.MaNV
+      JOIN NguoiDung ndKH         ON ndKH.MaND = hd.MaKH
+      LEFT JOIN ChiNhanh cn       ON cn.MaCN = hd.MaCN
       WHERE hd.MaHoaDon = @MaHoaDon
       ${customerId ? 'AND hd.MaKH = @MaKH' : ''}
-    `;
+  `;
     const headerRs = await reqHeader.query(headerSql);
     if (!headerRs.recordset?.length) throw new Error('Receipt not found');
 
