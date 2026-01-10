@@ -1,22 +1,24 @@
-import { useState, useEffect } from "react";
+// components/customer/pets/AddPetModal.tsx
+import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Calendar, Heart } from "lucide-react";
+import { getPetTypes, getPetBreeds } from "../../../api/petApi";
 
 interface Breed {
-  id: string;
-  name: string;
-  speciesId: string;
+  id: string;      // MaGiong
+  name: string;    // TenGiong
+  typeId: string;  // MaLoaiThuCung
 }
 
-interface Species {
-  id: string;
-  name: string;
+interface PetType {
+  id: string;   // MaLoai
+  name: string; // TenLoai
 }
 
 interface AddPetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PetFormData) => void; // parent sẽ xử lý API + đóng modal
-  submitting?: boolean; // NEW: để disable nút khi đang gọi API
+  onSubmit: (data: PetFormData) => void;
+  submitting?: boolean;
 }
 
 export interface PetFormData {
@@ -27,29 +29,6 @@ export interface PetFormData {
   healthStatus: string;
 }
 
-// Mock data (nếu muốn fetch từ API sau này thì thay bằng API)
-const species: Species[] = [
-  { id: "LTC01", name: "Chó" },
-  { id: "LTC02", name: "Mèo" },
-  { id: "LTC03", name: "Thỏ" },
-];
-
-const breeds: Breed[] = [
-  { id: "G01", name: "Poodle", speciesId: "LTC01" },
-  { id: "G02", name: "Corgi", speciesId: "LTC01" },
-  { id: "G03", name: "Husky", speciesId: "LTC02" },
-  { id: "G09", name: "Chihuahua", speciesId: "LTC07" },
-  { id: "G10", name: "Golden Retriever", speciesId: "LTC08" },
-
-  { id: "G04", name: "Mèo Anh Lông Ngắn", speciesId: "LTC02" },
-  { id: "G05", name: "Mèo Ba Tư", speciesId: "LTC03" },
-  { id: "G06", name: "Mèo Mướp", speciesId: "LTC04" },
-
-  { id: "G07", name: "Thỏ Hà Lan", speciesId: "LTC05" },
-  { id: "G08", name: "Thỏ Sư Tử", speciesId: "LTC06" },
-];
-
-
 export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: AddPetModalProps) {
   const [formData, setFormData] = useState<PetFormData>({
     name: "",
@@ -59,19 +38,13 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
     healthStatus: "Khỏe mạnh",
   });
 
-  const [selectedSpeciesId, setSelectedSpeciesId] = useState<string>("");
-  const [availableBreeds, setAvailableBreeds] = useState<Breed[]>([]);
-  const [errors, setErrors] = useState<Partial<Record<keyof PetFormData, string>>>({});
+  const [types, setTypes] = useState<PetType[]>([]);
+  const [breeds, setBreeds] = useState<Breed[]>([]);
+  const [selectedTypeId, setSelectedTypeId] = useState<string>("");
+  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [loadingBreeds, setLoadingBreeds] = useState(false);
 
-  useEffect(() => {
-    if (selectedSpeciesId) {
-      const filtered = breeds.filter((b) => b.speciesId === selectedSpeciesId);
-      setAvailableBreeds(filtered);
-      setFormData((prev) => ({ ...prev, breedId: "" }));
-    } else {
-      setAvailableBreeds([]);
-    }
-  }, [selectedSpeciesId]);
+  const [errors, setErrors] = useState<Partial<Record<keyof PetFormData, string>>>({});
 
   const resetForm = () => {
     setFormData({
@@ -81,9 +54,63 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
       gender: "Đực",
       healthStatus: "Khỏe mạnh",
     });
-    setSelectedSpeciesId("");
+    setSelectedTypeId("");
+    setBreeds([]);
     setErrors({});
   };
+
+  // Load types when open
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+      return;
+    }
+
+    (async () => {
+      setLoadingTypes(true);
+      try {
+        const res: any = await getPetTypes();
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        // Map fields (để chịu được backend naming)
+        const mapped: PetType[] = list.map((t: any) => ({
+          id: t.MaLoaiTC,
+          name: t.TenLoaiTC 
+        }));
+        setTypes(mapped.filter((x) => x.id && x.name));
+      } finally {
+        setLoadingTypes(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Load breeds when type changes
+  useEffect(() => {
+    if (!selectedTypeId) {
+      setBreeds([]);
+      setFormData((p) => ({ ...p, breedId: "" }));
+      return;
+    }
+
+    (async () => {
+      setLoadingBreeds(true);
+      try {
+        const res: any = await getPetBreeds(selectedTypeId);
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        const mapped: Breed[] = list.map((b: any) => ({
+          id: b.MaGiong,
+          name: b.TenGiong,
+          typeId: b.MaLoaiTC|| selectedTypeId,
+        }));
+        setBreeds(mapped.filter((x) => x.id && x.name));
+        setFormData((p) => ({ ...p, breedId: "" }));
+      } finally {
+        setLoadingBreeds(false);
+      }
+    })();
+  }, [selectedTypeId]);
+
+  const availableBreeds = useMemo(() => breeds, [breeds]);
 
   const handleChange = (field: keyof PetFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -94,7 +121,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
     const newErrors: Partial<Record<keyof PetFormData, string>> = {};
 
     if (!formData.name.trim()) newErrors.name = "Vui lòng nhập tên thú cưng";
-    if (!selectedSpeciesId) newErrors.breedId = "Vui lòng chọn loại thú cưng";
+    if (!selectedTypeId) newErrors.breedId = "Vui lòng chọn loại thú cưng";
     if (!formData.breedId) newErrors.breedId = "Vui lòng chọn giống";
 
     if (!formData.dob) {
@@ -114,23 +141,14 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
-    // IMPORTANT: Không tự đóng modal ở đây.
-    // Parent sẽ gọi API và đóng modal khi success.
     onSubmit(formData);
   };
 
   const handleClose = () => {
-    if (submitting) return; // tránh đóng khi đang gửi
+    if (submitting) return;
     resetForm();
     onClose();
   };
-
-  // Khi modal mở lại, đảm bảo form sạch (optional)
-  useEffect(() => {
-    if (!isOpen) resetForm();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -140,7 +158,6 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -158,7 +175,6 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Tên */}
           <div>
@@ -184,24 +200,24 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
               Loại thú cưng <span className="text-red-500">*</span>
             </label>
             <select
-              value={selectedSpeciesId}
+              value={selectedTypeId}
               onChange={(e) => {
-                setSelectedSpeciesId(e.target.value);
+                setSelectedTypeId(e.target.value);
                 setErrors((prev) => ({ ...prev, breedId: undefined }));
               }}
-              disabled={submitting}
+              disabled={submitting || loadingTypes}
               className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                errors.breedId && !selectedSpeciesId ? "border-red-300 bg-red-50" : "border-gray-300"
+                errors.breedId && !selectedTypeId ? "border-red-300 bg-red-50" : "border-gray-300"
               }`}
             >
-              <option value="">-- Chọn loại thú cưng --</option>
-              {species.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+              <option value="">{loadingTypes ? "Đang tải..." : "-- Chọn loại thú cưng --"}</option>
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>
-            {errors.breedId && !selectedSpeciesId && <p className="mt-1 text-sm text-red-600">{errors.breedId}</p>}
+            {errors.breedId && !selectedTypeId && <p className="mt-1 text-sm text-red-600">{errors.breedId}</p>}
           </div>
 
           {/* Giống */}
@@ -212,20 +228,21 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
             <select
               value={formData.breedId}
               onChange={(e) => handleChange("breedId", e.target.value)}
-              disabled={!selectedSpeciesId || submitting}
+              disabled={!selectedTypeId || submitting || loadingBreeds}
               className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                 errors.breedId ? "border-red-300 bg-red-50" : "border-gray-300"
-              } ${!selectedSpeciesId ? "bg-gray-100 cursor-not-allowed" : ""}`}
+              } ${!selectedTypeId ? "bg-gray-100 cursor-not-allowed" : ""}`}
             >
-              <option value="">-- Chọn giống --</option>
-              {availableBreeds.map((breed) => (
-                <option key={breed.id} value={breed.id}>
-                  {breed.name}
+              <option value="">
+                {!selectedTypeId ? "Chọn loại trước" : loadingBreeds ? "Đang tải giống..." : "-- Chọn giống --"}
+              </option>
+              {availableBreeds.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
                 </option>
               ))}
             </select>
-            {errors.breedId && selectedSpeciesId && <p className="mt-1 text-sm text-red-600">{errors.breedId}</p>}
-            {!selectedSpeciesId && <p className="mt-1 text-sm text-gray-500">Vui lòng chọn loại thú cưng trước</p>}
+            {errors.breedId && selectedTypeId && <p className="mt-1 text-sm text-red-600">{errors.breedId}</p>}
           </div>
 
           {/* Ngày sinh + giới tính */}
@@ -284,7 +301,6 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
             <p className="mt-1 text-sm text-gray-500">Mô tả tình trạng sức khỏe hiện tại của thú cưng</p>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
             <button
               type="button"
