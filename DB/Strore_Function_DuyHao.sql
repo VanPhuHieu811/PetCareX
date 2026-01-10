@@ -13,6 +13,7 @@ RETURN
         nd.Email,
         kh.DiemLoyalty,
         COUNT(tt.MaTC) OVER (PARTITION BY kh.makh) AS SoLuongThuCung,
+        tt.MaTC,
         tt.TenTC,
         tt.GioiTinh,
         tt.NgaySinh,
@@ -300,6 +301,8 @@ select *
 from PhieuDatDV 
 where NgayDatDV='2020-07-29 00:00:00.000'
 
-select* 
-from PhieuDatDV
-where NgayDatDV='2026-01-'
+
+select nd.HoTen, tc.*
+from KhachHang kh
+join NguoiDung nd on nd.MaND=kh.MaKH
+join ThuCung tc on tc.MaKH=kh.MaKH
