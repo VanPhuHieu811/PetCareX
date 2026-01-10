@@ -162,12 +162,13 @@ export interface Doctor {
 export interface Pet {
 	id: string;
 	name: string;
-	species: string; // Chó, Mèo
-	breed: string; // Giống
+	breedId:string;	
+	breed: string; 
+	species: string;
 	dob: string;
+	health:string;
+	customerId:string;
 	gender: 'Đực' | 'Cái';
-	weight: number;
-	avatar?: string;
 }
 
 export interface ProductAvailability {

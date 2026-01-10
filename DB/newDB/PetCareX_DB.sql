@@ -398,7 +398,7 @@ CREATE TABLE HoaDon (
     MaHoaDon varchar(10) NOT NULL,
     MaNVLap varchar(10),
     MaKH varchar(10),
-    MaCN varchar(10) NOT NULL,
+    MaCN varchar(10),
     MaKhuyenMai varchar(10) NULL,
     NgayLap datetime NOT NULL,
     TongTien int NOT NULL,
