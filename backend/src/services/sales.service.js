@@ -19,7 +19,7 @@ const getInvoiceList = async (pool, { branchId, date, customerName }) => {
             FROM HoaDon hd
             LEFT JOIN KhachHang kh ON hd.MaKH = kh.MaKH
             LEFT JOIN NguoiDung nd ON kh.MaKH = nd.MaND
-            WHERE hd.MaCN = 'CN003'
+            WHERE hd.MaCN = @MaCN
                   AND CAST(hd.NgayLap AS DATE) = @Ngay
                   AND (nd.HoTen LIKE @TenKH OR @TenKH = '%%')
             ORDER BY hd.NgayLap DESC

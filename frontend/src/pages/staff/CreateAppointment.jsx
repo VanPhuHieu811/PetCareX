@@ -3,12 +3,14 @@ import {
   ArrowLeft, Search, UserPlus, PawPrint, Calendar, 
   Clock, Stethoscope, MapPin, User, Plus, X, ChevronDown, Check
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CreateAppointment = () => {
   const navigate = useNavigate();
   
   // States quản lý luồng
+  const location=useLocation();
+  const petFromSearch = location.state?.petData;
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [customerFound, setCustomerFound] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);

@@ -73,7 +73,10 @@ const receptionAPI = {
     // apiPost sẽ nhận object customerData và gửi lên body của request
     return apiPost(`${BASE_PATH}`, customerData);
   },
-
+  
+  getPetHistory: async (maTC: string): Promise<any> => {
+    return apiGet(`${BASE_PATH}/pet-history/${maTC}`);
+  },
   /**
    * Lấy bảng lịch hẹn và thống kê
    * Endpoint: GET /appointments?date=...&status=...&search=...

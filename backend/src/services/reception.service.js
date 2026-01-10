@@ -51,7 +51,31 @@ const createCustomer = async (pool, customerData) => {
         throw error;
     }
 };
-
+const getPetMedicalHistory = async (pool, maTC) => {
+    const request = pool.request();
+    request.input('MaTC', sql.NVarChar(20), maTC);
+    
+    // Truy vấn lấy lịch sử từ các bảng Phiếu đặt dịch vụ và Phiếu khám bệnh
+    const query = `
+        SELECT 
+            p.MaPhieuDV,
+            p.NgayDatDV AS NgayLap,
+            d.TenDV,
+            pk.MoTaChuanDoan,
+            pk.MoTaTrieuChung,
+            nd.HoTen AS TenBS
+        FROM PhieuDatDV p
+        JOIN DichVu d ON p.MaDV = d.MaDV
+        LEFT JOIN DatKhamBenh pk ON p.MaPhieuDV = pk.MaPhieuDV
+        LEFT JOIN NhanVien nv ON pk.BacSiPhuTrach = nv.MaNV
+        LEFT JOIN NguoiDung nd ON nv.MaNV = nd.MaND
+        WHERE pk.MaTC =  @MaTC
+        ORDER BY p.NgayDatDV DESC
+    `;
+    
+    const result = await request.query(query);
+    return result.recordset;
+};
 const getCustomerInfo = async (pool, identifier) => {
     try {
         // Tạo request từ pool đã được kết nối
@@ -138,4 +162,4 @@ const getAvailableDoctors=async(pool,{ branchID, date, time }) => {
     }
 }
 
-export default { getCustomerInfo, getAppointmentDashboard, getAvailableDoctors, getCustomerStats , createCustomer};
+export default { getCustomerInfo, getAppointmentDashboard, getAvailableDoctors, getCustomerStats , createCustomer, getPetMedicalHistory};

@@ -29,6 +29,25 @@ const getCustomerDetails = async (req, res) => {
     }
 };
 
+const getPetHistory = async (req, res) => {
+    try {
+        const { maTC } = req.params; // Lấy mã thú cưng từ URL
+        const pool = req.db;
+
+        if (!maTC) {
+            return res.status(400).json({ message: 'Thiếu mã thú cưng' });
+        }
+
+        const history = await receptionService.getPetMedicalHistory(pool, maTC);
+        res.status(200).json({
+            success: true,
+            data: history
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy lịch sử thú cưng', error: error.message });
+    }
+};
+
 const getCustomerStatistics = async (req, res) => {
     try {
         const pool = req.db;
@@ -103,4 +122,4 @@ const addCustomer = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi thêm khách hàng', error: error.message });
     }
 };
-export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer};
+export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer, getPetHistory};
