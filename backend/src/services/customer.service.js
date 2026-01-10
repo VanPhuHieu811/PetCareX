@@ -126,10 +126,10 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
         hd.HinhThucThanhToan,
         cn.TenCN
       FROM HoaDon hd
-      JOIN NhanVien nv       ON nv.MaNV = hd.MaNVLap
-      JOIN NguoiDung ndNV    ON ndNV.MaND = nv.MaNV
-      JOIN NguoiDung ndKH    ON ndKH.MaND = hd.MaKH
-      JOIN ChiNhanh cn       ON cn.MaCN = hd.MaCN
+      LEFT JOIN NhanVien nv    ON nv.MaNV = hd.MaNVLap
+      LEFT JOIN NguoiDung ndNV ON ndNV.MaND = nv.MaNV
+      LEFT JOIN NguoiDung ndKH ON ndKH.MaND = hd.MaKH
+      LEFT JOIN ChiNhanh cn    ON cn.MaCN = hd.MaCN
       WHERE hd.MaHoaDon = @MaHoaDon
       ${customerId ? 'AND hd.MaKH = @MaKH' : ''}
     `;
