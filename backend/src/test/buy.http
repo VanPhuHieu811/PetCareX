@@ -14,11 +14,11 @@ Content-Type: application/json
 @token = {{login.response.body.$.data.token}}
 
 ### 2. Xem Giỏ Hàng
-GET {{baseUrl}}/cart
+GET {{baseUrl}}/carts
 Authorization: Bearer {{token}}
 
 ### 3. Thêm vào Giỏ (Tự tạo cart nếu chưa có)
-POST {{baseUrl}}/cart/add
+POST {{baseUrl}}/carts/add
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -29,7 +29,7 @@ Content-Type: application/json
 }
 
 ### Thêm vào Giỏ (Thêm sản phẩm khác)
-POST {{baseUrl}}/cart/add
+POST {{baseUrl}}/carts/add
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -40,7 +40,7 @@ Content-Type: application/json
 }
 
 ### 4. Xóa khỏi Giỏ
-POST {{baseUrl}}/cart/remove
+POST {{baseUrl}}/carts/remove
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -49,7 +49,7 @@ Content-Type: application/json
 }
 
 ### 5. Thanh Toán (Checkout)
-POST {{baseUrl}}/cart/checkout
+POST {{baseUrl}}/carts/checkout
 Authorization: Bearer {{token}}
 Content-Type: application/json
 

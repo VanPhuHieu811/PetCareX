@@ -33,7 +33,7 @@ app.use('/api/v1/pets', petRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/customers', customerRoutes);
-app.use('/api/v1/cart', cartRoutes);
+app.use('/api/v1/carts', cartRoutes);
 
 app.use('/api/v1/branches', branchRoutes);
 
