@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShoppingBag, Search, Plus, Minus, Trash2, CreditCard,
-  Banknote, X, CheckCircle2, User, Package, Store
+  Banknote, X, CheckCircle2, User, Package, Store, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import staffApi from '../../api/staffApi';
+import { productApi } from '../../api/productApi';
 
 const PetPOS = () => {
   // 1. Dữ liệu sản phẩm mẫu
-  const products = [
-    { id: 1, name: 'Pate Ciao Cho Mèo', price: 35000, img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200', category: 'Thức ăn' },
-    { id: 2, name: 'Hạt Royal Canin Puppy', price: 450000, img: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=200', category: 'Thức ăn' },
-    { id: 3, name: 'Xương Cao Su Gặm', price: 85000, img: 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=200', category: 'Đồ chơi' },
-    { id: 4, name: 'Sữa Tắm Master Care', price: 125000, img: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=200', category: 'Y tế' },
-    { id: 5, name: 'Vòng Cổ Chuông Đỏ', price: 45000, img: 'https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?w=200', category: 'Phụ kiện' },
-    { id: 6, name: 'Cát Vệ Sinh Đậu Nành', price: 95000, img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200', category: 'Vệ sinh' },
-  ];
+  // 1. Dữ liệu sản phẩm mẫu (Removed)
 
   // 2. States quản lý logic
   const [cart, setCart] = useState([]);
@@ -36,6 +30,44 @@ const PetPOS = () => {
     };
     fetchProfile();
   }, []);
+
+  // Product & Pagination State
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const ITEMS_PER_PAGE = 6;
+
+  useEffect(() => {
+    // Debounce search
+    const timer = setTimeout(() => {
+      const fetchProducts = async () => {
+        setLoading(true);
+        try {
+          // Pass searchTerm to getAll
+          const res = await productApi.getAll(currentPage, ITEMS_PER_PAGE, searchTerm);
+          if (res.success && res.data && res.data.data) {
+            setProducts(res.data.data.map(p => ({
+              id: p.MaSP,
+              name: p.TenSP,
+              price: p.GiaBan,
+              img: p.HinhAnh || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200',
+              category: p.TenLoaiSP || 'Khác'
+            })));
+            setTotalPages(res.data.pagination?.totalPages || 1);
+          }
+        } catch (error) {
+          console.error("Failed to fetch products:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProducts();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [currentPage, searchTerm]);
 
   // Logic Thêm vào giỏ hàng
   const addToCart = (product) => {
@@ -75,7 +107,16 @@ const PetPOS = () => {
           <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm mb-6 flex gap-4 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input type="text" placeholder="Tìm bằng tên hoặc barcode..." className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-blue-500/5 transition-all" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset to page 1 on search
+                }}
+                placeholder="Tìm bằng tên hoặc barcode..."
+                className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+              />
             </div>
             {staffProfile && (
               <div className="hidden lg:flex items-center gap-3 px-5 py-3 bg-blue-50/50 rounded-2xl border border-blue-100">
@@ -99,23 +140,56 @@ const PetPOS = () => {
           </div>
 
           {/* Grid sản phẩm */}
-          <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-6 pr-2 pb-4 scrollbar-hide">
-            {products.map(product => (
-              <div key={product.id} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
-                <div className="w-full aspect-square bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
-                  <img src={product.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                  <span className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[9px] font-black uppercase text-blue-500 shadow-sm">{product.category}</span>
-                </div>
-                <h4 className="font-black text-gray-800 text-sm mb-1 leading-tight">{product.name}</h4>
-                <p className="text-[#0095FF] font-black text-lg mb-4">{product.price.toLocaleString()}đ</p>
-                <button
-                  onClick={() => addToCart(product)}
-                  className="mt-auto w-full py-3.5 bg-blue-50 text-blue-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-sm"
-                >
-                  + THÊM VÀO GIỎ
-                </button>
+          <div className="flex-1 overflow-y-auto pr-2 pb-4 scrollbar-hide relative">
+            {loading ? (
+              <div className="flex h-full items-center justify-center text-blue-500">
+                <Loader2 className="animate-spin" size={48} />
               </div>
-            ))}
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-6 mb-4">
+                  {products.map(product => (
+                    <div key={product.id} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
+                      <div className="w-full aspect-square bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
+                        <img src={product.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <span className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[9px] font-black uppercase text-blue-500 shadow-sm">{product.category}</span>
+                      </div>
+                      <h4 className="font-black text-gray-800 text-sm mb-1 leading-tight line-clamp-2 min-h-[40px]">{product.name}</h4>
+                      <p className="text-[#0095FF] font-black text-lg mb-4">{product.price.toLocaleString()}đ</p>
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="mt-auto w-full py-3.5 bg-blue-50 text-blue-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-sm"
+                      >
+                        + THÊM VÀO GIỎ
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-auto py-4">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-3 rounded-xl bg-white border border-gray-100 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all text-blue-500"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <span className="font-black text-sm text-gray-600">
+                      Trang {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-3 rounded-xl bg-white border border-gray-100 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all text-blue-500"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
