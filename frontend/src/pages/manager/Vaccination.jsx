@@ -5,7 +5,6 @@ import { Search, Info, Activity, Plus, Syringe, X, Save, Trash2 } from 'lucide-r
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import '../../styles/Vaccination.css';
 
-const branchID = 'CN001'; // Biến lưu tạm để mô phỏng chi nhánh hiện tại
 const BASEURL = "http://localhost:3000/api/v1"
 
 function vacxinForm({ MaVacXin, TenVacXin, NgaySanXuat, GiaVacXin, DonViTinh, currentVacxin }, setCurrentVacxin) {
@@ -33,7 +32,36 @@ export default function Vaccination() {
 	// State quản lý danh sách vắc-xin (Local state simulation)
 	const [vaccines, setVaccines] = useState([]);
 	const [allVaccines, setAllVaccines] = useState([]);
+	const [vacxinUseRates, setVacxinUseRates] = useState([]);
+
+	const [branchID, setBranchID] = useState("");
+	// Lấy dữ liệu branch của quản lý
 	useEffect(() => {
+		async function fetchStaffBranch() {
+			try {
+				const token = localStorage.getItem('petcare_token');
+				const res = await fetch(`${BASEURL}/branches/staff-branch`, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+				if (!res.ok)
+					throw new Error(`Failed to fetch staff branch: ${res.status} ${res.statusText}`);
+				const data = await res.json();
+				if (data.length > 0) {
+					setBranchID(data[0].MaCN);
+				} else {
+					console.error('No branch found for the staff member.');
+				}
+			} catch (error) {
+				console.error('Error fetching staff branch:', error);
+			}
+		}
+		fetchStaffBranch();
+	}, []);
+
+	useEffect(() => {
+		if(!branchID) return;
 		async function fetchVacxinsByBranch() {
 			try {
 				const res = await fetch(`${BASEURL}/vacxin/branch?id=${branchID}`);
@@ -57,10 +85,24 @@ export default function Vaccination() {
 				console.error('Error fetching all vaccines:', error);
 			}
 		}
+		
+		async function fetchVacxinUseRates() {
+			try {
+				const res = await fetch(`${BASEURL}/vacxin/branch/use-rate?id=${branchID}`);
+				if (!res.ok)
+					throw new Error(`Failed to fetch vaccine use rates: ${res.status} ${res.statusText}`);
+				const data = await res.json();
+				setVacxinUseRates(data);
+			}
+			catch (error) {
+				console.error('Error fetching vaccine use rates:', error);
+			}
+		}
 
+		fetchVacxinUseRates();
 		fetchVacxinsByBranch();
 		fetchAllVacxins();
-	}, []);
+	}, [branchID]);
 
 	// State cho Modal thêm/sửa
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,8 +112,7 @@ export default function Vaccination() {
 		TenVacXin: '',
 		NgaySanXuat: '',
 		GiaVacXin: 0,
-		TonKho: 0,
-		LuotDat: 0
+		TonKho: 0
 	});
 
 	const filteredVaccines = vaccines.filter(v =>
@@ -126,33 +167,8 @@ export default function Vaccination() {
 
 	// Thêm vac-xin vào chi nhánh
 	const handleSave = async () => {
-		if (!currentVacxin.MaVacXin || !currentVacxin.TenVacXin) {
-			alert("Vui lòng nhập Mã và Tên vắc-xin");
-			return;
-		}
-
-		if (vaccines.find(v => v.MaVacXin === currentVacxin.MaVacXin)) {
-			alert("Mã vắc-xin đã tồn tại!");
-			return;
-		}
-
 		if (currentVacxin.TonKho <= 0) {
 			alert("Tồn kho không thể là số âm hoặc bằng 0!");
-			return;
-		}
-
-		if (currentVacxin.GiaVacXin <= 0) {
-			alert("Giá vắc-xin không thể là số âm hoặc bằng 0!");
-			return;
-		}
-
-		if (!currentVacxin.NgaySanXuat) {
-			alert("Vui lòng chọn ngày sản xuất!");
-			return;
-		}
-
-		if (isNaN(currentVacxin.GiaVacXin) || isNaN(currentVacxin.TonKho)) {
-			alert("Giá vắc-xin và Tồn kho không được có ký tự lạ!");
 			return;
 		}
 
@@ -206,7 +222,7 @@ export default function Vaccination() {
 						</button>
 					</div>
 
-					{/* Add Button */}
+					{/* Add vacxin Button */}
 					{activeTab === 'list' && (
 						<button
 							onClick={handleAddNew}
@@ -248,7 +264,7 @@ export default function Vaccination() {
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-gray-200">
-								{filteredVaccines.map((vx) => (
+								{filteredVaccines.length > 0 ? filteredVaccines.map((vx) => (
 									<tr key={vx.MaVacXin} className="hover:bg-gray-50 transition-colors">
 										<td className="px-6 py-4 text-sm font-medium text-gray-900 text-center">{vx.MaVacXin}</td>
 										<td className="px-6 py-4 text-sm text-gray-800 font-medium text-center">{vx.TenVacXin}</td>
@@ -272,14 +288,10 @@ export default function Vaccination() {
 											</button>
 										</td>
 									</tr>
-								))}
+								)): <td colSpan="7" className="text-center text-gray-500 py-4">Đang tìm kiếm danh sách vắc-xin ...</td> 
+								}
 							</tbody>
 						</table>
-						{filteredVaccines.length === 0 && (
-							<div className="p-8 text-center text-gray-500">
-								Không tìm thấy vắc-xin nào phù hợp.
-							</div>
-						)}
 					</div>
 				</div>
 			)}
@@ -293,41 +305,14 @@ export default function Vaccination() {
 						</h3>
 						<div className="h-80">
 							<ResponsiveContainer width="100%" height="100%">
-								<BarChart data={vaccines} layout="vertical">
+								<BarChart data={vacxinUseRates} layout="vertical">
 									<CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
 									<XAxis type="number" hide />
 									<YAxis type="category" dataKey="TenVacXin" width={150} tick={{ fontSize: 12 }} />
 									<Tooltip cursor={{ fill: '#f8fafc' }} />
-									<Bar dataKey="LuotDat" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={30} name="Số lượt tiêm" />
+									<Bar dataKey="LuotSuDung" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={30} name="Số lượt tiêm" />
 								</BarChart>
 							</ResponsiveContainer>
-						</div>
-					</div>
-
-					<div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-						<h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-							<Info className="mr-2 text-blue-600" />
-							Thú cưng đã tiêm trong kỳ
-						</h3>
-						<div className="overflow-y-auto h-80">
-							<table className="w-full">
-								<thead className="sticky top-0 bg-white border-b border-gray-100">
-									<tr>
-										<th className="text-left py-2 text-sm text-gray-500">Tên Thú Cưng</th>
-										<th className="text-left py-2 text-sm text-gray-500">Loại</th>
-										<th className="text-right py-2 text-sm text-gray-500">Tình trạng</th>
-									</tr>
-								</thead>
-								<tbody>
-									{[1, 2, 3, 4, 5, 6].map((i) => (
-										<tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-											<td className="py-3 text-sm font-medium">Mimi (KH0{i})</td>
-											<td className="py-3 text-sm text-gray-600">Mèo</td>
-											<td className="py-3 text-sm text-right text-green-600">Hoàn thành</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
 						</div>
 					</div>
 				</div>
@@ -373,9 +358,7 @@ export default function Vaccination() {
 
 			{isSelectOpen && !isModalOpen && (
 				<div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-					<div 
-						className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden"
-					>
+					<div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
 						<div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
 							<h2 className="text-white font-bold text-lg">
 								Nhập Vacxin vào chi nhánh

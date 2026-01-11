@@ -1,18 +1,21 @@
 import sql from 'mssql';
 
 export const getAllStaff = async (pool, page, limit, offset, branchId = null) => {
-  try {
-    const request = pool.request();
-    
-    let query = `
+	try {
+		const request = pool.request();
+
+		let query = `
       SELECT 
         nv.MaNV, 
         nd.HoTen, 
         nd.Email, 
-        nd.SDT, 
+        nd.SDT,
         nv.TenChucVu,  
         nv.NgayVaoLam, 
-        nv.TrangThai, 
+        nv.TrangThai,
+				nv.LuongCoBan,
+				nd.NgaySinh,
+				nd.GioiTinh,
         cn.TenCN
       FROM NhanVien nv
       JOIN NguoiDung nd ON nv.MaNV = nd.MaND
@@ -20,53 +23,54 @@ export const getAllStaff = async (pool, page, limit, offset, branchId = null) =>
       WHERE 1=1
     `;
 
-    if (branchId) {
-      query += ` AND nv.MaCN = @BranchId`;
-      request.input('BranchId', branchId);
-    }
+		if (branchId) {
+			query += ` AND nv.MaCN = @BranchId`;
+			request.input('BranchId', branchId);
+		}
 
-    query += `
+		query += `
       ORDER BY nv.MaNV
       OFFSET @Offset ROWS
       FETCH NEXT @Limit ROWS ONLY
     `;
 
-    request.input('Offset', parseInt(offset));
-    request.input('Limit', parseInt(limit));
+		request.input('Offset', parseInt(offset));
+		request.input('Limit', parseInt(limit));
 
-    const result = await request.query(query);
+		const result = await request.query(query);
 
-    const countRequest = pool.request();
-    let countQuery = `
+		const countRequest = pool.request();
+
+		let countQuery = `
       SELECT count(*) as total
       FROM NhanVien nv
       WHERE 1=1
     `;
 
-    if (branchId) {
-      countQuery += ` AND nv.MaCN = @BranchId`;
-      countRequest.input('BranchId', branchId);
-    }
+		if (branchId) {
+			countQuery += ` AND nv.MaCN = @BranchId`;
+			countRequest.input('BranchId', branchId);
+		}
 
-    const countResult = await countRequest.query(countQuery);
-    const total = countResult.recordset[0]?.total ?? 0;
+		const countResult = await countRequest.query(countQuery);
+		const total = countResult.recordset[0]?.total ?? 0;
 
-    return {
-      data: result.recordset,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total: total
-    };
-  } catch (err) {
-    throw new Error(`Database query failed: ${err.message}`);
-  }
+		return {
+			data: result.recordset,
+			page: parseInt(page),
+			limit: parseInt(limit),
+			total: total
+		};
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
 };
 
 export const getCurrentStaff = async (pool, staffId) => {
-  try {
-    const request = pool.request();
-    
-    const query = `
+	try {
+		const request = pool.request();
+
+		const query = `
       SELECT 
         tk.MaND, 
         nd.HoTen, 
@@ -90,57 +94,139 @@ export const getCurrentStaff = async (pool, staffId) => {
       LEFT JOIN ChiNhanh cn ON nv.MaCN = cn.MaCN
       WHERE tk.MaND = @MaND
     `;
-    request.input('MaND', staffId);
+		request.input('MaND', staffId);
 
-    const result = await request.query(query);
-    return result.recordset[0];
-  } catch (err) {
-    throw new Error(`Database query failed: ${err.message}`);
-  }
+		const result = await request.query(query);
+		return result.recordset[0];
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
 };
 
 export const updateCurrentStaff = async (pool, staffId, updateData) => {
-  try {
-    const request = pool.request();
+	try {
+		const request = pool.request();
 
-    const allowedUserFields = ['HoTen', 'NgaySinh', 'GioiTinh', 'SDT', 'CCCD'];
-    let userUpdateFields = [];
+		const allowedUserFields = ['HoTen', 'NgaySinh', 'GioiTinh', 'SDT', 'CCCD'];
+		let userUpdateFields = [];
 
-    allowedUserFields.forEach(field => {
-      if (updateData[field] !== undefined && updateData[field] !== null) {
-        if (field === 'NgaySinh' || field === 'GioiTinh') {
-             request.input(field, updateData[field]);
-        } else {
-             request.input(field, updateData[field]);
-        }
-        userUpdateFields.push(`${field} = @${field}`);
-      }
-    });
+		allowedUserFields.forEach(field => {
+			if (updateData[field] !== undefined && updateData[field] !== null) {
+				if (field === 'NgaySinh' || field === 'GioiTinh') {
+					request.input(field, updateData[field]);
+				} else {
+					request.input(field, updateData[field]);
+				}
+				userUpdateFields.push(`${field} = @${field}`);
+			}
+		});
 
-    if (userUpdateFields.length === 0) {
-      throw new Error('No valid fields to update');
-    }
+		if (userUpdateFields.length === 0) {
+			throw new Error('No valid fields to update');
+		}
 
-    const userQuery = `
+		const userQuery = `
       UPDATE NguoiDung
       SET ${userUpdateFields.join(', ')}
       WHERE MaND = @MaND
     `;
-    
-    request.input('MaND', staffId); 
-    await request.query(userQuery);
 
-    return await getCurrentStaff(pool, staffId);
-  } catch (err) {
-    if (err.message.includes('UQ_NguoiDung_CCCD')) {
-        throw new Error('CCCD đã tồn tại trong hệ thống.');
-    }
-    throw new Error(`Database update failed: ${err.message}`);
-  }
+		request.input('MaND', staffId);
+		await request.query(userQuery);
+
+		return await getCurrentStaff(pool, staffId);
+	} catch (err) {
+		if (err.message.includes('UQ_NguoiDung_CCCD')) {
+			throw new Error('CCCD đã tồn tại trong hệ thống.');
+		}
+		throw new Error(`Database update failed: ${err.message}`);
+	}
+};
+
+export const countAllStaff = async (pool, branchId) => {
+	try {
+		const request = pool.request();
+		let query = `
+			SELECT COUNT(*) AS total
+			FROM NhanVien
+			WHERE 1=1
+		`;
+		if (branchId) {
+			query += ` AND MaCN = @BranchId`;
+			request.input('BranchId', branchId);
+		}
+		const result = await request.query(query);
+		return result.recordset[0]?.total ?? 0;
+	}
+	catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
+};
+
+export const staffDeployment = async (pool, employerID, employeeID, branchId, startDate, endDate) => {
+	try {
+		const query = `
+			INSERT INTO DieuDong (MaCN, MaNV, NgayBD, NgayKT, MaNVDieuDong)
+			VALUES (@maCN, @maNV, @ngayBD, @ngayKT, @maNVDieuDong)
+		`;
+		const request = pool
+			.request()
+			.input('maCN', branchId)
+			.input('maNV', employeeID)
+			.input('ngayBD', startDate)
+			.input('ngayKT', endDate)
+			.input('maNVDieuDong', employerID) 
+			
+		const result =  await request.query(query);
+		return true;
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
+};
+
+export const getStaffDeployments = async (pool, staffId) => {
+	try {
+		const query = `
+			SELECT dd.*, nd.HoTen as TenNguoiDieuDong, cn.TenCN
+			FROM DieuDong dd, ChiNhanh cn, NguoiDung nd
+			WHERE dd.MaCN = cn.MaCN 
+				AND dd.MaNV = @maNV
+				AND dd.MaNVDieuDong = nd.MaND
+			ORDER BY dd.NgayBD DESC
+		`;
+		const request = pool
+			.request()
+			.input('maNV', staffId);
+		const result = await request.query(query);
+		return result.recordset;
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
+};
+
+export const staffQuitJob = async (pool, staffId) => {
+	try {
+		const query = `
+			UPDATE NhanVien
+			SET TrangThai = N'Nghỉ việc'
+			WHERE MaNV = @maNV
+		`; 
+		const request = pool
+			.request()
+			.input('maNV', staffId);
+		const result = await request.query(query);
+		return true;
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
 };
 
 export default {
-    getAllStaff,
-    getCurrentStaff,
-    updateCurrentStaff
+	getAllStaff,
+	getCurrentStaff,
+	updateCurrentStaff,
+	countAllStaff,
+	staffDeployment,
+	getStaffDeployments,
+	staffQuitJob
 };

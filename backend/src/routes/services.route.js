@@ -1,10 +1,12 @@
 import express from 'express';
 import * as servicesController from '../controllers/services.controller.js';
+import { authenticate } from '../middlewares/authentication.middleware.js';
+import { authorizeDoctor } from '../middlewares/authorization.middleware.js';
 
 const router = express.Router();
 
 // Endpoint: GET /api/v1/appointments/queue/NV0094
-router.get('/dasboard', servicesController.getDashboard);
+router.get('/dasboard', authenticate, authorizeDoctor,servicesController.getDashboard);
 router.get('/exams/medicines', servicesController.getMedicines);
 router.post('/exams/medicines', servicesController.postPrescription);
 router.patch('/exams/revisit-date', servicesController.patchRevisitDate);

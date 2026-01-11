@@ -1,0 +1,25 @@
+.I-product-add-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 500px;
+	overflow-y: auto;
+}
+
+.I-product-info {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	border: 1px solid #eee;
+	border-radius: 10px;
+	cursor: pointer;
+	padding: 10px;
+
+	.I-product-info-details {
+		display: flex;
+		flex-direction: column;
+		text-align: left;
+		width: 80%;
+	}
+}

@@ -147,10 +147,10 @@ const getAppointmentDashboard = async (pool, { date, status, search }) => {
 };
 
 //3. Lấy danh sách các bác sĩ rãnh ở chi nhánh
-const getAvailableDoctors=async(pool,{ branchID, date, time }) => {
+const getAvailableDoctors=async(pool,{ branchId, date, time }) => {
    try{
     const request=pool.request();
-    request.input('MaCN',sql.NVarChar(50),branchID);
+    request.input('MaCN',sql.NVarChar(50),branchId);
     request.input('NgayDatDV',sql.DateTime,date);
     request.input('ThoiGian',sql.NVarChar(50),time);
 

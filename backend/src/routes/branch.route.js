@@ -9,5 +9,8 @@ router.get('/revenue', branchController.getBranchRevenue);
 router.get('/usage', branchController.getBranchServiceUsage);
 router.get('/daterevenue', branchController.getDateStatistics);
 router.get('/staff-branch', authenticate, branchController.getStaffBranch);
+router.get('/customer-list', branchController.getBranchCustomerList);
+router.get('/customer-count', branchController.countAllCustomersInBranch);
+router.get('/vip-customer-count', branchController.countVIPCustomersInBranch);
 
-    export default router;
+export default router;

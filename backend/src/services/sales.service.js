@@ -24,7 +24,7 @@ const getInvoiceList = async (pool, { branchId, date, customerName }) => {
                   AND (nd.HoTen LIKE @TenKH OR @TenKH = '%%')
             ORDER BY hd.NgayLap DESC
         `;
-        
+
         const result = await request.query(query);
         return result.recordset;
     } catch (error) {
@@ -51,7 +51,7 @@ export const getDailySalesStatistics = async (pool, branchId, targetDate) => {
         const result = await pool.request()
             .input('MaCN', sql.VarChar, branchId || null)
             // Truyền ngày vào (định dạng YYYY-MM-DD hoặc null)
-            .input('Ngay', sql.Date, targetDate || null) 
+            .input('Ngay', sql.Date, targetDate || null)
             .query(query);
 
         return result.recordset[0];
@@ -60,4 +60,23 @@ export const getDailySalesStatistics = async (pool, branchId, targetDate) => {
     }
 };
 
-export default { getInvoiceList, getDailySalesStatistics };
+
+export const createPOSOrder = async (pool, { branchId, staffId, customerId, items, paymentMethod }) => {
+    try {
+        const itemsJson = JSON.stringify(items);
+
+        const result = await pool.request()
+            .input('MaCN', sql.VarChar, branchId)
+            .input('MaNV', sql.VarChar, staffId)
+            .input('MaKH', sql.VarChar, customerId || null)
+            .input('ItemsJson', sql.NVarChar, itemsJson)
+            .input('PaymentMethod', sql.NVarChar, paymentMethod === 'card' ? 'Chuyển khoản' : 'Tiền mặt')
+            .execute('sp_seller');
+
+        return result.recordset[0];
+    } catch (error) {
+        throw new Error(`Lỗi tạo đơn hàng: ${error.message}`);
+    }
+};
+
+export default { getInvoiceList, getDailySalesStatistics, createPOSOrder };

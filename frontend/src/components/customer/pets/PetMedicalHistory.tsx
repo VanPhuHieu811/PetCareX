@@ -68,7 +68,7 @@ export default function PetMedicalHistory({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
             <p className="text-gray-500 text-sm">
-              {pet.breed} • {pet.gender} 
+              Loài: {pet.species} • Giống: {pet.breed} • Giới tính: {pet.gender} 
             </p>
           </div>
         </div>

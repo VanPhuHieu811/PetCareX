@@ -1,14 +1,14 @@
 import sql from 'mssql';
 
 export const getAllBranches = async (pool) => {
-  try {
-    const query = `SELECT * FROM ChiNhanh`;
+	try {
+		const query = `SELECT * FROM ChiNhanh`;
 
-    const result = await pool.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    throw new Error(`Database query failed: ${err.message}`);
-  }
+		const result = await pool.request().query(query);
+		return result.recordset;
+	} catch (err) {
+		throw new Error(`Database query failed: ${err.message}`);
+	}
 };
 
 export const getBranchRevenue = async (pool, branchId) => {
@@ -81,10 +81,82 @@ export const getStaffBranch = async (pool, userId) => {
 	}
 };
 
+export const getBranchCustomerList = async (pool, branchId, limit, offset) => {
+	try {
+		const query = `
+			select distinct kh.MaKH, nd.HoTen, kh.DiemLoyalty, ltv.TenLoaiTV, count(p.MaPhieuDV) as SoLanDatDV
+			from NguoiDung nd, PhieuDatDV p, KhachHang kh, LoaiThanhVien ltv
+			where p.MaCN = @macn
+				and kh.MaLoaiTV = ltv.MaLoaiTV
+				and kh.MaKH = p.MaKH
+				and p.MaKH = nd.MaND
+			group by kh.MaKH, nd.HoTen, kh.DiemLoyalty, ltv.TenLoaiTV
+			order by SoLanDatDV desc
+			OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+			`; // Cài phân trang
+		const result = await pool
+			.request()
+			.input('macn', sql.VarChar(10), branchId)
+			.input('limit', sql.Int, limit ?? 50)
+			.input('offset', sql.Int, offset ?? 0)
+			.query(query)
+		const data = result.recordset
+		return data
+	}
+	catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const countAllCustomersInBranch = async (pool, branchId) => {
+	try {
+		const query = `
+			select count(distinct kh.MaKH) as TotalCustomers
+			from NguoiDung nd, PhieuDatDV p, KhachHang kh
+			where p.MaCN = @macn
+				and kh.MaKH = p.MaKH
+				and p.MaKH = nd.MaND
+			`; 
+		const result = await pool
+			.request()
+			.input('macn', sql.VarChar(10), branchId)
+			.query(query)
+		const data = result.recordset[0]?.TotalCustomers || 0;
+		return data;
+	}
+	catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
+export const countVIPCustomersInBranch = async (pool, branchId) => {
+	try {
+		const query = `
+			select count(distinct kh.MaKH) as TotalCustomers
+			from PhieuDatDV p, KhachHang kh
+			where p.MaCN = @macn
+				and kh.MaKH = p.MaKH
+				and kh.MaLoaiTV = 'LTV03'
+		`;
+		const result = await pool
+			.request()
+			.input('macn', sql.VarChar(10), branchId)
+			.query(query)
+		const data = result.recordset[0]?.TotalCustomers || 0;
+		return data;
+	}
+	catch (err) {
+		throw new Error(`Database query fail: ${err.message}`);
+	}
+};
+
 export default { 
 	getAllBranches,
 	getBranchRevenue,
 	getBranchServiceUsage,
 	getDateStatistics,
 	getStaffBranch,
+	getBranchCustomerList,
+	countAllCustomersInBranch,
+	countVIPCustomersInBranch
 };
