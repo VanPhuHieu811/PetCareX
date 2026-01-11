@@ -8,6 +8,7 @@ AS
 RETURN
 (
     SELECT 
+        nd.MaND,
         nd.HoTen,
         nd.sdt,
         nd.Email,
@@ -307,3 +308,16 @@ select nd.HoTen, tc.*
 from KhachHang kh
 join NguoiDung nd on nd.MaND=kh.MaKH
 join ThuCung tc on tc.MaKH=kh.MaKH
+
+select tc.*
+from thucung tc
+join khachhang kh on kh.makh= tc.makh
+join nguoidung nd on nd.mand=kh.makh
+where nd.hoten='Garrett Garcia'
+
+select *
+from PhieuDatDV
+where MaPhieuDV='PDV070047'
+
+select * 
+from GoiTiemPhong

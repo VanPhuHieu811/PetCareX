@@ -122,4 +122,74 @@ const addCustomer = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi thêm khách hàng', error: error.message });
     }
 };
-export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer, getPetHistory};
+
+const getPetSpecies = async (req, res) => {
+    try {
+        const pool = req.db; // Lấy connection pool từ request
+        const result = await receptionService.getPetSpecies(pool);
+        
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi lấy danh sách loài thú cưng',
+            error: error.message
+        });
+    }
+};
+
+// 2. MỚI: Lấy danh sách Giống dựa trên Mã Loài
+const getBreeds = async (req, res) => {
+    try {
+        const pool = req.db;
+        const { maLoai } = req.query; // Lấy param từ URL: /breeds?maLoai=LTC01
+
+        if (!maLoai) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu mã loài thú cưng (maLoai)'
+            });
+        }
+
+        const result = await receptionService.getBreedsBySpecies(pool, maLoai);
+        
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi lấy danh sách giống',
+            error: error.message
+        });
+    }
+};
+
+const addPet = async (req, res) => {
+    try {
+        const pool = req.db;
+        const result = await receptionService.addPet(pool, req.body);
+        return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const createAppointment = async (req, res) => {
+    try {
+        const pool = req.db;
+        const result = await receptionService.createAppointment(pool, req.body);
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer, getPetHistory,
+    getBreeds, getPetSpecies,addPet, createAppointment
+};

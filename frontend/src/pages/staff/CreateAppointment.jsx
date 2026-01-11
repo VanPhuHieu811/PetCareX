@@ -1,341 +1,559 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Search, UserPlus, PawPrint, Calendar, 
-  Clock, Stethoscope, MapPin, User, Plus, X, ChevronDown, Check
+  Clock, Stethoscope, User, Plus, Check, Loader2, ChevronDown, X, Package 
 } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import receptionAPI from '../../api/receptionAPI';
+import { useAuth } from '../../context/AuthContext'; 
+import staffApi from '../../api/staffApi';
+
 
 const CreateAppointment = () => {
+
+  
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // States quản lý luồng
-  const location=useLocation();
-  const petFromSearch = location.state?.petData;
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
-  const [customerFound, setCustomerFound] = useState(false);
-  const [selectedPet, setSelectedPet] = useState(null);
+  // 1. Lấy user và trạng thái loading từ AuthContext
+  const { user, loading: authLoading } = useAuth(); 
+  const dropdownRef = useRef(null);
+
+  // --- STATES DỮ LIỆU ---
+  const [customerInfo, setCustomerInfo] = useState(null); 
+  const [petList, setPetList] = useState([]); 
+  const [availableDoctors, setAvailableDoctors] = useState([]);
+  
+  // --- STATES MỚI CHO GÓI TIÊM ---
+  const [packagesList, setPackagesList] = useState([]); 
+  const [selectedPackageId, setSelectedPackageId] = useState('');
+
+  // --- STATES GỢI Ý (SEARCH) ---
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [rawSearchResult, setRawSearchResult] = useState([]); 
+
+  // --- STATES DANH MỤC ĐỘNG (LOÀI & GIỐNG) ---
+  const [speciesList, setSpeciesList] = useState([]); 
+  const [breedsList, setBreedsList] = useState([]);
+
+  // --- STATES FORM ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPet, setSelectedPet] = useState(location.state?.petData || null);
   const [showAddPetForm, setShowAddPetForm] = useState(false);
-  
-  // States lưu trữ thông tin thực tế
-  const [confirmedPet, setConfirmedPet] = useState(null); // Lưu thú cưng đã chốt để hiện bảng tóm tắt
   const [selectedService, setSelectedService] = useState('Khám bệnh');
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  
+  // Form thêm thú cưng
+  const [newPetName, setNewPetName] = useState('');
+  const [newPetAge, setNewPetAge] = useState('');
+  const [selectedSpeciesId, setSelectedSpeciesId] = useState('');
+  const [selectedBreedId, setSelectedBreedId] = useState('');
 
-  // Logic chi tiết thêm mới thú cưng
-  const [newPetSpecies, setNewPetSpecies] = useState(''); // 'dog' hoặc 'cat'
-  const dogBreeds = ['Golden Retriever', 'Poodle', 'Corgi', 'Husky', 'Phú Quốc', 'Shiba Inu'];
-  const catBreeds = ['Mèo Anh lông ngắn', 'Mèo Ba Tư', 'Mèo Munchkin', 'Mèo Xiêm', 'Mèo Mướp'];
+  const [isCreating, setIsCreating] = useState(false);
 
-  const doctors = [
-    { id: 1, name: 'BS. Nguyễn Minh Tuấn', specialty: 'Nội khoa', image: 'https://i.pravatar.cc/150?u=1' },
-    { id: 2, name: 'BS. Trần Thị Bình', specialty: 'Ngoại khoa', image: 'https://i.pravatar.cc/150?u=2' },
-    { id: 3, name: 'BS. Lê Văn Nam', specialty: 'Tiêm chủng', image: 'https://i.pravatar.cc/150?u=3' },
-  ];
+  // --- 2. KIỂM TRA QUYỀN TRUY CẬP (GIỮ NGUYÊN) ---
+  if (authLoading) {
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" size={40}/></div>;
+  }
 
-  const existingPets = [
-    { id: 101, name: 'Lucky', breed: 'Golden Retriever', image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100' },
-    { id: 102, name: 'Miu', breed: 'British Shorthair', image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=100' }
-  ];
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
 
-  // Hàm xác nhận thêm thú cưng/khách hàng
-  const handleConfirmPet = (petData) => {
-    setConfirmedPet(petData);
-    setShowAddPetForm(false);
-    // Tự động gán bác sĩ random nếu là dịch vụ tiêm
-    if (selectedService !== 'Khám bệnh') {
-      setSelectedDoctor(doctors[Math.floor(Math.random() * doctors.length)]);
+  const [fetchedBranchId, setFetchedBranchId] = useState('');
+
+  useEffect(() => {
+    const fetchStaffProfile = async () => {
+      try {
+        const res = await staffApi.getMyProfile();
+        if (res.success && res.data) {
+          const realID = res.data.MaCN || res.data.branchID || res.data.maCN;
+          if (realID) setFetchedBranchId(realID);
+        }
+      } catch (error) { console.error("Lỗi lấy thông tin chi nhánh:", error); }
+    };
+    fetchStaffProfile();
+  }, []);
+  
+  const branchID = fetchedBranchId || user.MaCN || user.branchID || 'CN001';
+
+  // --- 3. CÁC USE EFFECT LOAD DỮ LIỆU (GIỮ NGUYÊN PHẦN CŨ) ---
+
+  useEffect(() => {
+    const fetchSpecies = async () => {
+      try {
+        const res = await receptionAPI.getPetSpecies();
+        if (res.success) setSpeciesList(res.data);
+      } catch (error) { console.error("Lỗi lấy loài:", error); }
+    };
+    fetchSpecies();
+  }, []);
+
+  useEffect(() => {
+    const fetchBreeds = async () => {
+      if (selectedSpeciesId) {
+        setBreedsList([]); 
+        try {
+          const res = await receptionAPI.getBreeds(selectedSpeciesId);
+          if (res.success) setBreedsList(res.data);
+        } catch (error) { console.error("Lỗi lấy giống:", error); }
+      }
+    };
+    fetchBreeds();
+  }, [selectedSpeciesId]);
+
+  // --- USE EFFECT MỚI: LOAD GÓI TIÊM ---
+  useEffect(() => {
+    if (selectedService === 'Gói tiêm' && packagesList.length === 0) {
+      const fetchPackages = async () => {
+        try {
+          const res = await receptionAPI.getAllPackages();
+          const data = Array.isArray(res) ? res : (res.data || []);
+          setPackagesList(data);
+        } catch (error) { console.error("Lỗi lấy gói tiêm:", error); }
+      };
+      fetchPackages();
     }
+  }, [selectedService]);
+
+  // Tìm kiếm khách hàng (GIỮ NGUYÊN LOGIC BẠN ĐÃ DUYỆT)
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (searchTerm.trim().length >= 2 && !customerInfo) {
+        try {
+          const res = await receptionAPI.getCustomerDetails(searchTerm);
+          if (res.data && res.data.length > 0) {
+            setRawSearchResult(res.data);
+            const uniqueCustomers = Array.from(
+                new Map(res.data.map(item => {
+                    const key = item.MaND || item.maND || item.makh || item.sdt;
+                    return [key, item];
+                })).values()
+            );
+            setSuggestions(uniqueCustomers);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]); setShowSuggestions(false);
+          }
+        } catch (error) { setSuggestions([]); }
+      } else {
+        setSuggestions([]); setShowSuggestions(false);
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, customerInfo]);
+
+  const handleSelectCustomer = (customer) => {
+    const customerID = customer.mand
+    setCustomerInfo({ ...customer, __id: customerID });
+    setSearchTerm(customer.HoTen); 
+    setShowSuggestions(false);
+    
+    const selectedID = (customerID || '').toUpperCase().trim();
+    
+    const customerPets = rawSearchResult
+        .filter(row => {
+            const rowMaKH = (row.mand || '').toUpperCase().trim();
+            const rowMaND = (row.mand || '').toUpperCase().trim();
+            return (rowMaKH === selectedID || rowMaND === selectedID) && row.MaTC;
+        })
+        .map(item => ({
+            id: item.MaTC?.trim(),
+            name: item.TenTC,
+            breed: item.TenGiong,
+            species: item.TenLoaiTC
+        }));
+
+    const uniquePets = Array.from(new Map(customerPets.map(p => [p.id, p])).values());
+    setPetList(uniquePets);
   };
+
+  const handleResetCustomer = () => {
+    setCustomerInfo(null);
+    setSearchTerm('');
+    setPetList([]);
+    setSelectedPet(null);
+    setRawSearchResult([]);
+  };
+
+  // Lấy bác sĩ rảnh (GIỮ NGUYÊN)
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      if (branchID && bookingDate && bookingTime) {
+        try {
+          const docs = await receptionAPI.getAvailableDoctors(branchID, bookingDate, bookingTime);
+          const doctorList = Array.isArray(docs) ? docs : (docs.data || []);
+          setAvailableDoctors(doctorList);
+          
+          if (selectedService !== 'Khám bệnh' && doctorList.length > 0) {
+            setSelectedDoctor(doctorList[0]);
+          }
+        } catch (error) { console.error(error); }
+      }
+    };
+    fetchDoctors();
+  }, [bookingDate, bookingTime, branchID, selectedService]);
+
+  // --- 4. XỬ LÝ NGHIỆP VỤ ---
+
+  // Thêm Thú Cưng (GIỮ NGUYÊN)
+  const handleConfirmAddPet = async () => {
+    const customerID = customerInfo?.mand || customerInfo?.makh;
+
+    if (!customerID) {
+        alert("Lỗi: Không xác định được Mã Khách Hàng. Vui lòng tìm kiếm lại!");
+        return;
+    }
+    if (!newPetName || !selectedBreedId) {
+        alert("Vui lòng nhập tên và chọn giống!");
+        return;
+    }
+
+    setIsCreating(true);
+    try {
+        const payload = {
+            maKH: customerID,
+            name: newPetName,
+            gender: "Đực",
+            breedId: selectedBreedId, 
+            weight: 0 
+        };
+        
+        const res = await receptionAPI.addPet(payload);
+        if (res.success) {
+            const breedName = breedsList.find(b => b.MaGiong === selectedBreedId)?.TenGiong;
+            const newPet = { 
+                id: res.data.maTC, 
+                name: newPetName, 
+                breed: breedName,
+                species: speciesList.find(s => s.MaLoaiTC === selectedSpeciesId)?.TenLoaiTC
+            };
+            setPetList([...petList, newPet]);
+            setSelectedPet(newPet);
+            setShowAddPetForm(false);
+            alert("Thêm thú cưng thành công!");
+        }
+    } catch (err) { 
+        alert("Lỗi thêm thú cưng: " + err.message); 
+    } finally { setIsCreating(false); }
+  };
+
+  // --- XÁC NHẬN ĐẶT LỊCH (SỬA LOGIC GÓI TIÊM) ---
+  const handleConfirmBooking = async () => {
+    // 1. Validate dữ liệu cơ bản
+    const customerID = customerInfo?.MaND || customerInfo?.maND || customerInfo?.mand || customerInfo?.makh;
+    if (!customerID || !selectedPet?.id) return alert("Thiếu thông tin khách hàng hoặc thú cưng!");
+    if (!bookingDate || !bookingTime) return alert("Chưa chọn thời gian khám!");
+
+    // 2. Validate Gói tiêm (MỚI)
+    if (selectedService === 'Gói tiêm' && !selectedPackageId) {
+        return alert("Vui lòng chọn Gói tiêm cụ thể!");
+    }
+
+    const isoDateTime = `${bookingDate}T${bookingTime}:00`;
+    setIsCreating(true);
+
+    try {
+      let resultAppointment;
+      
+      // LOGIC A: ĐẶT LỊCH KHÁM
+      if (selectedService === 'Khám bệnh') {
+        const payload = {
+            maKH: customerID,
+            maCN: branchID,
+            maDV: 'DV01',
+            hinhThucDat: 'Tại quầy',
+            bacSiPhuTrach: selectedDoctor?.MaNV || null,
+            maTC: selectedPet.id,
+            ngayKham: isoDateTime 
+        };
+        resultAppointment = await receptionAPI.createExamAppointment(payload);
+      } 
+      // LOGIC B: ĐẶT LỊCH TIÊM (LẺ & GÓI)
+      else {
+        const payload = {
+            maKH: customerID,
+            maCN: branchID,
+            maDV: 'DV02', 
+            hinhThucDat: 'Tại quầy',
+            bacSiPhuTrach: selectedDoctor?.MaNV || null,
+            maTC: selectedPet.id,
+            ngayTiem: isoDateTime,
+            maDK: null // Lần đầu tạo chưa có mã ĐK
+        };
+        resultAppointment = await receptionAPI.createVaccineAppointment(payload);
+      }
+
+      // XỬ LÝ KẾT QUẢ
+      const maPhieuDV = resultAppointment.MaPhieuDV || resultAppointment.data?.MaPhieuDV || resultAppointment.maPhieuDV;
+
+      if (maPhieuDV) {
+        // LOGIC MỚI: NẾU LÀ GÓI TIÊM -> GỌI API ĐĂNG KÝ GÓI
+        if (selectedService === 'Gói tiêm') {
+            try {
+                await receptionAPI.registerPackage({
+                    MaKH: customerID,
+                    MaGoiTP: selectedPackageId,
+                    MaPhieuDV: maPhieuDV
+                });
+                alert(`Tạo lịch tiêm và Đăng ký gói thành công! (Mã phiếu: ${maPhieuDV})`);
+            } catch (pkgError) {
+                console.error(pkgError);
+                // Vẫn thông báo thành công phần tạo lịch, nhưng báo lỗi phần gói
+                alert(`Tạo lịch thành công (Phiếu: ${maPhieuDV}), nhưng lỗi đăng ký gói: ${pkgError.message}`);
+            }
+        } else {
+            alert(`Đặt lịch thành công! (Mã phiếu: ${maPhieuDV})`);
+        }
+        
+        navigate('/staff/appointments');
+      } else {
+        alert("Lỗi: Server không trả về mã phiếu. " + JSON.stringify(resultAppointment));
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi hệ thống: " + err.message);
+    } finally { setIsCreating(false); }
+  };
+
+  // Helper tính tiền hiển thị
+  const calculateTotal = () => {
+    if (selectedService === 'Gói tiêm' && selectedPackageId) {
+        const pkg = packagesList.find(p => p.MaGoiTP === selectedPackageId);
+        return pkg?.GiaTien ? `${pkg.GiaTien.toLocaleString()}đ` : '---';
+    }
+    return '150.000đ';
+  };
+
+  // UI Helper
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowSuggestions(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <>
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-gray-800 transition-all shadow-sm">
-          <ArrowLeft size={20} />
-        </button>
+        <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-gray-800 shadow-sm"><ArrowLeft size={20} /></button>
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B] tracking-tight font-sans">Tạo lịch khám trực tiếp</h1>
-          <p className="text-sm text-gray-400 font-medium italic">Đăng ký và đặt lịch cho khách tại quầy</p>
+          <h1 className="text-2xl font-bold text-[#1E293B] tracking-tight">Tạo lịch khám trực tiếp</h1>
+          <p className="text-sm text-gray-400 font-medium italic">
+             Chi nhánh hiện tại: <span className="font-bold text-blue-600">{branchID}</span>
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 font-sans">
+      <div className="grid grid-cols-12 gap-8">
+        {/* CỘT TRÁI */}
         <div className="col-span-8 space-y-6">
           
-          {/* PHẦN 1: THÔNG TIN KHÁCH HÀNG & THÚ CƯNG */}
-          <div className={`bg-white rounded-[32px] border transition-all duration-300 ${confirmedPet ? 'border-emerald-200 bg-emerald-50/10 shadow-none' : 'border-gray-100 shadow-sm'} p-8`}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                <User size={20} className={confirmedPet ? 'text-emerald-500' : 'text-blue-500'} /> 
-                1. Thông tin đối tượng {confirmedPet && <Check size={18} className="text-emerald-500" />}
-              </h3>
-              {!confirmedPet && !isNewCustomer && (
-                <button onClick={() => {setIsNewCustomer(true); setCustomerFound(false);}} className="text-xs font-black text-blue-500 hover:text-blue-700 flex items-center gap-1 uppercase tracking-wider">
-                  <UserPlus size={14} /> Khách hàng mới?
-                </button>
-              )}
-            </div>
-
-            {!confirmedPet ? (
+          {/* BƯỚC 1: TÌM KHÁCH & CHỌN PET (GIỮ NGUYÊN UI) */}
+          <div className={`bg-white rounded-[32px] border p-8 ${selectedPet ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-100'}`}>
+            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6">
+               <User size={20} className="text-blue-500" /> 1. Xác định đối tượng
+            </h3>
+            
+            {!selectedPet ? (
               <div className="space-y-6">
-                {!isNewCustomer ? (
-                  <div className="space-y-6">
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                      <input 
-                        type="text" 
-                        placeholder="Tìm SĐT: 0901234567..." 
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/5 transition-all outline-none"
-                        onChange={(e) => setCustomerFound(e.target.value === '0901234567' || e.target.value.toLocaleLowerCase() === 'nguyễn văn an')} // Giả lập tìm kiếm
-                      />
-                    </div>
-                    {customerFound && (
-                      <div className="animate-in slide-in-from-top-4">
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-1">Chọn thú cưng hoặc bé mới:</p>
-                        <div className="grid grid-cols-3 gap-4">
-                          {existingPets.map((pet) => (
-                            <div 
-                              key={pet.id}
-                              onClick={() => setSelectedPet(pet)}
-                              className={`p-5 rounded-[24px] border-2 transition-all cursor-pointer flex flex-col items-center gap-3 ${
-                                selectedPet?.id === pet.id ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-50 bg-white hover:border-blue-200'
-                              }`}
-                            >
-                              <img src={pet.image} alt="" className="w-12 h-12 rounded-2xl object-cover shadow-sm border-2 border-white" />
-                              <span className="text-sm font-black text-gray-800">{pet.name}</span>
-                            </div>
-                          ))}
-                          <button onClick={() => setShowAddPetForm(true)} className="p-5 rounded-[24px] border-2 border-dashed border-gray-200 text-gray-400 flex flex-col items-center justify-center gap-2 hover:border-blue-300 transition-all">
-                             <Plus size={24} /> <span className="text-[10px] font-black uppercase">Bé mới</span>
-                          </button>
-                        </div>
+                <div className="relative" ref={dropdownRef}>
+                   <div className="relative">
+                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                       <input 
+                         type="text" placeholder="Tìm SĐT hoặc Tên khách hàng..." 
+                         className="w-full pl-12 pr-10 py-3.5 bg-gray-50 rounded-xl font-bold outline-none border border-gray-200 focus:border-blue-500 transition-all"
+                         value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} disabled={!!customerInfo} 
+                       />
+                       {customerInfo && <button onClick={handleResetCustomer} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"><X size={18} /></button>}
+                   </div>
 
-                        {/* FORM CHI TIẾT THÊM THÚ CƯNG MỚI CHO KHÁCH CŨ */}
-                        {showAddPetForm && (
-                          <div className="mt-8 p-8 bg-gray-50 rounded-[32px] border border-gray-100 animate-in zoom-in duration-300">
-                             <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-6">
-                               <PawPrint size={16} className="text-blue-500" /> Thêm hồ sơ thú cưng mới
-                             </h4>
-                             <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                   <input type="text" placeholder="Tên thú cưng *" className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm font-bold" />
-                                   <input type="text" placeholder="Tuổi (VD: 2 tuổi)..." className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm font-bold" />
-                                </div>
-                                <div className="space-y-4">
-                                   <div className="grid grid-cols-2 gap-3">
-                                      <button onClick={() => setNewPetSpecies('dog')} className={`py-3 rounded-xl border-2 font-black text-[10px] uppercase transition-all ${newPetSpecies === 'dog' ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white text-gray-400'}`}>CHÓ</button>
-                                      <button onClick={() => setNewPetSpecies('cat')} className={`py-3 rounded-xl border-2 font-black text-[10px] uppercase transition-all ${newPetSpecies === 'cat' ? 'bg-[#0095FF] border-[#0095FF] text-white' : 'bg-white text-gray-400'}`}>MÈO</button>
-                                   </div>
-                                   <div className="relative">
-                                      <select className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm font-bold text-gray-700 outline-none appearance-none cursor-pointer">
-                                         <option value="">-- Chọn giống --</option>
-                                         {newPetSpecies === 'dog' && dogBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-                                         {newPetSpecies === 'cat' && catBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-                                      </select>
-                                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                                   </div>
-                                </div>
-                             </div>
-                             <button 
-                               onClick={() => handleConfirmPet({name: 'Bé mới', breed: 'Đang nhập'})}
-                               className="mt-6 w-full py-4 bg-[#0095FF] text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-blue-100"
-                             >
-                               XÁC NHẬN THÊM MỚI
-                             </button>
-                          </div>
-                        )}
-
-                        {selectedPet && !showAddPetForm && (
-                          <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
-                            <button 
-                              onClick={() => handleConfirmPet(selectedPet)}
-                              className="px-10 py-3.5 bg-[#0095FF] text-white rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-100 active:scale-95 transition-all"
-                            >
-                              SỬ DỤNG THÔNG TIN NÀY
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* LUỒNG KHÁCH MỚI HOÀN TOÀN */
-                  <div className="space-y-6 animate-in fade-in">
-                    <div className="grid grid-cols-2 gap-4">
-                      <input type="text" placeholder="Họ tên chủ nuôi *" className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold" />
-                      <input type="text" placeholder="Số điện thoại *" className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold" />
-                    </div>
-                    <div className="p-8 bg-gray-50 rounded-[32px] border border-gray-100 space-y-4">
-                      <h4 className="text-[11px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-2"><PawPrint size={14} /> Thông tin thú cưng đăng ký mới</h4>
-                      <div className="grid grid-cols-3 gap-4">
-                         <input type="text" placeholder="Tên thú cưng" className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold col-span-2" />
-                         <input type="text" placeholder="Tuổi..." className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <select onChange={(e) => setNewPetSpecies(e.target.value)} className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold outline-none">
-                           <option value="">-- Chọn loài --</option>
-                           <option value="dog">Chó</option>
-                           <option value="cat">Mèo</option>
-                        </select>
-                        <select className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold outline-none">
-                           <option value="">-- Chọn giống --</option>
-                           {newPetSpecies === 'dog' && dogBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-                           {newPetSpecies === 'cat' && catBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <button onClick={() => setIsNewCustomer(false)} className="text-xs text-gray-400 font-bold hover:underline uppercase tracking-widest flex items-center gap-2">← Quay lại</button>
-                      <button 
-                        onClick={() => handleConfirmPet({name: 'Thú cưng mới', breed: 'Mới'})}
-                        className="px-10 py-3.5 bg-[#0095FF] text-white rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-100"
-                      >
-                        THÊM MỚI & TIẾP TỤC
+                   {showSuggestions && suggestions.length > 0 && (
+                       <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 max-h-[300px] overflow-y-auto">
+                           {suggestions.map((cus, idx) => (
+                               <div key={idx} onClick={() => handleSelectCustomer(cus)} className="px-6 py-4 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-none flex justify-between items-center">
+                                   <div><p className="text-sm font-bold text-gray-800">{cus.HoTen}</p><p className="text-xs text-gray-400">{cus.sdt}</p></div>
+                                   <div className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded">{cus.MaND || cus.maND || 'KH...'}</div>
+                               </div>
+                           ))}
+                       </div>
+                   )}
+                </div>
+                
+                {customerInfo && (
+                  <div className="animate-in slide-in-from-top-2">
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Danh sách thú cưng:</p>
+                    <div className="grid grid-cols-3 gap-4">
+                      {petList.map(pet => (
+                        <button key={pet.id} onClick={() => setSelectedPet(pet)} className="p-4 border-2 rounded-2xl hover:border-blue-500 transition-all flex flex-col items-center gap-2 bg-white">
+                          <PawPrint size={24} className="text-gray-300" />
+                          <span className="text-sm font-bold text-gray-700">{pet.name}</span>
+                          <span className="text-[10px] text-gray-400 uppercase">{pet.breed}</span>
+                        </button>
+                      ))}
+                      <button onClick={() => setShowAddPetForm(true)} className="border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-all min-h-[100px]">
+                        <Plus size={20} /> <span className="text-[10px] font-black uppercase mt-1">THÊM MỚI</span>
                       </button>
                     </div>
+
+                    {/* FORM THÊM PET GIỮ NGUYÊN */}
+                    {showAddPetForm && (
+                        <div className="mt-6 p-6 bg-gray-50 rounded-3xl border border-gray-200 animate-in zoom-in">
+                            <h4 className="text-xs font-black text-blue-500 uppercase mb-4">Nhập thông tin bé mới</h4>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <input type="text" placeholder="Tên thú cưng" className="p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none" value={newPetName} onChange={(e)=>setNewPetName(e.target.value)}/>
+                                <div className="relative">
+                                    <select value={selectedSpeciesId} onChange={(e)=>setSelectedSpeciesId(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none appearance-none bg-white">
+                                        <option value="">-- Chọn loài --</option>
+                                        {speciesList.map(s => <option key={s.MaLoaiTC} value={s.MaLoaiTC}>{s.TenLoaiTC}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/>
+                                </div>
+                                <div className="relative col-span-2">
+                                    <select value={selectedBreedId} onChange={(e)=>setSelectedBreedId(e.target.value)} disabled={!selectedSpeciesId} className="w-full p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none appearance-none bg-white disabled:bg-gray-100">
+                                        <option value="">-- Chọn giống --</option>
+                                        {breedsList.map(b => <option key={b.MaGiong} value={b.MaGiong}>{b.TenGiong}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={()=>setShowAddPetForm(false)} className="flex-1 py-3 bg-gray-200 text-gray-600 rounded-xl font-bold text-xs uppercase hover:bg-gray-300">Hủy</button>
+                                <button onClick={handleConfirmAddPet} disabled={isCreating} className="flex-[2] py-3 bg-blue-500 text-white rounded-xl font-bold text-xs uppercase hover:bg-blue-600 transition-all flex justify-center items-center gap-2">
+                                    {isCreating ? <Loader2 className="animate-spin" size={16}/> : 'Lưu hồ sơ mới'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                   </div>
                 )}
               </div>
             ) : (
-              /* HIỂN THỊ KHI ĐÃ CHỐT THÔNG TIN */
-              <div className="flex justify-between items-center bg-emerald-50/50 p-5 rounded-[24px] border border-emerald-100 animate-in zoom-in">
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100"><Check size={28} /></div>
-                  <div>
-                    <p className="text-lg font-black text-gray-800 leading-tight">{confirmedPet.name}</p>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.1em] mt-1">{confirmedPet.breed || 'Chưa xác định'}</p>
-                  </div>
+              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><Check /></div>
+                   <div>
+                     <p className="font-black text-gray-800 text-lg">{selectedPet.name}</p>
+                     <p className="text-xs text-gray-400 font-bold uppercase">{selectedPet.breed} • {customerInfo?.HoTen}</p>
+                   </div>
                 </div>
-                <button onClick={() => setConfirmedPet(null)} className="text-[10px] font-black text-blue-500 bg-white border border-blue-100 px-5 py-2.5 rounded-xl uppercase tracking-widest shadow-sm">Thay đổi</button>
+                <button onClick={() => {setSelectedPet(null); setShowAddPetForm(false);}} className="text-xs font-bold text-blue-500 hover:underline">Thay đổi</button>
               </div>
             )}
           </div>
 
-          {/* PHẦN 2: CHI TIẾT ĐẶT LỊCH */}
-          <div className={`bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 transition-all ${!confirmedPet ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
-             <h3 className="font-bold text-gray-800 mb-8 flex items-center gap-2 text-lg">
-                <Calendar size={20} className="text-blue-500" /> 2. Chi tiết lịch hẹn
-             </h3>
-             <div className="space-y-10">
+          {/* BƯỚC 2: LỊCH HẸN & BÁC SĨ (THÊM PHẦN GÓI TIÊM VÀO ĐÂY) */}
+          <div className={`bg-white rounded-[32px] border p-8 ${!selectedPet ? 'opacity-30 grayscale pointer-events-none' : ''}`}>
+             <h3 className="font-bold text-gray-800 mb-8 flex items-center gap-2"><Calendar size={20} className="text-blue-500" /> 2. Chi tiết lịch hẹn</h3>
+             <div className="space-y-8">
                <div className="grid grid-cols-3 gap-4">
-                 <ServiceType icon={Stethoscope} label="Khám bệnh" active={selectedService === 'Khám bệnh'} onClick={() => {setSelectedService('Khám bệnh'); setSelectedDoctor(null);}} />
-                 <ServiceType icon={Clock} label="Tiêm phòng" active={selectedService === 'Tiêm phòng'} onClick={() => {setSelectedService('Tiêm phòng'); setSelectedDoctor(doctors[0]);}} />
-                 <ServiceType icon={Plus} label="Gói tiêm" active={selectedService === 'Gói tiêm'} onClick={() => {setSelectedService('Gói tiêm'); setSelectedDoctor(doctors[1]);}} />
-               </div>
-               
-               <div className="grid grid-cols-2 gap-8">
-                 <div className="space-y-3">
-                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Ngày khám dự kiến</label>
-                   <input type="date" onChange={(e) => setBookingDate(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-[20px] px-6 py-4 text-base font-black text-gray-700 focus:ring-8 focus:ring-blue-500/5 transition-all outline-none" />
-                 </div>
-                 <div className="space-y-3">
-                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Thời gian (Giờ)</label>
-                   <input type="time" onChange={(e) => setBookingTime(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-[20px] px-6 py-4 text-base font-black text-gray-700 focus:ring-8 focus:ring-blue-500/5 transition-all outline-none" />
-                 </div>
+                 <ServiceType icon={Stethoscope} label="Khám bệnh" active={selectedService === 'Khám bệnh'} onClick={() => {setSelectedService('Khám bệnh'); setSelectedDoctor(null); setSelectedPackageId('');}} />
+                 <ServiceType icon={Clock} label="Tiêm phòng" active={selectedService === 'Tiêm phòng'} onClick={() => {setSelectedService('Tiêm phòng'); setSelectedDoctor(null); setSelectedPackageId('');}} />
+                 {/* SỬA ICON VÀ CLICK HANDLER CHO GÓI TIÊM */}
+                 <ServiceType icon={Package} label="Gói tiêm" active={selectedService === 'Gói tiêm'} onClick={() => {setSelectedService('Gói tiêm'); setSelectedDoctor(null);}} />
                </div>
 
-               {/* HIỂN THỊ CHỌN BÁC SĨ */}
+               {/* --- UI CHỌN GÓI TIÊM (CHỈ HIỆN KHI CHỌN DỊCH VỤ NÀY) --- */}
+               {selectedService === 'Gói tiêm' && (
+                    <div className="animate-in fade-in slide-in-from-top-2 bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                        <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-3 block">Chọn gói vắc-xin muốn đăng ký</label>
+                        <div className="relative">
+                            <select 
+                                value={selectedPackageId} 
+                                onChange={(e) => setSelectedPackageId(e.target.value)}
+                                className="w-full p-4 bg-white rounded-xl border border-purple-200 text-sm font-bold text-purple-900 outline-none appearance-none cursor-pointer hover:border-purple-300 transition-all"
+                            >
+                                <option value="">-- Vui lòng chọn gói --</option>
+                                {packagesList.map(pkg => (
+                                    <option key={pkg.MaGoiTP} value={pkg.MaGoiTP}>
+                                        {pkg.TenGoiTP} - {pkg.GiaTien ? pkg.GiaTien.toLocaleString() + 'đ' : 'Liên hệ'}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-300" size={20}/>
+                        </div>
+                    </div>
+               )}
+
+               <div className="grid grid-cols-2 gap-6">
+                 <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày khám</label><input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className="w-full bg-gray-50 p-4 rounded-xl font-bold outline-none border border-gray-100 focus:border-blue-500" /></div>
+                 <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Giờ khám</label><input type="time" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} className="w-full bg-gray-50 p-4 rounded-xl font-bold outline-none border border-gray-100 focus:border-blue-500" /></div>
+               </div>
+               
                {bookingDate && bookingTime && (
-                 <div className="animate-in fade-in slide-in-from-bottom-6 duration-500 space-y-5">
-                   <div className="flex justify-between items-center">
-                      <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">
-                        {selectedService === 'Khám bệnh' ? 'Chọn bác sĩ phụ trách chuyên môn:' : 'Bác sĩ điều phối ngẫu nhiên:'}
-                      </p>
-                      <span className="text-[10px] bg-blue-50 text-blue-500 px-3 py-1.5 rounded-lg font-black uppercase tracking-wider">{selectedService}</span>
-                   </div>
-                   
-                   {selectedService === 'Khám bệnh' ? (
-                     <div className="grid grid-cols-3 gap-5">
-                        {doctors.map((doc) => (
-                          <div 
-                            key={doc.id}
-                            onClick={() => setSelectedDoctor(doc)}
-                            className={`p-5 rounded-[28px] border-2 transition-all cursor-pointer flex flex-col items-center text-center gap-3 ${
-                              selectedDoctor?.id === doc.id ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100' : 'border-gray-50 bg-white hover:border-blue-200'
-                            }`}
-                          >
-                            <img src={doc.image} className="w-16 h-16 rounded-[20px] object-cover border-4 border-white shadow-sm" alt=""/>
-                            <div>
-                              <p className="text-sm font-black text-gray-800 leading-tight">{doc.name}</p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{doc.specialty}</p>
-                            </div>
-                          </div>
-                        ))}
-                     </div>
-                   ) : (
-                     <div className="p-6 bg-blue-50 border border-blue-100 rounded-[24px] flex items-center gap-5 border-dashed">
-                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm border border-blue-100"><User size={24} /></div>
-                        <p className="text-sm font-bold text-blue-800 italic">Hệ thống đã tự động gán <span className="underline">{selectedDoctor?.name}</span> cho lịch tiêm của thú cưng.</p>
-                     </div>
-                   )}
+                 <div className="space-y-4 animate-in fade-in duration-500">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bác sĩ khả dụng:</p>
+                    <div className="grid grid-cols-3 gap-4">
+                       {availableDoctors.length > 0 ? availableDoctors.map(doc => (
+                         <button key={doc.MaNV} onClick={() => setSelectedDoctor(doc)} className={`p-4 border-2 rounded-[24px] transition-all flex flex-col items-center gap-2 ${selectedDoctor?.MaNV === doc.MaNV ? 'border-blue-500 bg-blue-50' : 'border-gray-50 hover:border-blue-200'}`}>
+                           <div className="w-10 h-10 bg-white rounded-full border shadow-sm flex items-center justify-center font-bold text-blue-500">{doc.HoTen.charAt(0)}</div>
+                           <p className="text-xs font-black text-center">{doc.HoTen}</p>
+                         </button>
+                       )) : <p className="col-span-3 text-center text-xs text-red-400 italic bg-red-50 p-3 rounded-xl">Không có bác sĩ nào rảnh vào khung giờ này.</p>}
+                    </div>
                  </div>
                )}
              </div>
           </div>
         </div>
 
-        {/* CỘT PHẢI: TÓM TẮT LỊCH HẸN */}
+        {/* CỘT PHẢI */}
         <div className="col-span-4">
-          <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-10 sticky top-24">
-            <h3 className="font-bold text-gray-800 text-xl mb-10 tracking-tight">Tóm tắt lịch hẹn</h3>
-            <div className="space-y-10">
-              {confirmedPet ? (
-                <div className="flex items-center gap-5 p-6 bg-blue-50/50 rounded-[28px] border border-blue-100 animate-in zoom-in">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm border border-blue-100"><PawPrint size={32} /></div>
-                  <div>
-                    <p className="font-black text-gray-800 text-lg leading-tight">{confirmedPet.name}</p>
-                    <p className="text-[11px] text-gray-400 font-bold uppercase mt-1 tracking-widest">{confirmedPet.breed}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-100 rounded-[40px]">
-                  <PawPrint size={56} className="text-gray-100 mb-4" />
-                  <p className="text-sm text-gray-300 font-black italic tracking-wide text-center px-6">Xác nhận thông tin bước 1 để xem tóm tắt</p>
-                </div>
-              )}
+           <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-8 sticky top-24">
+              <h3 className="font-bold text-gray-800 text-xl mb-8 tracking-tight">Tóm tắt đơn</h3>
+              <div className="space-y-6 border-b border-gray-100 pb-8">
+                 <SummaryRow label="Khách hàng" value={customerInfo?.HoTen || '---'} />
+                 <SummaryRow label="Thú cưng" value={selectedPet?.name || '---'} />
+                 <SummaryRow label="Dịch vụ" value={selectedService} highlight />
+                 
+                 {/* HIỂN THỊ TÊN GÓI NẾU CÓ */}
+                 {selectedService === 'Gói tiêm' && selectedPackageId && (
+                    <SummaryRow 
+                        label="Gói chọn" 
+                        value={packagesList.find(p => p.MaGoiTP === selectedPackageId)?.TenGoiTP} 
+                        highlight 
+                    />
+                 )}
 
-              <div className="space-y-5 pt-8 border-t border-gray-100">
-                <SummaryRow label="Dịch vụ" value={selectedService} />
-                <SummaryRow label="Bác sĩ" value={selectedDoctor ? selectedDoctor.name : '---'} />
-                <SummaryRow label="Thời gian" value={bookingDate && bookingTime ? `${bookingTime} • ${bookingDate}` : '---'} />
-                <div className="flex justify-between items-center pt-6">
-                  <span className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Tạm tính:</span>
-                  <span className="text-3xl font-black text-[#0095FF] tracking-tighter font-mono">150.000đ</span>
-                </div>
+                 <SummaryRow label="Bác sĩ" value={selectedDoctor?.HoTen || '---'} />
+                 <SummaryRow label="Thời gian" value={bookingDate ? `${bookingTime} - ${bookingDate}` : '---'} />
+              </div>
+              
+              {/* TÍNH TIỀN ĐỘNG */}
+              <div className="mt-6 flex justify-between items-center">
+                  <span className="text-xs font-black text-gray-400 uppercase">Tạm tính</span>
+                  <span className="text-2xl font-black text-blue-600">
+                      {calculateTotal()}
+                  </span>
               </div>
 
-              <button 
-                className={`w-full py-6 rounded-[24px] font-black text-sm shadow-xl transition-all active:scale-95 ${
-                  (confirmedPet && selectedDoctor && bookingDate) ? 'bg-[#0095FF] text-white shadow-blue-100 hover:bg-blue-600' : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-                }`}
-                disabled={!confirmedPet || !selectedDoctor || !bookingDate}
-              >
-                XÁC NHẬN ĐẶT LỊCH NGAY
+              <button onClick={handleConfirmBooking} disabled={!selectedPet || !selectedDoctor || !bookingDate || isCreating} className="w-full py-4 bg-[#0095FF] text-white rounded-xl font-black mt-6 shadow-lg shadow-blue-100 hover:bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all flex items-center justify-center gap-2">
+                {isCreating && <Loader2 className="animate-spin" size={20} />} XÁC NHẬN ĐẶT LỊCH
               </button>
-            </div>
-          </div>
+           </div>
         </div>
       </div>
     </>
   );
 };
 
-// Component con hỗ trợ UI
 const ServiceType = ({ icon: Icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`p-8 rounded-[32px] border-2 flex flex-col items-center gap-4 transition-all ${
-    active ? 'bg-blue-50 border-blue-500 text-blue-500 shadow-lg shadow-blue-50 scale-105' : 'bg-white border-gray-50 text-gray-400 hover:border-blue-200'
-  }`}>
-    <Icon size={32} />
-    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{label}</span>
+  <button onClick={onClick} className={`p-6 rounded-[24px] border-2 flex flex-col items-center gap-3 transition-all ${active ? 'bg-blue-50 border-blue-500 text-blue-500 shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:border-blue-200'}`}>
+    <Icon size={28} />
+    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 
-const SummaryRow = ({ label, value }) => (
+const SummaryRow = ({ label, value, highlight }) => (
   <div className="flex justify-between items-center text-sm">
-    <span className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">{label}:</span>
-    <span className={`font-black tracking-tight ${value === '---' ? 'text-gray-200' : 'text-gray-700'}`}>{value}</span>
+    <span className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">{label}</span>
+    <span className={`font-bold text-right ${highlight ? 'text-blue-500' : 'text-gray-700'}`}>{value}</span>
   </div>
 );
 

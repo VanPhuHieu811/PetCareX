@@ -2,7 +2,7 @@ import * as packagesService from '../services/packages.service.js';
 
 export const getInfoPackages = async (req, res) => {
   try {
-    const { petId } = req.body; // Lấy :doctorId từ endpoint
+    const { petId } = req.params; // Lấy :doctorId từ endpoint
     const result = await packagesService.getPackageRegistration(req.db, petId);
     
     res.status(200).json({

@@ -97,7 +97,7 @@ export default function PetMedicalHistory({
                 <div className="bg-emerald-50/50 px-5 py-3 border-b border-emerald-100 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-emerald-800 font-medium">
                     <Calendar className="w-4 h-4" />
-                    {formatDateFull(rec.date)}
+                    {formatDateFull(rec.orderDate)}
                   </div>
                   <span className="text-xs font-mono text-emerald-600 bg-white px-2 py-1 rounded border border-emerald-200">
                     {rec.id}
@@ -194,9 +194,9 @@ export default function PetMedicalHistory({
                 <div className="bg-purple-50/50 px-5 py-3 border-b border-purple-100 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-purple-800 font-medium">
                     <Calendar className="w-4 h-4" />
-                    {formatDateFull(rec.date)}
+                    {formatDateFull(rec.orderDate)}
                   </div>
-                  <span className="text-xs font-mono text-purple-600 bg-white px-2 py-1 rounded border border-purple-200">
+                    <span className="text-xs font-mono text-purple-600 bg-white px-2 py-1 rounded border border-purple-200">
                     {rec.id}
                   </span>
                 </div>

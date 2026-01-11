@@ -7,8 +7,8 @@ const route = express.Router();
 route.get('/types', petController.getPetTypes)
 route.get('/breeds', petController.getPetBreeds);
 
-route.get('/exams/:id', authenticate, petController.getPetExamHistory);
-route.get('/vaccinations/:id', authenticate, petController.getPetVaccinationHistory);
+route.get('/exams/:id',authenticate,  petController.getPetExamHistory);
+route.get('/vaccinations/:id',authenticate,  petController.getPetVaccinationHistory);
 
 route.get('/:id', authenticate, petController.getPetDetail);
 

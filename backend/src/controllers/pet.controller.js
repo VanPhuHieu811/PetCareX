@@ -1,6 +1,7 @@
 import * as petService from '../services/pet.service.js';
 
 const canAccessPet = (user, petOwnerId) => {
+    
     const role = user.role || user.VaiTro || 'Khách hàng'; 
 
     if (role !== 'Khách hàng') return true;
@@ -76,8 +77,6 @@ export const updatePet = async (req, res) => {
     }
 };
 
-// Các hàm History, Delete làm tương tự getPetDetail (Lấy pet -> Check canAccessPet -> Thực hiện)
-// ...
 
 export const createNewPet = async (req, res) => {
     try {
