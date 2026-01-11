@@ -143,7 +143,10 @@ where nd.MaND = 'kh02251' or nd.HoTen = N'Văn Phú Hiệu'
 group by nd.MaND, nd.HoTen, nd.Email, tk.MatKhau, hd.MaHoaDon
 
 
-
+Select * 
+From PhieuDatDV
+join NguoiDung nd on nd.MaND = PhieuDatDV.MaKH
+where BacSiPhuTrach = 'NV0002' and nd.HoTen = 'Cindy Davis'
 
 BEGIN TRANSACTION;
 BEGIN TRY
