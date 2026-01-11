@@ -1,4 +1,4 @@
-use db_ac35db_new
+use PetCareX
 GO
 --Function to get information of customer. 
 --Input: sđt/cccd of customer. Output: customer information and list of pets.
@@ -287,24 +287,3 @@ RETURN
 );
 
 go
-select *
-from DanhGia
-where MaPhieuDV='PDV000001' and MaKH='KH01655'
-
-select *
-from NguoiDung
-where SDT='0936363636'
-
-select p.NgayDatDV, count(*)
-from PhieuDatDV pgit 
-group by p.NgayDatDV
-
-select *
-from PhieuDatDV 
-where NgayDatDV='2020-07-29 00:00:00.000'
-
-
-select nd.HoTen, tc.*
-from KhachHang kh
-join NguoiDung nd on nd.MaND=kh.MaKH
-join ThuCung tc on tc.MaKH=kh.MaKH
