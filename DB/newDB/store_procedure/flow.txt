@@ -1,0 +1,10 @@
+Khách hàng khi mua sản phẩm trực tiếp:
+
+Sẽ mang sản phẩm tới cho bán hàng, bán hàng sẽ nhập tay từng sản phẩm vào hóa đơn.
+
+Bán hàng sẽ hỏi khách hàng đã có tạo tài khoản chưa, nếu có thì sẽ cung cấp
+mã khách hàng -> trả ra tên khách hàng.
+
+Nếu khách hàng chưa tạo tài khoản thì sẽ để trống mã khách hàng và tên khách hàng.
+
+Sau khi ấn xác nhận thanh toán thì hệ thống sẽ tạo phiếu đặt dịch vụ, đặt mua hàng, danh sách sản phẩm, hóa đơn và chi tiết hóa đơn

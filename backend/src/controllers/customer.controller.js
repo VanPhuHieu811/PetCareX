@@ -147,3 +147,29 @@ export const getReceiptDetails = async (req, res) => {
     });
   }
 }
+export const getCustomerById = async (req, res) => {
+  const pool = req.db;
+  const customerId = req.params.customerId;
+
+  try {
+    const customer = await customerService.getCustomerById(pool, customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Customer retrieved successfully',
+      data: customer,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve customer',
+      error: err.message,
+    });
+  }
+}

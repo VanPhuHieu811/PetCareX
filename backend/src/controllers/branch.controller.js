@@ -63,10 +63,54 @@ export const getStaffBranch = async (req, res) => {
 	}
 };
 
+export const getBranchCustomerList = async (req, res) => {
+	try {
+		const branchID = req.query.branchID;
+		const limit = parseInt(req.query.limit) || 20;
+		const offset = parseInt(req.query.offset) || 0;
+		const result = await branchService.getBranchCustomerList(req.db, branchID, limit, offset);
+		res.status(200).json(result);
+	}
+	catch (err) {
+		res
+			.status(500)
+			.json({ error: 'Failed to retrieve branch customer list', details: err.message });
+	}
+};
+
+export const countAllCustomersInBranch = async (req, res) => {
+	try {
+		const branchID = req.query.branchID;
+		const result = await branchService.countAllCustomersInBranch(req.db, branchID);
+		res.status(200).json({ count: result });
+	}
+	catch (err) {
+		res
+			.status(500)
+			.json({ error: 'Failed to count customers in branch', details: err.message });
+	}
+};
+
+export const countVIPCustomersInBranch = async (req, res) => {
+	try {
+		const branchID = req.query.branchID;
+		const result = await branchService.countVIPCustomersInBranch(req.db, branchID);
+		res.status(200).json({ count: result });
+	}
+	catch (err) {
+		res
+			.status(500)
+			.json({ error: 'Failed to count VIP customers in branch', details: err.message });
+	}
+};
+
 export default { 
 	getAllBranches, 
 	getBranchRevenue,
 	getBranchServiceUsage,
 	getDateStatistics,
-	getStaffBranch
+	getStaffBranch,
+	getBranchCustomerList,
+	countAllCustomersInBranch,
+	countVIPCustomersInBranch
 };

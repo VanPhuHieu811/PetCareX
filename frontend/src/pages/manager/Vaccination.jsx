@@ -264,7 +264,7 @@ export default function Vaccination() {
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-gray-200">
-								{filteredVaccines.map((vx) => (
+								{filteredVaccines.length > 0 ? filteredVaccines.map((vx) => (
 									<tr key={vx.MaVacXin} className="hover:bg-gray-50 transition-colors">
 										<td className="px-6 py-4 text-sm font-medium text-gray-900 text-center">{vx.MaVacXin}</td>
 										<td className="px-6 py-4 text-sm text-gray-800 font-medium text-center">{vx.TenVacXin}</td>
@@ -288,14 +288,10 @@ export default function Vaccination() {
 											</button>
 										</td>
 									</tr>
-								))}
+								)): <td colSpan="7" className="text-center text-gray-500 py-4">Đang tìm kiếm danh sách vắc-xin ...</td> 
+								}
 							</tbody>
 						</table>
-						{filteredVaccines.length === 0 && (
-							<div className="p-8 text-center text-gray-500">
-								Không tìm thấy vắc-xin nào phù hợp.
-							</div>
-						)}
 					</div>
 				</div>
 			)}
