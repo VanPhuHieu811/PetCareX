@@ -58,7 +58,7 @@ begin
 
         -- tao phieu dat dich vu
         insert into PhieuDatDV (MaPhieuDV, NgayDatDV, MaKH, TenKhachHang, MaCN, MaDV, HinhThucDat, TrangThai, LoaiDichVu, BacSiPhuTrach)
-        values (@NewMaPDV, getdate(), @MaKH, @TenKhachHang, @MaCN, 'DV03', N'Tại quầy', N'Đã thanh toán', N'Mua hàng', null);
+        values (@NewMaPDV, DATEADD(HOUR, 7, GETUTCDATE()), @MaKH, @TenKhachHang, @MaCN, 'DV03', N'Tại quầy', N'Đã thanh toán', N'Mua hàng', null);
 
         -- tao phieu dat mua hang
         insert into DatMuaHang (MaPhieuDV, DiaChiNhanHang, TongTien)
@@ -86,7 +86,7 @@ begin
 
         -- insert hoa don
         insert into HoaDon (MaHoaDon, MaNVLap, MaKH, MaCN, MaKhuyenMai, NgayLap, TongTien, HinhThucThanhToan)
-        values (@NewMaHD, @MaNV, @MaKH, @MaCN, null, getdate(), @TongTien, @PaymentMethod);
+        values (@NewMaHD, @MaNV, @MaKH, @MaCN, null, DATEADD(HOUR, 7, GETUTCDATE()), @TongTien, @PaymentMethod);
 
         -- tao chi tiet hoa don
         insert into ChiTietHoaDon (MaHoaDon, MaPhieuDV, TongTienDV)

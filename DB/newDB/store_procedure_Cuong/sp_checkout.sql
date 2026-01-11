@@ -54,7 +54,7 @@ begin
 
         -- 3. Tạo Hóa Đơn
         insert into dbo.HoaDon (MaHoaDon, MaNVLap, MaKH, MaCN, MaKhuyenMai, NgayLap, TongTien, HinhThucThanhToan)
-        values (@NewMaHD, null, @CustomerId, @branchId, null, getdate(), @TongTien, @paymentMethod);
+        values (@NewMaHD, null, @CustomerId, @branchId, null, DATEADD(HOUR, 7, GETUTCDATE()), @TongTien, @paymentMethod);
 
         -- 4. Tạo Chi Tiết Hóa Đơn
         insert into dbo.ChiTietHoaDon (MaHoaDon, MaPhieuDV, TongTienDV)

@@ -77,11 +77,14 @@ function formatMoney(v: number) {
 
 function formatDateTime(iso?: string | null) {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleString("vi-VN", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
+  // Parse ISO string manually to avoid timezone conversion
+  const dateStr = iso.split('T')[0]; // "2026-01-12"
+  const timeStr = iso.split('T')[1]?.substring(0, 8) || "00:00:00"; // "08:03:00"
+  
+  const [year, month, day] = dateStr.split('-');
+  const [hour, minute] = timeStr.split(':');
+  
+  return `${hour}:${minute} ${day}/${month}/${year}`;
 }
 
 function serviceIcon(type: string) {

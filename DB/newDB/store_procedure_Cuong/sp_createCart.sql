@@ -43,7 +43,7 @@ begin
 
     -- tao phieu dat dich vu moi
     insert into PhieuDatDV values
-    (@NewMaPDV, GETDATE(), @customerId, @nameCustomer, NULL, @branchId, 'DV03', 'Online', N'Đang chờ', N'Mua hàng', NULL)
+    (@NewMaPDV, DATEADD(HOUR, 7, GETUTCDATE()), @customerId, @nameCustomer, NULL, @branchId, 'DV03', 'Online', N'Đang chờ', N'Mua hàng', NULL)
     
     -- Tinh tong tien
     declare @tongTien float

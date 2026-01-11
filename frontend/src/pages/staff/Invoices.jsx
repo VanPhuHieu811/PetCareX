@@ -21,19 +21,21 @@ const Invoices = () => {
   // 2. Format hiển thị ra giao diện: LUÔN LÀ NGÀY/THÁNG/NĂM
   const formatDisplayDate = (dateString) => {
     if (!dateString) return '';
-    
-    // Trường hợp 1: Ngày lọc (YYYY-MM-DD) -> Cắt chuỗi để tránh bị lùi ngày do múi giờ
-    if (dateString.length === 10 && dateString.includes('-')) {
-        const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
-    }
 
-    // Trường hợp 2: Ngày giờ từ API (ISO String) -> Dùng Date Object
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    // YYYY-MM-DD hoặc ISO YYYY-MM-DDTHH:mm:ss(.sss)Z -> lấy đúng phần ngày
+    const m = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const [, y, mth, d] = m;
+      return `${d}/${mth}/${y}`;
+    }
+    return '';
+  };
+
+  const formatTimeNoTZ = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    // Lấy HH:mm từ chuỗi, không chuyển múi giờ
+    const m = String(dateTimeString).match(/[T\s](\d{2}):(\d{2})/);
+    return m ? `${m[1]}:${m[2]}` : '';
   };
 
   // 3. Format tiền tệ VNĐ
@@ -208,7 +210,7 @@ const Invoices = () => {
                   <td className="px-8 py-6 font-black text-gray-800 text-sm">{inv.TenKhachHang || 'Khách vãng lai'}</td>
                   <td className="px-8 py-6 text-sm">
                     {/* Giờ giữ nguyên */}
-                    <p className="font-bold text-gray-700">{new Date(inv.NgayLap).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</p>
+                    <p className="font-bold text-gray-700">{formatTimeNoTZ(inv.NgayLap)}</p>
                     {/* Ngày hiển thị format DD/MM/YYYY */}
                     <p className="text-[10px] text-gray-400 font-bold uppercase">{formatDisplayDate(inv.NgayLap)}</p>
                   </td>
