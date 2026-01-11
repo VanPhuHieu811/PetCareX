@@ -30,14 +30,14 @@ const steps = [
 // ⚠️ QUAN TRỌNG: Hãy đổi id khớp với MaDV trong bảng DichVu của database
 const SERVICES_DATA = [
     { 
-        id: 'DV001', // Ví dụ: Mã dịch vụ Khám bệnh
+        id: 'DV01', 
         name: 'Khám bệnh', 
         type: 'Khám bệnh',
         image: 'https://images.unsplash.com/photo-1628009368231-76033d0738cd?w=200&h=200&fit=crop',
         priceRange: '150.000đ - 500.000đ'
     },
     { 
-        id: 'DV002', // Ví dụ: Mã dịch vụ Tiêm phòng
+        id: 'DV02', 
         name: 'Tiêm phòng', 
         type: 'Tiêm phòng',
         image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200&h=200&fit=crop',
@@ -169,22 +169,39 @@ export default function Booking() {
         if (currentStep > 1) setCurrentStep(c => c - 1);
     };
 
+	// 1. Hàm Reset form về trạng thái ban đầu
+    const resetBooking = () => {
+        setCurrentStep(1);
+        setSelectedSlot(null);
+        setSelectedDoctor(null);
+        // Giữ lại chi nhánh và thú cưng để khách đỡ chọn lại
+    };
+
     // 3. Xử lý Đặt lịch
     const handleConfirm = async () => {
-        if (!user || !selectedBranch || !selectedPet || !selectedDoctor || !selectedSlot) return;
+        // Kiểm tra dữ liệu đầu vào
+        if (!user) return toast.error("Vui lòng đăng nhập để đặt lịch");
+        if (!selectedBranch?.MaCN) return toast.error("Lỗi: Chi nhánh không hợp lệ");
+        if (!selectedPet?.MaTC) return toast.error("Lỗi: Thú cưng không hợp lệ (Thiếu Mã TC)");
+        if (!selectedDoctor?.MaNV) return toast.error("Lỗi: Bác sĩ không hợp lệ");
+        if (!selectedSlot) return toast.error("Vui lòng chọn giờ khám");
 
         setIsSubmitting(true);
         try {
-            const dateTimeISO = `${selectedDate}T${selectedSlot}:00`; // YYYY-MM-DDTHH:mm:00
+            // Định dạng ngày giờ chuẩn ISO cho SQL Server
+            const dateTimeISO = `${selectedDate}T${selectedSlot}:00`; 
 
             const commonPayload = {
-                maKH: user.MaND || user.id, // ID lấy từ AuthContext
+                maKH: user.MaND || user.id || "", 
                 maCN: selectedBranch.MaCN,
-                maDV: selectedService.id,
+                maDV: selectedService.id, 
                 hinhThucDat: 'Đặt trước',
                 bacSiPhuTrach: selectedDoctor.MaNV,
                 maTC: selectedPet.MaTC,
             };
+
+            // LOG ĐỂ DEBUG: Bật F12 xem cái này nếu vẫn lỗi 500
+            console.log("🚀 Payload gửi đi:", { ...commonPayload, dateTimeISO });
 
             let res;
             if (selectedService.type === 'Khám bệnh') {
@@ -200,16 +217,18 @@ export default function Booking() {
                 });
             }
 
-            if (res.success) {
-                toast.success("Đặt lịch thành công!");
-                navigate('/customer/appointments'); // Chuyển hướng sau khi đặt
+            if (res && res.success) {
+                toast.success("Đặt lịch thành công! Bác sĩ đang chờ bạn.");
+                resetBooking(); // <--- Quay lại màn hình đặt lịch
             } else {
-                toast.error(res.message || "Đặt lịch thất bại");
+                toast.error(res?.message || "Đặt lịch thất bại (Lỗi Server)");
             }
 
         } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Có lỗi xảy ra khi đặt lịch");
+            console.error("API Error:", error);
+            // Hiển thị lỗi chi tiết từ Backend nếu có
+            const msg = error?.message || "Có lỗi xảy ra khi kết nối server";
+            toast.error(msg);
         } finally {
             setIsSubmitting(false);
         }

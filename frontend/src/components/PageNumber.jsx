@@ -1,4 +1,3 @@
-'use client'
 import '../styles/PageNumber.css';
 
 const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {

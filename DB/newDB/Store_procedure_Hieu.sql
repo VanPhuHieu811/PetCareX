@@ -124,7 +124,7 @@ GO
 
 
 select *
-from ChiNhanh
+from DichVu
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau
 from NguoiDung nd 
