@@ -442,6 +442,7 @@ export default function Profile() {
           </div>
           <h2 className="text-xl font-bold text-gray-900">{customer.HoTen}</h2>
           <p className="text-sm text-gray-500">{customer.Email}</p>
+          <p className="text-xs text-gray-400 font-mono mt-1">ID: {customer.MaND}</p>
           <div className="mt-4 inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
             {loyaltyPoints.toLocaleString("vi-VN")} điểm thưởng
           </div>
@@ -652,6 +653,11 @@ export default function Profile() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mã khách hàng</label>
+                    <div className="px-4 py-2 bg-blue-50 rounded-lg text-blue-900 font-mono font-semibold">{customer.MaND}</div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Họ và tên</label>
                     {isEditingInfo ? (
