@@ -3,25 +3,30 @@ import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Calendar, Heart } from "lucide-react";
 import { getPetTypes, getPetBreeds } from "../../../api/petApi";
 
+// --- Interfaces ---
+
 interface Breed {
-  id: string;      // MaGiong
-  name: string;    // TenGiong
-  typeId: string;  // MaLoaiThuCung
+  id: string;      // Mapping từ MaGiong
+  name: string;    // Mapping từ TenGiong
+  typeId: string;  // Mapping từ MaLoaiTC
 }
 
 interface PetType {
-  id: string;   // MaLoai
-  name: string; // TenLoai
+  id: string;   // Mapping từ MaLoaiTC
+  name: string; // Mapping từ TenLoaiTC
 }
 
-interface AddPetModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: PetFormData) => void;
-  submitting?: boolean;
+// Định nghĩa cấu trúc dữ liệu chuẩn mà Backend yêu cầu (Payload)
+export interface PetApiPayload {
+  TenTC: string;
+  MaGiong: string;
+  NgaySinh: string;
+  GioiTinh: string;
+  TinhTrangSucKhoe: string;
 }
 
-export interface PetFormData {
+// Interface cho state của Form (dùng nội bộ component để dễ quản lý UI)
+interface PetFormData {
   name: string;
   breedId: string;
   dob: string;
@@ -29,7 +34,16 @@ export interface PetFormData {
   healthStatus: string;
 }
 
+interface AddPetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  // onSubmit giờ sẽ nhận dữ liệu đã được format đúng chuẩn API
+  onSubmit: (data: PetApiPayload) => void;
+  submitting?: boolean;
+}
+
 export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: AddPetModalProps) {
+  // State quản lý dữ liệu form
   const [formData, setFormData] = useState<PetFormData>({
     name: "",
     breedId: "",
@@ -41,11 +55,12 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
   const [types, setTypes] = useState<PetType[]>([]);
   const [breeds, setBreeds] = useState<Breed[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
+  
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [loadingBreeds, setLoadingBreeds] = useState(false);
-
   const [errors, setErrors] = useState<Partial<Record<keyof PetFormData, string>>>({});
 
+  // Reset form về mặc định
   const resetForm = () => {
     setFormData({
       name: "",
@@ -59,7 +74,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
     setErrors({});
   };
 
-  // Load types when open
+  // 1. Load danh sách Loại thú cưng khi mở Modal
   useEffect(() => {
     if (!isOpen) {
       resetForm();
@@ -71,20 +86,22 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
       try {
         const res: any = await getPetTypes();
         const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
-        // Map fields (để chịu được backend naming)
+        
+        // Map dữ liệu từ API (Tiếng Việt) sang State nội bộ (Tiếng Anh/id/name)
         const mapped: PetType[] = list.map((t: any) => ({
           id: t.MaLoaiTC,
           name: t.TenLoaiTC 
         }));
         setTypes(mapped.filter((x) => x.id && x.name));
+      } catch (err) {
+        console.error("Lỗi tải loại thú cưng:", err);
       } finally {
         setLoadingTypes(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Load breeds when type changes
+  // 2. Load danh sách Giống khi chọn Loại
   useEffect(() => {
     if (!selectedTypeId) {
       setBreeds([]);
@@ -97,13 +114,17 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
       try {
         const res: any = await getPetBreeds(selectedTypeId);
         const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        
         const mapped: Breed[] = list.map((b: any) => ({
           id: b.MaGiong,
           name: b.TenGiong,
-          typeId: b.MaLoaiTC|| selectedTypeId,
+          typeId: b.MaLoaiTC || selectedTypeId,
         }));
+        
         setBreeds(mapped.filter((x) => x.id && x.name));
-        setFormData((p) => ({ ...p, breedId: "" }));
+        setFormData((p) => ({ ...p, breedId: "" })); // Reset giống khi đổi loại
+      } catch (err) {
+        console.error("Lỗi tải giống:", err);
       } finally {
         setLoadingBreeds(false);
       }
@@ -114,6 +135,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
 
   const handleChange = (field: keyof PetFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Xóa lỗi khi người dùng nhập lại
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
@@ -138,10 +160,22 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
     return Object.keys(newErrors).length === 0;
   };
 
+  // --- XỬ LÝ SUBMIT QUAN TRỌNG ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+
+    // QUAN TRỌNG: Map dữ liệu từ Form (name, breedId...) sang chuẩn API (TenTC, MaGiong...)
+    // Đây là bước sửa lỗi 400 Bad Request
+    const apiPayload: PetApiPayload = {
+      TenTC: formData.name,
+      MaGiong: formData.breedId,
+      NgaySinh: formData.dob,
+      GioiTinh: formData.gender,
+      TinhTrangSucKhoe: formData.healthStatus
+    };
+
+    onSubmit(apiPayload);
   };
 
   const handleClose = () => {
@@ -158,7 +192,8 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-lg">
@@ -175,6 +210,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
           </div>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Tên */}
           <div>
@@ -189,15 +225,15 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
               className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                 errors.name ? "border-red-300 bg-red-50" : "border-gray-300"
               }`}
-              placeholder="Nhập tên thú cưng"
+              placeholder="Nhập tên thú cưng (VD: Miu, Lu...)"
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
           </div>
 
-          {/* Loại */}
+          {/* Loại thú cưng */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Loại thú cưng <span className="text-red-500">*</span>
+              Loai thú cưng <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedTypeId}
@@ -234,7 +270,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
               } ${!selectedTypeId ? "bg-gray-100 cursor-not-allowed" : ""}`}
             >
               <option value="">
-                {!selectedTypeId ? "Chọn loại trước" : loadingBreeds ? "Đang tải giống..." : "-- Chọn giống --"}
+                {!selectedTypeId ? "Vui lòng chọn loại trước" : loadingBreeds ? "Đang tải giống..." : "-- Chọn giống --"}
               </option>
               {availableBreeds.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -245,7 +281,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
             {errors.breedId && selectedTypeId && <p className="mt-1 text-sm text-red-600">{errors.breedId}</p>}
           </div>
 
-          {/* Ngày sinh + giới tính */}
+          {/* Ngày sinh + Giới tính */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -281,7 +317,7 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
             </div>
           </div>
 
-          {/* Tình trạng */}
+          {/* Tình trạng sức khỏe */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Heart className="w-4 h-4 inline mr-1" />
@@ -295,12 +331,12 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
               className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                 errors.healthStatus ? "border-red-300 bg-red-50" : "border-gray-300"
               }`}
-              placeholder="Ví dụ: Khỏe mạnh, Bệnh ngoài da..."
+              placeholder="Ví dụ: Khỏe mạnh, Đang điều trị nấm..."
             />
             {errors.healthStatus && <p className="mt-1 text-sm text-red-600">{errors.healthStatus}</p>}
-            <p className="mt-1 text-sm text-gray-500">Mô tả tình trạng sức khỏe hiện tại của thú cưng</p>
           </div>
 
+          {/* Footer Buttons */}
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -313,10 +349,10 @@ export default function AddPetModal({ isOpen, onClose, onSubmit, submitting }: A
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-60"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-200"
             >
               <Plus className="w-4 h-4" />
-              {submitting ? "Đang thêm..." : "Thêm thú cưng"}
+              {submitting ? "Đang xử lý..." : "Thêm thú cưng"}
             </button>
           </div>
         </form>

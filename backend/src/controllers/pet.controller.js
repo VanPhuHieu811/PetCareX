@@ -77,8 +77,6 @@ export const updatePet = async (req, res) => {
     }
 };
 
-// Các hàm History, Delete làm tương tự getPetDetail (Lấy pet -> Check canAccessPet -> Thực hiện)
-// ...
 
 export const createNewPet = async (req, res) => {
     try {
