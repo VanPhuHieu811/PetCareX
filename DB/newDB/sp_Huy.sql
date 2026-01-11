@@ -14,7 +14,8 @@ RETURN
         p.TenKhachHang, 
         p.TenThuCung, 
         p.TrangThai,
-        p.LoaiDichVu
+        p.LoaiDichVu,
+        p.MaCN
     FROM PhieuDatDV p
     LEFT JOIN DatKhamBenh k ON p.MaPhieuDV = k.MaPhieuDV 
     LEFT JOIN DatTiemPhong t ON p.MaPhieuDV = t.MaPhieuDV 
