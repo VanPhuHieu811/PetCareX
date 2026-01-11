@@ -121,10 +121,11 @@ BEGIN
 END;
 GO
 
-
+SELECT * FROM PhieuDatDV 
+WHERE MaPhieuDV not like 'PDV00%'
 
 select *
-from ChiNhanh
+from DichVu
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau
 from NguoiDung nd 

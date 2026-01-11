@@ -1,4 +1,4 @@
-.container {
+.PN-container {
   display: flex;
   align-items: center;
   justify-content: center; /* Center pagination horizontally */
@@ -9,7 +9,7 @@
 
 
 /* Style chung cho các nút */
-.pageBtn {
+.PN-pageBtn {
   border: none;
   background: none;
   cursor: pointer;
@@ -20,25 +20,25 @@
   border-radius: 4px;
 }
 
-.pageBtn:hover:not(:disabled) {
+.PN-pageBtn:hover:not(:disabled) {
   background-color: #f0f0f0;
   color: #333;
 }
 
 /* Style cho nút mũi tên (First, Prev, Next, Last) */
-.navBtn {
+.PN-navBtn {
   font-size: 20px;
   font-weight: bold;
   color: var(--green); /* Màu xanh lá cây */
 }
 
-.navBtn:disabled {
+.PN-navBtn:disabled {
   color: #ccc;
   cursor: not-allowed;
 }
 
-/* Style cho số trang đang được chọn (Active) */
-.active {
+/* Style cho số trang đang được chọn (PN-active) */
+.PN-active {
   font-weight: bold;
   font-size: 18px;
   color: black;
@@ -46,7 +46,7 @@
 }
 
 /* Dấu ba chấm */
-.dots {
+.PN-dots {
   color: var(--word-gray);
   letter-spacing: 2px;
 }

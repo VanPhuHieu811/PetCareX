@@ -1,4 +1,3 @@
-'use client'
 import '../styles/PageNumber.css';
 
 const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
@@ -44,10 +43,10 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
   const pageNumbers = generatePagination();
 
   return (
-    <div className='container'>
+    <div className='PN-container'>
       {/* Nút Về đầu (First) */}
       <button 
-        className='pageBtn navBtn'
+        className='PN-pageBtn PN-navBtn'
         onClick={() => onPageChange && onPageChange(1)}
         disabled={currentPage === 1}
       >
@@ -56,7 +55,7 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
 
       {/* Nút Lùi (Prev) */}
       <button 
-        className='pageBtn navBtn'
+        className='PN-pageBtn PN-navBtn'
         onClick={() => onPageChange && onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
@@ -66,13 +65,13 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
       {/* Danh sách số trang */}
       {pageNumbers.map((page, index) => {
         if (page === '...') {
-          return <span key={index} className='dots'>...</span>;
+          return <span key={index} className='PN-dots'>...</span>;
         }
 
         return (
           <button
             key={index}
-            className={`pageBtn ${currentPage === page ? 'active' : ''}`}
+            className={`PN-pageBtn ${currentPage === page ? 'PN-active' : ''}`}
             onClick={() => onPageChange && onPageChange(page)}
           >
             {page}
@@ -82,7 +81,7 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
 
       {/* Nút Tiến (Next) */}
       <button 
-        className='pageBtn navBtn'
+        className='PN-pageBtn PN-navBtn'
         onClick={() => onPageChange && onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
@@ -91,7 +90,7 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
 
       {/* Nút Về cuối (Last) */}
       <button 
-        className='pageBtn navBtn'
+        className='PN-pageBtn PN-navBtn'
         onClick={() => onPageChange && onPageChange(totalPages)}
         disabled={currentPage === totalPages}
       >
