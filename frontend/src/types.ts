@@ -1,11 +1,19 @@
 export type Role = 'MANAGER' | 'DOCTOR' | 'RECEPTIONIST' | 'SALES' | 'CUSTOMER';
 
 export interface UserAccount {
-	username: string;
-	password: string;
-	role: string;
-	name: string;
-	linkedId?: string;
+    username: string;
+    role: string;
+    MaND?: string;     
+    id?: string;       
+    HoTen?: string;    
+    name?: string;     
+    email?: string;     
+    SDT?: string;      
+    phone?: string;    
+    MaCN?: string;      
+    TenCN?: string;     
+    linkedId?: string;
+    avatar?: string;
 }
 
 export interface AuthState {

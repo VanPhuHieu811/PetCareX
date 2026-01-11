@@ -11,7 +11,7 @@ function productForm(product, currentProduct, setCurrentProduct) {
 	return (
 		<button key={product.MaSP}
 			className={currentProduct.MaSP === product.MaSP ?
-				"bg-blue-50 product-info" : "product-info"}
+				"bg-blue-50 I-product-info" : "I-product-info"}
 			onClick={() => setCurrentProduct({
 				MaSP: product.MaSP,
 				TenSP: product.TenSP,
@@ -23,7 +23,7 @@ function productForm(product, currentProduct, setCurrentProduct) {
 			})}
 		>
 			<Cat size={30} className="text-gray-400 mx-auto" />
-			<div className="product-info-details">
+			<div className="I-product-info-details">
 				<h3 className="text-lg font-medium text-gray-800">{product.MaSP} - {product.TenSP}</h3>
 				<p className="text-sm text-gray-600">Loại: {product.TenLoaiSP}</p>
 				<p className="text-sm text-gray-600">Giá bán: {formatVND(product.GiaBan)} / {product.DonViTinh}</p>
@@ -453,7 +453,7 @@ export default function Inventory() {
 							</button>
 						</div>
 
-						<div className="product-add-list p-6 space-y-4">
+						<div className="I-product-add-list p-6 space-y-4">
 							<PageNumber currentPage={currentAllPage} totalPages={totalAllPages} onPageChange={handlePageChange} />
 
 							{Array.isArray(allProducts) && allProducts.length > 0 ? (

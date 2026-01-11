@@ -1,4 +1,4 @@
-.product-add-list {
+.I-product-add-list {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -6,7 +6,7 @@
 	overflow-y: auto;
 }
 
-.product-info {
+.I-product-info {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -16,7 +16,7 @@
 	cursor: pointer;
 	padding: 10px;
 
-	.product-info-details {
+	.I-product-info-details {
 		display: flex;
 		flex-direction: column;
 		text-align: left;
