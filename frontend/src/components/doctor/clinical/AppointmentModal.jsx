@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CalendarPicker from '../common/CalendarPicker';
 
-const AppointmentModal = ({ isOpen, onClose, petName }) => {
+const AppointmentModal = ({ isOpen, onClose, petName, maPhieuDV, formData }) => {
   const navigate = useNavigate();
 
   // Ban đầu chưa chọn ngày
@@ -10,10 +10,49 @@ const AppointmentModal = ({ isOpen, onClose, petName }) => {
 
   if (!isOpen) return null;
 
+  const handleNextAppointment = async () => {
+    try {
+      const normalizeDate = (d) => {
+        if (!d) return null;
+        if (d.includes('/')) {
+          const [day, month, year] = d.split('/');
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        return d;
+      };
+
+      const r = await fetch ("http://localhost:3000/api/v1/services/exams", {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({...formData, maPhieuDV})
+      })
+
+      const res = await fetch("http://localhost:3000/api/v1/services/exams/revisit-date", {
+        method: "PATCH",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          maPhieuDV: maPhieuDV,
+          ngayTaiKham: normalizeDate(selectedDate)
+        })
+      })
+      if (!res.ok && !r.ok) {
+        throw new Error("Loi khong them lich duoc")
+      }
+      alert("Them thanh cong")
+    }
+    catch(err) {
+      console.error("Loi them ngay tai kham")
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
-        
+
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
@@ -53,7 +92,7 @@ const AppointmentModal = ({ isOpen, onClose, petName }) => {
           <button
             disabled={!selectedDate}
             onClick={() => {
-              alert(`Đã đặt lịch tái khám cho ${petName} vào ngày ${selectedDate}`);
+              handleNextAppointment()
               onClose();               // đóng modal
               navigate('/doctor/dashboard');  // 👉 quay về dashboard
             }}

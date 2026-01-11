@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { petHistories, currentUser } from '../../services/mockDataBS';
 import { getCustomerDetails, getAppointmentQueue } from '../../api/doctor';
+import { updateExamDiagnosis } from '../../api/doctor';
 // 1. Import các component đã tách
 import Step1Diagnosis from '../../components/doctor/clinical/Step1Diagnosis';
 import Step2Treatment from '../../components/doctor/clinical/Step2Treatment';
@@ -107,6 +108,7 @@ const ClinicalExam = () => {
 
 
   console.log(pet);
+  console.log(currentPet);
 
   const currentTime = "19:41";
 
@@ -129,7 +131,24 @@ const ClinicalExam = () => {
     }
     else if (actionId === 'finish') {
       // Logic hoàn tất khám
+      try {
+      // 🔹 1. Gọi API cập nhật chẩn đoán
+      updateExamDiagnosis({
+        maPhieuDV: currentPet.MaPhieuDV,
+        trieuChung: formData.trieuChung,
+        chuanDoan: formData.chuanDoan
+      });
+
+      // 🔹 2. Thông báo thành công
+      alert('Kết thúc khám thành công');
+
+      // 🔹 3. Quay về dashboard
       navigate('/doctor/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Lỗi khi kết thúc khám');
+    }
+      
     }
   };
 
@@ -214,6 +233,8 @@ const ClinicalExam = () => {
           isOpen={isAppointmentModalOpen}
           onClose={() => setIsAppointmentModalOpen(false)}
           petName={pet?.TenTC}
+          maPhieuDV={currentPet.MaPhieuDV}
+          formData={formData}
         />
 
         {/* CẬP NHẬT: Phần ghi chú tự động lưu ở dưới cùng */}

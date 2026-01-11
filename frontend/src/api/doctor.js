@@ -48,3 +48,22 @@ export function updateRevisitDate(maPhieuDV, ngayTaiKham) {
     ngayTaiKham
   });
 }
+
+// src/api/doctor.js
+export const updateExamDiagnosis = async (data) => {
+  const res = await fetch('http://localhost:3000/api/v1/services/exams', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || 'Cập nhật khám thất bại');
+  }
+
+  return json;
+};

@@ -20,11 +20,10 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData, maPhieuDV, bran
   useEffect(() => {
     const fetchMeds = async () => {
       try {
-        const res = await fetch(`${BASEURL}/services/exams/medicines/CN003`)
+        const res = await fetch(`${BASEURL}/services/exams/medicines/${branchId}`)
         const data = await res.json();
 
         setDbMedicines(data);
-        console.log(data);
       } catch (err) {
         console.error("Lỗi lấy danh sách thuốc:", err);
       }
@@ -78,7 +77,12 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData, maPhieuDV, bran
         MaPhieuDV: maPhieuDV,
         MaCN: branchId,
         NgayTaiKham: normalizeDate(revisitDate),
-        medicines: selectedMeds
+        medicines: selectedMeds.map(m => ({
+          MaSP: m.MaSP,
+          soLuong: Number(m.soLuong),
+          tanSuat: Number(m.tanSuat), // ✅ FIX
+          lieuDung: m.lieuDung
+        }))
       }; 
       ///api/v1/services/exams/medicines
 
@@ -91,16 +95,20 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData, maPhieuDV, bran
         body: JSON.stringify(prescriptionData)
       });
 
-      // const r = await fetch (`${BASEURL}/services/exams`, {
-      //   method: 'PATCH',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({...formData, maPhieuDV})
-      // })
+      const r = await fetch (`${BASEURL}/services/exams`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({...formData, maPhieuDV})
+      })
 
-      if(res.ok) {
-        alert("Succesokdfs!")
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('API ERROR:', data);
+        alert(data.error || 'Lỗi kê đơn');
+        return;
       }
 
       // if(r.ok){
