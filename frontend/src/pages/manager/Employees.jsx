@@ -142,8 +142,9 @@ export default function Employees() {
 			alert('Ngày bắt đầu không được trước ngày hiện tại.');
 			return;
 		}
-		if(selectedEmployee.TrangThai !== 'Nghỉ việc') {
+		if(selectedEmployee.TrangThai === 'Nghỉ việc') {
 			alert('Nhân viên này đã nghỉ việc')
+			return;
 		}
 
 		// Kiểm tra ngày bắt đầu và kết thúc có bị dính lịch điều động hiện tại không
