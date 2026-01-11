@@ -21,3 +21,7 @@ export function getCustomerReceipts() {
 export function getReceiptDetailsApi(receiptId: string) {
   return apiGet(`/api/v1/customers/receipts/${receiptId}`);
 }
+
+export function getCustomerById(customerId: string) {
+  return apiGet(`/api/v1/customers/${customerId}`);
+}

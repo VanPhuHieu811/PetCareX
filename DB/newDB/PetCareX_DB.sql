@@ -3,8 +3,21 @@
    Mục tiêu: Tối ưu hiệu suất đọc & Snapshot dữ liệu
    Cập nhật: Bổ sung đầy đủ Explicit Constraints (FK, PK, CK)
    ========================================================= */
-USE db_ac35db_new;
+CREATE DATABASE PetCareX;
 GO
+
+USE PetCareX;
+GO
+
+-- use master
+-- go
+
+-- IF EXISTS (SELECT * FROM sys.databases WHERE name = 'PetCareX')
+-- BEGIN
+--     ALTER DATABASE PetCareX SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+--     DROP DATABASE PetCareX;
+-- END
+-- GO
 
 /* =========================================================
    1. NHÓM DANH MỤC (MASTER DATA)

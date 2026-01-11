@@ -51,6 +51,7 @@ const AppointmentList = () => {
       const response = await receptionAPI.getAppointmentBoard(filterDate, filterStatus, searchTerm);
       
       // Dữ liệu trả về từ service gồm stats và appointments
+      console.log(response.appointments)
       setStats(response.stats); 
       setAppointments(response.appointments); 
     } catch (error) {

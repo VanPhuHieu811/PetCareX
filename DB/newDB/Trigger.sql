@@ -1,6 +1,5 @@
-﻿USE db_ac35db_new;
+﻿USE PetCareX;
 GO
-
 /* =========================================================
    NHÓM 1: AUTOMATION TRIGGERS (TỰ ĐỘNG HÓA DỮ LIỆU)
    Mục đích: Đảm bảo tính nhất quán cho dữ liệu Phi chuẩn hóa

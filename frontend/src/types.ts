@@ -206,6 +206,7 @@ export interface Order {
 export interface MedicalRecord {
 	id: string;
 	date: string;
+	orderDate: string;
 	petId: string;
 	petName: string;
 	serviceType: string;

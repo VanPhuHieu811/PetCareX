@@ -142,8 +142,9 @@ export default function Employees() {
 			alert('Ngày bắt đầu không được trước ngày hiện tại.');
 			return;
 		}
-		if(selectedEmployee.TrangThai !== 'Nghỉ việc') {
+		if(selectedEmployee.TrangThai === 'Nghỉ việc') {
 			alert('Nhân viên này đã nghỉ việc')
+			return;
 		}
 
 		// Kiểm tra ngày bắt đầu và kết thúc có bị dính lịch điều động hiện tại không
@@ -259,13 +260,13 @@ export default function Employees() {
 					<h1 className="text-2xl font-bold text-gray-800">Quản lý Nhân sự</h1>
 					<p className="text-gray-500">Danh sách nhân viên, hiệu suất và điều động</p>
 				</div>
-				<button
+				{/* <button
 					className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
 					// onClick={() => ()}
 				>
 					<UserPlus size={18} />
 					<span>Thêm nhân viên</span>
-				</button>
+				</button> */}
 			</div>
 
 			<div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
