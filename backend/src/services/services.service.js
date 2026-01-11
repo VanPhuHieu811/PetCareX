@@ -131,7 +131,7 @@ export const getServiceDetail = async (pool, maPhieuDV) => {
 
     const generalInfo = result.recordsets[0][0];
     const detailInfo = result.recordsets[1][0] || {};
-    const subList = result.recordsets[2] || []; // Đơn thuốc hoặc danh sách vắc-xin
+    const subList = result.recordsets[2] || []; 
 
     return {
       ...generalInfo,
