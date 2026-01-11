@@ -83,16 +83,16 @@ const getAppointmentBoard = async (req, res) => {
 // Lấy danh sách bác sĩ rãnh
 const getFreeDoctors = async (req, res) => {
     try {
-        const { branchId, date, time } = req.query;
+        const { branchID, date, time } = req.query;
 
-        if (!branchId || !date || !time) {
+        if (!branchID || !date || !time) {
             return res.status(400).json({ 
                 message: 'Vui lòng cung cấp đầy đủ: chi nhánh, ngày và giờ.' 
             });
         }
 
         const doctors = await receptionService.getAvailableDoctors(req.db, {
-            branchId,
+            branchID,
             date,
             time
         });
