@@ -13,6 +13,7 @@ RETURN
         nd.Email,
         kh.DiemLoyalty,
         COUNT(tt.MaTC) OVER (PARTITION BY kh.makh) AS SoLuongThuCung,
+        tt.MaTC,
         tt.TenTC,
         tt.GioiTinh,
         tt.NgaySinh,
@@ -23,7 +24,13 @@ RETURN
     FROM NguoiDung nd
     JOIN khachhang kh ON nd.MaND = kh.makh
     LEFT JOIN thucung tt ON kh.makh = tt.makh
-    WHERE (nd.sdt = @identifier OR nd.cccd = @identifier or nd.Email = @identifier)
+    WHERE (
+        nd.sdt LIKE '%' + @identifier + '%' 
+        OR nd.cccd LIKE '%' + @identifier + '%' 
+        OR nd.Email LIKE '%' + @identifier + '%'
+        OR nd.HoTen LIKE '%' + @identifier + '%' -- Thêm tìm kiếm theo tên cho tiện
+        OR tt.MaTC = @identifier
+    )
       AND nd.LoaiND = N'Khách hàng'
 );
 
@@ -236,3 +243,67 @@ select *
 from NguoiDung
 join TaiKhoan  t on NguoiDung.MaND = T.MaND
 where hoten like N'%Hảo%'
+
+go
+--function to receive feedback from customer
+CREATE FUNCTION dbo.FN_SubmitFeedback (
+    @MaPhieuDV NVARCHAR(50),
+    @NgayDanhGia DATETIME,
+    @DiemDanhGia INT,
+    @ThaiDoNhanVien INT,
+    @MucDoHaiLong NVARCHAR,
+    @BinhLuan NVarchar(500),
+    @MaKH NVARCHAR(50)
+)
+RETURNS TABLE
+AS
+RETURN
+(   
+    if @DiemDanhGia <0 or @DiemDanhGia >10 
+    begin
+        raiserror('DiemDanhGia phai trong khoang 0-10',16,1)
+        return
+    end
+    if @ThaiDoNhanVien <0 or @ThaiDoNhanVien >10
+    begin
+        raiserror('ThaiDoNhanVien phai trong khoang 0-10',16,1)
+        return
+    end
+
+    INSERT INTO DanhGia (MaPhieuDV, NgayDanhGia, DiemDanhGia, ThaiDoNhanVien, MucDoHaiLong, BinhLuan, MaKH )
+    VALUES (@MaPhieuDV, @NgayDanhGia, @DiemDanhGia, @ThaiDoNhanVien, @MucDoHaiLong, @BinhLuan, @MaKH);
+
+    SELECT 
+        ph.MaPhanHoi,
+        ph.MaKH,
+        ph.MaDV,
+        ph.Rating,
+        ph.Comments,
+        ph.NgayPhanHoi
+    FROM PhanHoiKH ph
+    WHERE ph.MaKH = @customerId AND ph.MaDV = @serviceId
+      AND ph.NgayPhanHoi = CAST(GETDATE() AS DATE)
+);
+
+go
+select *
+from DanhGia
+where MaPhieuDV='PDV000001' and MaKH='KH01655'
+
+select *
+from NguoiDung
+where SDT='0936363636'
+
+select p.NgayDatDV, count(*)
+from PhieuDatDV pgit 
+group by p.NgayDatDV
+
+select *
+from PhieuDatDV 
+where NgayDatDV='2020-07-29 00:00:00.000'
+
+
+select nd.HoTen, tc.*
+from KhachHang kh
+join NguoiDung nd on nd.MaND=kh.MaKH
+join ThuCung tc on tc.MaKH=kh.MaKH
