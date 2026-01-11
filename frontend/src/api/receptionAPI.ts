@@ -49,6 +49,26 @@ export interface AddCustomerInput {
   gender: string;    // 'Nam', 'Nữ' hoặc 'Khác'
   cccd?: string;
 }
+export interface CreateAppointmentInput {
+  maCN: string;
+  maKH: string;
+  maTC: string;
+  maDV: string;       // Mã dịch vụ (lấy từ bảng DichVu)
+  maBS: string | null; // Mã bác sĩ (có thể null)
+  ngayHen: string;    // 'YYYY-MM-DD HH:mm'
+  loaiDichVu: 'KhamBenh' | 'TiemPhong'; // Cờ để backend rẽ nhánh bảng
+  isPackage?: boolean; // True nếu đăng ký gói tiêm
+  maGoiTP?: string;    // Mã gói tiêm nếu isPackage = true
+}
+
+export interface AddPetInput {
+  maKH: string;
+  name: string;
+  gender: string;
+  birthDate?: string;
+  breed: string;   // Giống (Poodle, Mèo mướp...)
+  species: string; // Loài (Chó/Mèo)
+}
 
 // --- Reception API ---
 
@@ -101,7 +121,30 @@ const receptionAPI = {
       time
     }).toString();
     return apiGet(`${BASE_PATH}/available-doctors?${query}`);
-  }
+  },
+
+  /**
+   * API Thêm thú cưng mới
+   */
+  addPet: async (data: AddPetInput): Promise<any> => {
+    return apiPost(`${BASE_PATH}/add-pet`, data);
+  },
+
+  /**
+   * API Tạo phiếu đặt lịch (Xử lý giao dịch phức tạp)
+   */
+  createAppointment: async (data: CreateAppointmentInput): Promise<any> => {
+    return apiPost(`${BASE_PATH}/create-appointment`, data);
+  },
+  /** Lấy danh sách loài (Chó, Mèo, ...) */
+  getPetSpecies: async (): Promise<any[]> => {
+    return apiGet(`${BASE_PATH}/species`);
+  },
+
+  /** Lấy danh sách giống theo Mã Loại */
+  getBreeds: async (maLoai: string): Promise<any[]> => {
+    return apiGet(`${BASE_PATH}/breeds?maLoai=${maLoai}`);
+  },
 };
 
 export default receptionAPI;

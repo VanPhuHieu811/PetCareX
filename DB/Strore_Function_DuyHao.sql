@@ -8,6 +8,7 @@ AS
 RETURN
 (
     SELECT 
+        nd.MaND,
         nd.HoTen,
         nd.sdt,
         nd.Email,
