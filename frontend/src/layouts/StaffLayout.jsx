@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import staffApi from "../api/staffApi"; 
 
 // Thành phần từng mục trên Sidebar
 const SidebarItem = ({ icon: Icon, label, path }) => {
@@ -52,10 +53,51 @@ const NotiItem = ({ title, desc, time, active }) => (
 const StaffLayout = () => {
   const [showNoti, setShowNoti] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
-  const { user } = useAuth();
+  
+  // State lưu thông tin đầy đủ lấy từ API
+  const [fullProfile, setFullProfile] = useState(null); 
 
-  // 👉 lấy role từ user (tuỳ bạn đang lưu field gì)
-  const role = user?.role; // ví dụ: "RECEPTIONIST" hoặc "SALES"
+  const { user } = useAuth(); // User này chỉ là bản lưu tạm lúc Login
+
+  // 2. GỌI API LẤY INFO ĐẦY ĐỦ (Giống bên Settings)
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const res = await staffApi.getMyProfile();
+        if (res.success) {
+          setFullProfile(res.data);
+        }
+      } catch (error) {
+        console.error("Không tải được thông tin layout:", error);
+      }
+    };
+    
+    // Gọi ngay khi component mount
+    fetchProfileData();
+  }, []);
+
+  // 3. XÁC ĐỊNH DỮ LIỆU HIỂN THỊ (Ưu tiên API > Context User)
+  const activeUser = fullProfile || user; 
+
+  const role = activeUser?.role || user?.role; 
+  
+  // Tên hiển thị
+  const displayName = activeUser?.HoTen || activeUser?.name || "Nhân viên";
+  
+  // Chi nhánh hiển thị (Ưu tiên TenCN lấy từ API)
+  const displayBranch = 
+    activeUser?.TenCN || 
+    activeUser?.TenChiNhanh || 
+    activeUser?.BranchName || 
+    (activeUser?.MaCN ? `Chi nhánh ${activeUser.MaCN}` : "Chi nhánh hệ thống");
+
+  // Label hiển thị vai trò
+  const roleLabel =
+    role === "SALES" || role === "Bán hàng"
+      ? "Bán hàng"
+      : role === "RECEPTIONIST" || role === "Tiếp tân"
+      ? "Tiếp tân"
+      : "Nhân viên";
 
   // Nhóm menu theo role
   const receptionistMenu = [
@@ -77,26 +119,15 @@ const StaffLayout = () => {
 
   let sidebarMenus = [];
 
-  if (role === "Bán hàng") {
-    // Nhân viên bán hàng: chỉ thấy Bán hàng + Hóa đơn + Cài đặt
+  if (role === "Bán hàng" || role === "SALES") {
     sidebarMenus = [...salesMenu, ...commonMenu];
-  } else if (role === "Tiếp tân") {
-    // Lễ tân: các mục còn lại + Cài đặt
+  } else if (role === "Tiếp tân" || role === "RECEPTIONIST") {
     sidebarMenus = [...receptionistMenu, ...commonMenu];
   } else {
-    // Fallback (MANAGER hoặc role khác): thấy hết
     sidebarMenus = [...receptionistMenu, ...salesMenu, ...commonMenu];
   }
 
-  // Label hiển thị dưới avatar
-  const roleLabel =
-    role === "SALES"
-      ? "Bán hàng"
-      : role === "RECEPTIONIST"
-      ? "Tiếp tân"
-      : "Nhân viên";
-
-  // Cập nhật ngày tháng hiện tại
+  // Cập nhật ngày tháng
   useEffect(() => {
     const date = new Date();
     const options = {
@@ -135,18 +166,18 @@ const StaffLayout = () => {
           ))}
         </nav>
 
-        {/* Thông tin nhân viên dưới Sidebar */}
+        {/* --- Thông tin nhân viên dưới Sidebar --- */}
         <div className="mt-auto border-t border-gray-100 pt-6 px-4">
           <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 border-2 border-white">
-              {user?.name?.[0] || "TH"}
+              {displayName.charAt(0)}
             </div>
             <div className="overflow-hidden">
-              <p className="font-bold text-sm text-gray-800 truncate">
-                {user?.name || "Trần Thị Hoa"}
+              <p className="font-bold text-sm text-gray-800 truncate" title={displayName}>
+                {displayName}
               </p>
-              <p className="text-[11px] text-gray-400 font-medium truncate">
-                {roleLabel} • Chi nhánh Q1
+              <p className="text-[11px] text-gray-400 font-medium truncate" title={displayBranch}>
+                {roleLabel} • {displayBranch}
               </p>
             </div>
           </div>
@@ -170,12 +201,10 @@ const StaffLayout = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Ngày hiện tại */}
             <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold bg-gray-50 px-4 py-2 rounded-xl uppercase tracking-wider">
               <Calendar size={16} /> {currentDate}
             </div>
 
-            {/* Chuông thông báo */}
             <div className="relative">
               <div
                 onClick={() => setShowNoti(!showNoti)}
@@ -237,15 +266,14 @@ const StaffLayout = () => {
               )}
             </div>
 
-            {/* Chi nhánh */}
+            {/* Chi nhánh hiển thị */}
             <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-100 flex items-center gap-2">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              Chi nhánh Quận 1
+              {displayBranch}
             </div>
           </div>
         </header>
 
-        {/* Nội dung các trang con */}
         <div className="p-10 w-full max-w-[1600px] mx-auto">
           <Outlet />
         </div>

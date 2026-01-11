@@ -79,3 +79,50 @@ export const getVaccines = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+export const postExamAppointment = async (req, res) => {
+  try {
+    const result = await servicesService.createExamAppointment(req.db, req.body);
+    res.status(201).json({
+      success: true,
+      message: 'Đặt lịch khám bệnh thành công',
+      data: result
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const postVaccineAppoint = async (req, res) => {
+    try {
+        const result = await servicesService.createVaccineAppointment(req.db, req.body);
+        res.status(201).json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const getServiceById = async (req, res) => {
+  try {
+    const { maPhieuDV } = req.body;
+    const result = await servicesService.getServiceDetail(req.db, maPhieuDV);
+    
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy phiếu' });
+    }
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const patchCancelAppointment = async (req, res) => {
+  try {
+    const { maPhieuDV } = req.body;
+    const result = await servicesService.cancelAppointment(req.db, maPhieuDV);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};

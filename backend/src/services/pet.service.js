@@ -1,30 +1,59 @@
 import sql from 'mssql';
+
+// 1. Lấy danh sách thú cưng của 1 User
 export const getAllPetsByUserId = async (pool, userId) => {
     try {
-        const query = 'Select * from ThuCung where MaKH = @MaKH';
-
+        const query = 'SELECT * FROM ThuCung WHERE MaKH = @MaKH';
         const result = await pool.request()
             .input('MaKH', userId)
             .query(query);
-
         return result.recordset;
     } catch (error) {
-        throw new Error('Error fetching pets by user ID: ' + error.message);
+        throw new Error('Error fetching pets: ' + error.message);
     }
 };
 
-export const getPetById = async (pool, petId, userId) => {
+// 2. Lấy chi tiết 
+export const getPetById = async (pool, petId) => {
     try {
-        const query = 'Select * from ThuCung where MaTC = @MaTC and MaKH = @MaKH';
+        const query = 'SELECT * FROM ThuCung WHERE MaTC = @MaTC'; 
 
         const result = await pool.request()
             .input('MaTC', petId)
-            .input('MaKH', userId)
             .query(query);
         
         return result.recordset[0];
     } catch (error) {
         throw new Error('Error fetching pet by ID: ' + error.message);
+    }
+};
+
+// 3. Update 
+export const updatePet = async (pool, petData) => {
+    try {
+        const query = `
+            UPDATE ThuCung
+            SET 
+                TenTC = COALESCE(@TenTC, TenTC),
+                MaGiong = COALESCE(@MaGiong, MaGiong),
+                NgaySinh = COALESCE(@NgaySinh, NgaySinh),
+                TinhTrangSucKhoe = COALESCE(@TinhTrangSucKhoe, TinhTrangSucKhoe),
+                GioiTinh = COALESCE(@GioiTinh, GioiTinh),
+            WHERE MaTC = @MaTC
+        `;
+
+        const result = await pool.request()
+            .input('MaTC', sql.VarChar, petData.MaTC)
+            .input('TenTC', sql.NVarChar, petData.TenTC ?? null)
+            .input('MaGiong', sql.VarChar, petData.MaGiong ?? null)
+            .input('NgaySinh', sql.Date, petData.NgaySinh ?? null)
+            .input('TinhTrangSucKhoe', sql.NVarChar, petData.TinhTrangSucKhoe ?? null)
+            .input('GioiTinh', sql.NVarChar, petData.GioiTinh ?? null)
+            .query(query);
+
+        return result.rowsAffected[0];
+    } catch (error){
+        throw new Error(`Failed update pet: ${error.message}`)
     }
 };
 
@@ -67,35 +96,6 @@ export const deletePet = async (pool, petId, userId) => {
     }
 };
 
-export const updatePet = async (pool, petData) => {
-    try {
-        const query = `
-            Update ThuCung
-            Set 
-                TenTC = COALESCE(@TenTC, TenTC),
-                MaGiong = COALESCE(@MaGiong, MaGiong),
-                NgaySinh         = COALESCE(@NgaySinh, NgaySinh),
-                TinhTrangSucKhoe = COALESCE(@TinhTrangSucKhoe, TinhTrangSucKhoe),
-                GioiTinh         = COALESCE(@GioiTinh, GioiTinh),
-                MaKH             = COALESCE(@MaKH, MaKH)
-            WHERE MaTC = @MaTC and MaKH = @MaKH
-        `;
-
-        const result = await pool.request()
-            .input('MaTC', sql.VarChar, petData.MaTC)
-            .input('TenTC', sql.NVarChar, petData.TenTC ?? null)
-            .input('MaGiong', sql.VarChar, petData.MaGiong ?? null)
-            .input('NgaySinh', sql.Date, petData.NgaySinh ?? null)
-            .input('TinhTrangSucKhoe', sql.NVarChar, petData.TinhTrangSucKhoe ?? null)
-            .input('GioiTinh', sql.NVarChar, petData.GioiTinh ?? null)
-            .input('MaKH', sql.VarChar, petData.MaKH ?? null)
-            .query(query);
-
-        return result.rowsAffected[0];
-    } catch (error){
-        throw new Error(`Falied update pet: ${error.message}`)
-    }
-};
 export const getPetExamHistory = async (pool, petId) => {
     try {
         const query = `
