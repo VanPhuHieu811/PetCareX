@@ -100,13 +100,14 @@ export const getPetExamHistory = async (pool, petId) => {
     try {
         const query = `
             SELECT 
-                kb.MaPhieuDV, 
+                kb.MaPhieuDV,
                 kb.NgayKham, 
                 kb.MoTaTrieuChung, 
                 kb.MoTaChuanDoan,
                 kb.NgayTaiKham, 
                 kb.TongTienDonThuoc, 
                 nd.HoTen as TenBacSi,
+                p.NgayDatDV,
                 (
                     SELECT 
                         dt.MaSP, 
@@ -147,7 +148,7 @@ export const getPetVaccinationHistory = async (pool, petId) => {
                 dt.MaPhieuDV, 
                 dt.NgayTiem, 
                 nd.HoTen AS TenBacSi,
-                -- Subquery lấy chi tiết các mũi tiêm trong phiếu đó
+                p.NgayDatDV,
                 (
                     SELECT 
                         vx.TenVacXin, 
@@ -159,6 +160,7 @@ export const getPetVaccinationHistory = async (pool, petId) => {
                     FOR JSON PATH
                 ) AS DanhSachVacXin
             FROM DatTiemPhong dt
+            JOIN PhieuDatDV p ON p.MaPhieuDV = dt.MaPhieuDV
             LEFT JOIN NhanVien nv ON dt.BacSiPhuTrach = nv.MaNV
             LEFT JOIN NguoiDung nd ON nv.MaNV = nd.MaND
             WHERE dt.MaTC = @MaTC

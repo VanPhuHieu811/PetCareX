@@ -20,7 +20,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 // Components
 import MedicalRecordDetailModal from "../../components/customer/history/MedicalRecordDetailModal";
-import AddPetModal, { PetFormData } from "../../components/customer/pets/AddPetModal";
+import AddPetModal, { PetApiPayload } from "../../components/customer/pets/AddPetModal";
 import PetList from "../../components/customer/pets/PetList";
 import PetMedicalHistory from "../../components/customer/pets/PetMedicalHistory";
 // APIs & Types
@@ -266,6 +266,7 @@ export default function Profile() {
       const mappedExams: MedicalRecord[] = examRows.map((x: any) => ({
         id: x.MaPhieuDV,
         date: x.NgayKham,
+        orderDate: x.NgayDatDV,
         petId,
         petName: pet?.TenTC || "Thú cưng",
         serviceType: "Khám bệnh",
@@ -279,6 +280,7 @@ export default function Profile() {
       const mappedVaccines: MedicalRecord[] = vxRows.map((v: any) => ({
         id: v.MaPhieuDV,
         date: v.NgayTiem,
+        orderDate: v.NgayDatDV,
         petId,
         petName: pet?.TenTC || "Thú cưng",
         serviceType: "Tiêm phòng",
@@ -314,28 +316,28 @@ export default function Profile() {
   // ==========================
   // Add pet 
   // ==========================
-  const handleAddPet = async (data: PetFormData) => {
+  const handleAddPet = async (data: any) => { 
     setAddingPet(true);
     setError(null);
+    
+    console.log("Dữ liệu nhận từ Modal:", data); 
+
     try {
-      await createPet({
-        TenTC: data.name,
-        MaGiong: data.breedId,
-        NgaySinh: data.dob,
-        GioiTinh: data.gender,
-        TinhTrangSucKhoe: data.healthStatus || null,
-      });
+      await createPet(data); 
+
+      // 3. Load lại danh sách
       setPetsLoading(true);
       const pRes = await getMyPets();
       setPets(normalizeList<PetRow>(pRes));
       setPetsLoading(false);
       setIsAddPetModalOpen(false);
     } catch (e: any) {
+      console.error(e);
       setError(e?.message || "Thêm thú cưng thất bại");
     } finally {
       setAddingPet(false);
     }
-  };
+};
 
   // ==========================
   // Save customer info

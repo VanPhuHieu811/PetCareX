@@ -92,31 +92,33 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- 1. Tự động sinh mã Thu Cưng mới (Dạng TCxxxxx)
-    DECLARE @MaxID varchar(10);
     DECLARE @NewID varchar(10);
-    DECLARE @NumberPart int;
+    DECLARE @MaxNumber int;
 
-    -- Lấy mã lớn nhất hiện tại (Ví dụ: TC00015)
-    SELECT TOP 1 @MaxID = MaTC 
-    FROM ThuCung 
-    ORDER BY MaTC DESC;
+    -- 1. Lấy con số lớn nhất hiện tại bằng cách tách chuỗi và chuyển sang INT
+    -- Chỉ lấy những mã bắt đầu bằng 'TC' và phần sau là số
+    SELECT TOP 1 @MaxNumber = CAST(SUBSTRING(MaTC, 3, LEN(MaTC) - 2) AS INT)
+    FROM ThuCung
+    WHERE MaTC LIKE 'TC%' 
+      AND ISNUMERIC(SUBSTRING(MaTC, 3, LEN(MaTC) - 2)) = 1
+    ORDER BY CAST(SUBSTRING(MaTC, 3, LEN(MaTC) - 2) AS INT) DESC;
 
-    IF @MaxID IS NULL
+    -- 2. Tính toán mã mới
+    IF @MaxNumber IS NULL
     BEGIN
-        SET @NewID = 'TC00001'; -- Nếu chưa có thì bắt đầu từ 1
+        SET @NewID = 'TC00001'; -- Nếu chưa có dữ liệu
     END
     ELSE
     BEGIN
-        SET @NumberPart = CAST(SUBSTRING(@MaxID, 3, LEN(@MaxID) - 2) AS INT) + 1;
-        SET @NewID = 'TC' + RIGHT('00000' + CAST(@NumberPart AS varchar(5)), 5);
+        -- Cộng 1 và format lại thành chuỗi có 5 số (VD: TC00005)
+        SET @NewID = 'TC' + RIGHT('00000' + CAST(@MaxNumber + 1 AS varchar(5)), 5);
     END
 
-    -- 2. Thực hiện Insert
+    -- 3. Thực hiện Insert
     INSERT INTO ThuCung (MaTC, TenTC, MaGiong, NgaySinh, TinhTrangSucKhoe, MaKH, GioiTinh)
     VALUES (@NewID, @TenTC, @MaGiong, @NgaySinh, @TinhTrangSucKhoe, @MaKH, @GioiTinh);
 
-    -- 3. Trả về thông tin thú cưng vừa tạo (để Backend hiển thị)
+    -- 4. Trả về kết quả
     SELECT * FROM ThuCung WHERE MaTC = @NewID;
 END;
 GO
