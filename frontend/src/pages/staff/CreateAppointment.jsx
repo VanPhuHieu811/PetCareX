@@ -139,29 +139,33 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
 
   // Chọn khách hàng từ gợi ý
   const handleSelectCustomer = (customer) => {
-    const customerID = customer.MaKH || customer.maKH || customer.MaND || customer.maND || customer.makh;
+    const customerID = customer.mand
     setCustomerInfo({ ...customer, __id: customerID });
     setSearchTerm(customer.HoTen); 
     setShowSuggestions(false);
     
-    // Lấy ID chuẩn để lọc danh sách pet
-
+    // Normalize ID ra ngoài để sử dụng trong filter
+    const selectedID = (customerID || '').toUpperCase().trim();
     
+    // FIX: Lọc thú cưng của khách hàng hiện tại (không phải toàn bộ)
     const customerPets = rawSearchResult
-    .filter(row =>
-      (row.MaKH === customerID || row.maKH === customerID ||
-       row.MaND === customerID || row.maND === customerID) && row.MaTC
-    )
-    .map(item => ({
-      id: item.MaTC?.trim(),
-      name: item.TenTC,
-      breed: item.TenGiong,
-      species: item.TenLoaiTC
-    }));
+        .filter(row => {
+            // So sánh chuẩn: chuyển về cùng định dạng uppercase
+            const rowMaKH = (row.mand || '').toUpperCase().trim();
+            const rowMaND = (row.mand || '').toUpperCase().trim();
+            // Kiểm tra: ID khớp VÀ có MaTC
+            return (rowMaKH === selectedID || rowMaND === selectedID) && row.MaTC;
+        })
+        .map(item => ({
+            id: item.MaTC?.trim(),
+            name: item.TenTC,
+            breed: item.TenGiong,
+            species: item.TenLoaiTC
+        }));
 
-  const uniquePets = Array.from(new Map(customerPets.map(p => [p.id, p])).values());
-  setPetList(uniquePets);
-};
+    const uniquePets = Array.from(new Map(customerPets.map(p => [p.id, p])).values());
+    setPetList(uniquePets);
+  };
 
   const handleResetCustomer = () => {
     setCustomerInfo(null);
@@ -197,10 +201,7 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
   const handleConfirmAddPet = async () => {
     // Lấy ID khách hàng từ biến thể (do SQL/API trả về có thể khác nhau)
     const customerID =
-      customerInfo?.MaKH ||
-      customerInfo?.maKH ||
-      customerInfo?.MaND ||
-      customerInfo?.maND ||
+      customerInfo?.mand ||
       customerInfo?.makh;
 
     if (!customerID) {
@@ -243,7 +244,7 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
 
   // Xác nhận Đặt Lịch
   const handleConfirmBooking = async () => {
-    const customerID = customerInfo?.MaND || customerInfo?.maND || customerInfo?.makh;
+    const customerID = customerInfo?.MaND || customerInfo?.maND || customerInfo?.mand || customerInfo?.makh;
     
     let serviceCode = 'DV001'; 
     let type = 'KhamBenh';
