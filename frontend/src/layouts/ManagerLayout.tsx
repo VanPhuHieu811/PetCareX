@@ -5,7 +5,6 @@ import {
 	LayoutDashboard,
 	Syringe,
 	Package,
-	Dog,
 	Users,
 	UserCircle,
 	LogOut,
@@ -52,7 +51,6 @@ const Layout: React.FC = () => {
 					<SidebarItem to="/manager/dashboard" icon={LayoutDashboard} label="Tổng quan & Doanh thu" />
 					<SidebarItem to="/manager/vaccination" icon={Syringe} label="Tiêm phòng" />
 					<SidebarItem to="/manager/inventory" icon={Package} label="Kho hàng & Sản phẩm" />
-					<SidebarItem to="/manager/pets" icon={Dog} label="Hồ sơ Thú cưng" />
 					<SidebarItem to="/manager/employees" icon={Users} label="Nhân sự" />
 					<SidebarItem to="/manager/customers" icon={UserCircle} label="Khách hàng" />
 					<SidebarItem to="/manager/settings" icon={Settings} label="Thông tin cá nhân" />
