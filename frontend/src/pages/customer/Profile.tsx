@@ -266,6 +266,7 @@ export default function Profile() {
       const mappedExams: MedicalRecord[] = examRows.map((x: any) => ({
         id: x.MaPhieuDV,
         date: x.NgayKham,
+        orderDate: x.NgayDatDV,
         petId,
         petName: pet?.TenTC || "Thú cưng",
         serviceType: "Khám bệnh",
@@ -279,6 +280,7 @@ export default function Profile() {
       const mappedVaccines: MedicalRecord[] = vxRows.map((v: any) => ({
         id: v.MaPhieuDV,
         date: v.NgayTiem,
+        orderDate: v.NgayDatDV,
         petId,
         petName: pet?.TenTC || "Thú cưng",
         serviceType: "Tiêm phòng",

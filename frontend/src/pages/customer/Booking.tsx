@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast'; // Import Toaster
 import clsx from 'clsx';
 import { 
     CheckCircle2, Clock, MapPin, PawPrint, Stethoscope, 
-    User, ChevronRight, ChevronLeft, Phone, ChevronDown, 
+    User, ChevronRight, ChevronLeft, ChevronDown, 
     Check, Loader2, Calendar as CalendarIcon 
 } from 'lucide-react';
 
 // --- IMPORTS API ---
-import { getMyPets } from '../../api/petApi'; // Import từ file bạn đã cung cấp
+import { getMyPets } from '../../api/petApi'; 
 import { 
     getBranches, 
     getAvailableDoctors, 
@@ -18,8 +18,9 @@ import {
     bookVaccineAppointment,
     Branch, 
     Doctor 
-} from '../../api/bookingApi'; // Import từ file mới tạo
+} from '../../api/bookingApi'; 
 
+// --- CONSTANTS ---
 const steps = [
     { id: 1, title: 'Dịch vụ & Địa điểm' },
     { id: 2, title: 'Thú cưng' },
@@ -27,7 +28,6 @@ const steps = [
     { id: 4, title: 'Xác nhận' }
 ];
 
-// ⚠️ QUAN TRỌNG: Hãy đổi id khớp với MaDV trong bảng DichVu của database
 const SERVICES_DATA = [
     { 
         id: 'DV01', 
@@ -76,26 +76,21 @@ export default function Booking() {
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const branchDropdownRef = useRef<HTMLDivElement>(null);
 
-    // 1. Fetch dữ liệu ban đầu (Chi nhánh & Pets)
+    // 1. Fetch dữ liệu ban đầu
     useEffect(() => {
         const fetchInitialData = async () => {
             setLoadingData(true);
             try {
-                // Gọi song song 2 API
                 const [branchesData, petsData] = await Promise.all([
                     getBranches(),
                     getMyPets()
                 ]);
 
-                // Xử lý Chi nhánh
                 if (branchesData) {
                     setBranches(branchesData);
                     if (branchesData.length > 0) setSelectedBranch(branchesData[0]);
                 }
 
-                // Xử lý Thú cưng (petApi.ts trả về { success: true, data: [...] } hoặc mảng trực tiếp tùy client.js)
-                // Dựa trên client.js bạn gửi: handle(res) trả về json body.
-                // Kiểm tra xem apiGet trả về mảng hay object {data: []}
                 const petList = Array.isArray(petsData) ? petsData : (petsData?.data || []);
                 setMyPetsList(petList);
                 if (petList.length > 0) setSelectedPet(petList[0]);
@@ -113,7 +108,7 @@ export default function Booking() {
         }
     }, [user]);
 
-    // 2. Fetch Bác sĩ rảnh (khi thay đổi Chi nhánh, Ngày, Giờ)
+    // 2. Fetch Bác sĩ rảnh
     useEffect(() => {
         const fetchDoctors = async () => {
             if (!selectedBranch || !selectedDate || !selectedSlot) return;
@@ -127,7 +122,6 @@ export default function Booking() {
                 if (res && res.success) {
                     setDoctors(res.data);
                 } else if (Array.isArray(res)) {
-                     // Fallback nếu API trả về mảng trực tiếp (không bọc trong success)
                     setDoctors(res);
                 }
             } catch (error) {
@@ -169,26 +163,26 @@ export default function Booking() {
         if (currentStep > 1) setCurrentStep(c => c - 1);
     };
 
-	// 1. Hàm Reset form về trạng thái ban đầu
+    // --- LOGIC RESET: Quay về đầu để đặt lịch mới ---
     const resetBooking = () => {
         setCurrentStep(1);
         setSelectedSlot(null);
         setSelectedDoctor(null);
-        // Giữ lại chi nhánh và thú cưng để khách đỡ chọn lại
+        setSelectedDate(new Date().toISOString().split('T')[0]); // Reset về hôm nay
+        // Note: Không reset Branch/Pet/Service để tiện cho User đặt tiếp nếu cần
+        setIsSubmitting(false); // Tắt trạng thái loading sau khi reset xong
     };
 
-    // 3. Xử lý Đặt lịch
+    // --- LOGIC CONFIRM: Đặt lịch & Thông báo ---
     const handleConfirm = async () => {
-        // Kiểm tra dữ liệu đầu vào
         if (!user) return toast.error("Vui lòng đăng nhập để đặt lịch");
         if (!selectedBranch?.MaCN) return toast.error("Lỗi: Chi nhánh không hợp lệ");
-        if (!selectedPet?.MaTC) return toast.error("Lỗi: Thú cưng không hợp lệ (Thiếu Mã TC)");
+        if (!selectedPet?.MaTC) return toast.error("Lỗi: Thú cưng không hợp lệ");
         if (!selectedDoctor?.MaNV) return toast.error("Lỗi: Bác sĩ không hợp lệ");
         if (!selectedSlot) return toast.error("Vui lòng chọn giờ khám");
 
         setIsSubmitting(true);
         try {
-            // Định dạng ngày giờ chuẩn ISO cho SQL Server
             const dateTimeISO = `${selectedDate}T${selectedSlot}:00`; 
 
             const commonPayload = {
@@ -199,9 +193,6 @@ export default function Booking() {
                 bacSiPhuTrach: selectedDoctor.MaNV,
                 maTC: selectedPet.MaTC,
             };
-
-            // LOG ĐỂ DEBUG: Bật F12 xem cái này nếu vẫn lỗi 500
-            console.log("🚀 Payload gửi đi:", { ...commonPayload, dateTimeISO });
 
             let res;
             if (selectedService.type === 'Khám bệnh') {
@@ -217,25 +208,35 @@ export default function Booking() {
                 });
             }
 
-            if (res && res.success) {
-                toast.success("Đặt lịch thành công! Bác sĩ đang chờ bạn.");
-                resetBooking(); // <--- Quay lại màn hình đặt lịch
+            if (res && (res.success === true || res.success === undefined)) {
+                
+                const successMsg = selectedService.type === 'Khám bệnh' 
+                    ? "Đã đặt lịch khám bệnh thành công!" 
+                    : "Đã đặt lịch tiêm phòng thành công!";
+                
+                toast.success(successMsg, { duration: 3000 });
+
+                setTimeout(() => {
+                    resetBooking();
+                }, 2000); 
+
             } else {
-                toast.error(res?.message || "Đặt lịch thất bại (Lỗi Server)");
+                toast.error(res?.message || "Đặt lịch thất bại.");
+                setIsSubmitting(false);
             }
 
         } catch (error: any) {
             console.error("API Error:", error);
-            // Hiển thị lỗi chi tiết từ Backend nếu có
-            const msg = error?.message || "Có lỗi xảy ra khi kết nối server";
-            toast.error(msg);
-        } finally {
+            toast.error(error?.message || "Lỗi kết nối server");
             setIsSubmitting(false);
         }
     };
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl font-sans">
+            {/* --- COMPONENT TOASTER ĐỂ HIỆN THÔNG BÁO --- */}
+            <Toaster position="top-center" reverseOrder={false} />
+
             {/* Progress Bar */}
             <div className="mb-8">
                 <div className="flex items-center justify-between relative">
