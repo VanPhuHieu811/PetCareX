@@ -21,7 +21,6 @@ import ManagerDashboard from './pages/manager/Dashboard';
 import Employees from './pages/manager/Employees';
 import Inventory from './pages/manager/Inventory';
 import Vaccination from './pages/manager/Vaccination';
-import Pets from './pages/manager/Pets';
 import ManagerCustomers from './pages/manager/Customers';
 import ManagerSettings from './pages/manager/ManagerSettings';
 
@@ -71,7 +70,6 @@ function App() {
 							<Route path="employees" element={<Employees />} />
 							<Route path="inventory" element={<Inventory />} />
 							<Route path="vaccination" element={<Vaccination />} />
-							<Route path="pets" element={<Pets />} />
 							<Route path="customers" element={<ManagerCustomers />} />
 							<Route path="settings" element={<ManagerSettings />} />
 						</Route>

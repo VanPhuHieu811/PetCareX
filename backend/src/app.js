@@ -60,4 +60,5 @@ app.use('/api/v1/packages', packagesRoutes);
 app.use('/api/v1/vacxin', vacxinRoutes);
 
 app.use('/api/v1/staff', staffRoutes);
+
 export default app;

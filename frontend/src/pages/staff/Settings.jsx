@@ -129,8 +129,6 @@ const Settings = () => {
         {/* --- LEFT MENU --- */}
         <div className="lg:col-span-4 space-y-4">
           <SettingsTab icon={User} label="Thông tin cá nhân" active />
-          <SettingsTab icon={Bell} label="Thông báo" />
-          <SettingsTab icon={Shield} label="Quyền hạn & Bảo mật" />
 
           <hr className="border-gray-100 my-6" />
 
