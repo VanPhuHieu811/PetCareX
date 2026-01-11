@@ -9,6 +9,16 @@ GO
 USE PetCareX;
 GO
 
+-- use master
+-- go
+
+-- IF EXISTS (SELECT * FROM sys.databases WHERE name = 'PetCareX')
+-- BEGIN
+--     ALTER DATABASE PetCareX SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+--     DROP DATABASE PetCareX;
+-- END
+-- GO
+
 /* =========================================================
    1. NHÓM DANH MỤC (MASTER DATA)
    ========================================================= */
