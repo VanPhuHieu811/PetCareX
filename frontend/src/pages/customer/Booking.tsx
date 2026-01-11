@@ -338,7 +338,10 @@ export default function Booking() {
                                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                     <PawPrint className="text-blue-600" /> Chọn thú cưng
                                 </h2>
-                                <button onClick={() => navigate('/customer/pets/add')} className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                                <button 
+                                    onClick={() => navigate('/customer/profile', { state: { openAddPet: true } })} 
+                                    className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                                >
                                     + Thêm mới
                                 </button>
                             </div>
