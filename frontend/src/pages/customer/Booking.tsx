@@ -195,7 +195,7 @@ export default function Booking() {
                 maKH: user.MaND || user.id || "", 
                 maCN: selectedBranch.MaCN,
                 maDV: selectedService.id, 
-                hinhThucDat: 'Đặt trước',
+                hinhThucDat: 'Online',
                 bacSiPhuTrach: selectedDoctor.MaNV,
                 maTC: selectedPet.MaTC,
             };
