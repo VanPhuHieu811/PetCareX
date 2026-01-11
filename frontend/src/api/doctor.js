@@ -1,4 +1,4 @@
-import { apiGet} from "./client";
+import { apiGet, apiPost , apiPatch} from "./client";
 
 export function getAppointmentQueue() {
   return apiGet("/api/v1/services/dasboard");
@@ -35,7 +35,7 @@ export function getPetVaccinations(petId) {
 }
 
 export function getMedicinesInStock(branchId) {
-  return apiGet(`/api/v1/services/exams/medicines/${encodeURIComponent(branchId)}`);
+  return apiGet(`/api/v1/services/exams/medicines/${branchId}`);
 }
 
 export function createPrescription(data) {
