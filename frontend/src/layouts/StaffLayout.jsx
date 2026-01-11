@@ -266,10 +266,12 @@ const StaffLayout = () => {
               )}
             </div>
 
-            {/* Chi nhánh hiển thị */}
-            <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-100 flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              {displayBranch}
+            {/* Chi nhánh + Tên nhân viên hiển thị */}
+            <div className="text-emerald-600 text-xs font-bold flex items-center gap-2 whitespace-nowrap">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shrink-0"></span>
+              <span>{displayName}</span>
+              <span className="text-gray-400">•</span>
+              <span>{displayBranch}</span>
             </div>
           </div>
         </header>
