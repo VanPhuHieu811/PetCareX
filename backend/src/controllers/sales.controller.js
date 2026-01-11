@@ -36,7 +36,7 @@ export const getSalesStats = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            date: dateDisplay.toLocaleDateString('vi-VN'), 
+            date: dateDisplay.toLocaleDateString('vi-VN'),
             filter: {
                 branch: branchId ? `Chi nhánh ${branchId}` : 'Toàn hệ thống',
                 date: date || 'Hôm nay (Mặc định)'
@@ -48,11 +48,39 @@ export const getSalesStats = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            error: 'Lấy thống kê thất bại', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Lấy thống kê thất bại',
+            details: error.message
         });
     }
 };
 
-export default { getInvoices, getSalesStats };
+
+export const createOrder = async (req, res) => {
+    try {
+        const { branchId, staffId, customerId, items, paymentMethod } = req.body;
+
+        if (!branchId || !staffId || !items || !items.length) {
+            return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc' });
+        }
+
+        const newOrder = await salesService.createPOSOrder(req.db, {
+            branchId,
+            staffId,
+            customerId,
+            items,
+            paymentMethod
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Tạo đơn hàng thành công',
+            data: newOrder
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export default { getInvoices, getSalesStats, createOrder };

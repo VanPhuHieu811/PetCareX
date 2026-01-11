@@ -167,19 +167,21 @@ const StaffLayout = () => {
 
         {/* --- Thông tin nhân viên dưới Sidebar --- */}
         <div className="mt-auto border-t border-gray-100 pt-6 px-4">
-          <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 border-2 border-white">
-              {displayName.charAt(0)}
+          <Link to="/staff/settings" className="block">
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 border-2 border-white group-hover:border-blue-200 transition-colors">
+                {displayName.charAt(0)}
+              </div>
+              <div className="overflow-hidden">
+                <p className="font-bold text-sm text-gray-800 truncate group-hover:text-blue-600 transition-colors" title={displayName}>
+                  {displayName}
+                </p>
+                <p className="text-[11px] text-gray-400 font-medium truncate" title={displayBranch}>
+                  {roleLabel} • {displayBranch}
+                </p>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <p className="font-bold text-sm text-gray-800 truncate" title={displayName}>
-                {displayName}
-              </p>
-              <p className="text-[11px] text-gray-400 font-medium truncate" title={displayBranch}>
-                {roleLabel} • {displayBranch}
-              </p>
-            </div>
-          </div>
+          </Link>
         </div>
       </aside>
 
@@ -257,10 +259,12 @@ const StaffLayout = () => {
               )}
             </div>
 
-            {/* Chi nhánh hiển thị */}
-            <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-100 flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              {displayBranch}
+            {/* Chi nhánh + Tên nhân viên hiển thị */}
+            <div className="text-emerald-600 text-xs font-bold flex items-center gap-2 whitespace-nowrap">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shrink-0"></span>
+              <span>{displayName}</span>
+              <span className="text-gray-400">•</span>
+              <span>{displayBranch}</span>
             </div>
           </div>
         </header>

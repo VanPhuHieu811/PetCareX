@@ -121,7 +121,8 @@ BEGIN
 END;
 GO
 
-
+SELECT * FROM PhieuDatDV 
+WHERE MaPhieuDV not like 'PDV00%'
 
 select *
 from DichVu

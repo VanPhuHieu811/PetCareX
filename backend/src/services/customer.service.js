@@ -249,3 +249,21 @@ export const getReceiptDetails = async (pool, receiptId, customerId) => {
     throw new Error(`Database query failed: ${err.message}`);
   }
 };
+
+export const getCustomerById = async (pool, customerId) => {
+  try {
+    const request = pool.request()
+    const query = `
+      select nd.MaND, nd.HoTen
+      from KhachHang kh
+      join NguoiDung nd on kh.MaKH = nd.MaND
+      where kh.MaKH = @MaKH
+    `;
+    request.input('MaKH', customerId);
+    
+    const result = await request.query(query);
+    return result.recordset[0];
+  } catch (err) {
+    throw new Error(`Database query failed: ${err.message}`);
+  }
+}
