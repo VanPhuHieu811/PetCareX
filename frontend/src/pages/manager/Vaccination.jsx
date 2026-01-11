@@ -33,6 +33,34 @@ export default function Vaccination() {
 	// State quản lý danh sách vắc-xin (Local state simulation)
 	const [vaccines, setVaccines] = useState([]);
 	const [allVaccines, setAllVaccines] = useState([]);
+	const [vacxinUseRates, setVacxinUseRates] = useState([]);
+
+	const [branchID, setBranchID] = useState("");
+	// Lấy dữ liệu branch của quản lý
+	useEffect(() => {
+		async function fetchStaffBranch() {
+			try {
+				const token = localStorage.getItem('petcare_token');
+				const res = await fetch(`${BASEURL}/branches/staff-branch`, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+				if (!res.ok)
+					throw new Error(`Failed to fetch staff branch: ${res.status} ${res.statusText}`);
+				const data = await res.json();
+				if (data.length > 0) {
+					setBranchID(data[0].MaCN);
+				} else {
+					console.error('No branch found for the staff member.');
+				}
+			} catch (error) {
+				console.error('Error fetching staff branch:', error);
+			}
+		}
+		fetchStaffBranch();
+	}, []);
+
 	useEffect(() => {
 		async function fetchVacxinsByBranch() {
 			try {
@@ -373,9 +401,7 @@ export default function Vaccination() {
 
 			{isSelectOpen && !isModalOpen && (
 				<div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-					<div 
-						className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden"
-					>
+					<div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
 						<div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
 							<h2 className="text-white font-bold text-lg">
 								Nhập Vacxin vào chi nhánh

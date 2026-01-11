@@ -105,7 +105,6 @@ const StaffLayout = () => {
     { icon: Calendar, label: "Lịch hẹn", path: "/staff/appointments" },
     { icon: Search, label: "Tra cứu thú cưng", path: "/staff/search" },
     { icon: Users, label: "Khách hàng", path: "/staff/customers" },
-    { icon: PawPrint, label: "Thú cưng", path: "/staff/pets" },
   ];
 
   const salesMenu = [
@@ -189,15 +188,7 @@ const StaffLayout = () => {
         {/* Header */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-30 w-full">
           <div className="relative w-full max-w-md">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Tìm kiếm khách hàng, thú cưng, lịch hẹn..."
-              className="w-full pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"
-            />
+
           </div>
 
           <div className="flex items-center gap-6">
