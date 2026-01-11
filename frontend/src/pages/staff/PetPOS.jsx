@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShoppingBag, Search, Plus, Minus, Trash2, CreditCard,
-  Banknote, X, CheckCircle2, User, Package, Store, ChevronLeft, ChevronRight, Loader2, Bell
+  Banknote, X, CheckCircle2, User, Package, Store, ChevronLeft, ChevronRight, Loader2, Bell, AlertCircle
 } from 'lucide-react';
 import staffApi from '../../api/staffApi';
 import { productApi } from '../../api/productApi';
+import { getCustomerById } from '../../api/customerApi';
 
 const PetPOS = () => {
   const [cart, setCart] = useState([]);
+  const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [isValidCustomer, setIsValidCustomer] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [staffProfile, setStaffProfile] = useState(null);
@@ -99,6 +102,33 @@ const PetPOS = () => {
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const discount = subtotal > 500000 ? 50000 : 0;
   const total = subtotal - discount;
+
+  // Auto-lookup customer when ID changes
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!customerId.trim()) {
+        setCustomerName('');
+        setIsValidCustomer(true);
+        return;
+      }
+      try {
+        const res = await getCustomerById(customerId);
+        if (res.success && res.data) {
+          setCustomerName(res.data.HoTen);
+          setIsValidCustomer(true);
+        } else {
+          setCustomerName('Không tìm thấy khách hàng');
+          setIsValidCustomer(false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customer:", error);
+        setCustomerName('Không tìm thấy khách hàng');
+        setIsValidCustomer(false);
+      }
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [customerId]);
 
   return (
     <div className="flex flex-col h-screen gap-6">
@@ -210,17 +240,23 @@ const PetPOS = () => {
               <h3 className="text-lg font-black text-gray-800 tracking-tight">Đơn hàng mới</h3>
             </div>
 
-            {/* Ô điền tên khách hàng */}
+            {/* Ô điền mã khách hàng - Updated */}
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Nhập tên khách hàng..."
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                placeholder="Nhập mã khách hàng..."
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-blue-200 transition-all"
               />
             </div>
+            {customerName && (
+              <div className={`mt-2 ml-1 flex items-center gap-2 ${isValidCustomer ? 'text-emerald-600' : 'text-red-500'} animate-in fade-in slide-in-from-top-1`}>
+                {isValidCustomer ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                <span className="text-xs font-bold">{isValidCustomer ? `Khách: ${customerName}` : customerName}</span>
+              </div>
+            )}
           </div>
 
           {/* Danh sách giỏ hàng */}
@@ -278,8 +314,8 @@ const PetPOS = () => {
 
             <button
               onClick={() => setShowSuccess(true)}
-              disabled={cart.length === 0 || !customerName}
-              className={`w-full py-4 rounded-xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 ${cart.length > 0 && customerName ? 'bg-[#0095FF] text-white shadow-blue-100 hover:bg-blue-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
+              disabled={cart.length === 0}
+              className={`w-full py-4 rounded-xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 ${cart.length > 0 ? 'bg-[#0095FF] text-white shadow-blue-100 hover:bg-blue-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
             >
               THANH TOÁN (IN HÓA ĐƠN)
             </button>
