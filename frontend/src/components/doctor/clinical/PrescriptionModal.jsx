@@ -1,31 +1,87 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockMedicines } from '../../../services/mockDataBS';
+// import { mockMedicines } from '../../../services/mockDataBS';
+// import { createPrescription } from '../../../api/doctor';
+import { createPrescription, getMedicinesInStock, updateRevisitDate } from '../../../api/doctor';
 import CalendarPicker from '../common/CalendarPicker';
 
-const PrescriptionModal = ({ isOpen, onClose, petName, formData }) => {
+const PrescriptionModal = ({ isOpen, onClose, petName, formData, maPhieuDV, branchId }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [dbMedicines, setDbMedicines] = useState([]);
   const [selectedMeds, setSelectedMeds] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [revisitDate, setRevisitDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && branchId) {
+      const fetchMeds = async () => {
+        try {
+          const res = await getMedicinesInStock(branchId); //
+          if (res.success) setDbMedicines(res.data);
+        } catch (err) {
+          console.error("Lỗi lấy danh sách thuốc:", err);
+        }
+      };
+      fetchMeds();
+    }
+  }, [isOpen, branchId]);
+
 
   if (!isOpen) return null;
 
+
+
   const handleAddMed = (med) => {
     if (!selectedMeds.find(m => m.MaSP === med.MaSP)) {
-      setSelectedMeds([...selectedMeds, { ...med, lieuDung: '', tanSuat: '', thoiGian: '', soLuong: '' }]);
+      setSelectedMeds([...selectedMeds, { ...med, lieuDung: '', tanSuat: '', soLuong: '' }]);
     }
     setShowSearch(false);
     setSearchTerm('');
   };
 
-  const handleSave = () => {
-    alert("Kê đơn thành công!");
-    onClose();
-    navigate('/doctor/dashboard');
+  const updateMedField = (idx, field, value) => {
+    const newMeds = [...selectedMeds];
+    newMeds[idx][field] = value;
+    setSelectedMeds(newMeds);
+  };
+
+  // const handleSave = () => {
+  //   alert("Kê đơn thành công!");
+  //   onClose();
+  //   navigate('/doctor/dashboard');
+  // };
+
+  const handleSave = async () => {
+    if (selectedMeds.length === 0) return;
+
+    try {
+      setIsSubmitting(true);
+      
+      // A. Tạo đơn thuốc (API 32)
+      const prescriptionData = {
+        MaPhieuDV: maPhieuDV,
+        MaCN: branchId,
+        medicines: selectedMeds
+      };
+      await createPrescription(prescriptionData); //
+
+      // B. Cập nhật ngày tái khám nếu có chọn (API PATCH revisit-date)
+      if (revisitDate) {
+        await updateRevisitDate(maPhieuDV, revisitDate); //
+      }
+
+      alert("Kê đơn và hẹn lịch thành công!");
+      onClose();
+      navigate('/doctor/dashboard');
+    } catch (err) {
+      alert(`Lỗi: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,7 +129,7 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData }) => {
                       <div key={med.MaSP} onClick={() => handleAddMed(med)} className="p-4 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 flex justify-between">
                         <div>
                           <p className="text-sm font-bold text-blue-700">{med.TenSP}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">{med.Loai}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{med.DonVi}</p>
                         </div>
                         <p className="text-[10px] text-slate-400 font-bold">Tồn: {med.Ton}</p>
                       </div>
@@ -97,10 +153,14 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData }) => {
                     <h5 className="font-bold text-slate-800 text-sm mb-1">{med.TenSP}</h5>
                     <p className="text-[10px] text-slate-400 font-bold mb-4 uppercase">{med.DonVi}</p>
                     <div className="grid grid-cols-4 gap-3">
-                      <InputBox label="Liều dùng" placeholder="VD: 1 viên" />
+                      {/* <InputBox label="Liều dùng" placeholder="VD: 1 viên" />
                       <InputBox label="Tần suất" placeholder="2 lần/ngày" />
                       <InputBox label="Thời gian" placeholder="5 ngày" />
-                      <InputBox label="Số lượng" placeholder="10" suffix="viên" />
+                      <InputBox label="Số lượng" placeholder="10" suffix="viên" /> */}
+
+                      <InputBox label="Liều dùng" placeholder="1 viên" value={med.lieuDung} onChange={(v) => updateMedField(idx, 'lieuDung', v)} />
+                      <InputBox label="Tần suất" placeholder="2 lần/ngày" value={med.tanSuat} onChange={(v) => updateMedField(idx, 'tanSuat', v)} />
+                      <InputBox label="Số lượng" placeholder="10" suffix={med.DonVi} value={med.soLuong} onChange={(v) => updateMedField(idx, 'soLuong', v)} />
                     </div>
                   </div>
                 ))}
@@ -143,12 +203,17 @@ const PrescriptionModal = ({ isOpen, onClose, petName, formData }) => {
 
         {/* Footer Actions */}
         <div className="p-8 border-t border-slate-50 flex justify-end gap-3">
-          <button onClick={onClose} className="px-8 py-3 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-colors">Hủy</button>
-          <button 
+          <button onClick={onClose} disabled={isSubmitting} className="px-8 py-3 rounded-xl border font-bold text-slate-500">Hủy</button>
+          <button
             onClick={handleSave}
-            className={`px-8 py-3 rounded-xl font-bold text-white transition-all shadow-lg ${selectedMeds.length > 0 ? 'bg-blue-600 shadow-blue-100 hover:scale-105' : 'bg-blue-300 cursor-not-allowed'}`}
+            disabled={isSubmitting || selectedMeds.length === 0}
+          //   className={`px-8 py-3 rounded-xl font-bold text-white transition-all shadow-lg ${selectedMeds.length > 0 ? 'bg-blue-600 shadow-blue-100 hover:scale-105' : 'bg-blue-300 cursor-not-allowed'}`}
+          // >
+          //   💾 Lưu đơn thuốc ({selectedMeds.length})
+          // </button>
+          className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg ${isSubmitting || selectedMeds.length === 0 ? 'bg-blue-300' : 'bg-blue-600 hover:scale-105'}`}
           >
-            💾 Lưu đơn thuốc ({selectedMeds.length})
+            {isSubmitting ? "Đang lưu..." : `Lưu đơn thuốc (${selectedMeds.length})`}
           </button>
         </div>
       </div>
@@ -160,7 +225,8 @@ const InputBox = ({ label, placeholder, suffix }) => (
   <div>
     <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">{label}</label>
     <div className="relative">
-      <input className="w-full p-3 rounded-xl border border-slate-100 bg-slate-50/30 text-xs font-bold outline-none focus:border-blue-300 transition-all" placeholder={placeholder} />
+      <input className="w-full p-3 rounded-xl border border-slate-100 bg-slate-50/30 text-xs font-bold outline-none focus:border-blue-300 transition-all" placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}/>
+
       {suffix && <span className="absolute right-3 top-3 text-[10px] text-slate-300 font-bold uppercase">{suffix}</span>}
     </div>
   </div>

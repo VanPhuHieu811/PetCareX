@@ -33,3 +33,18 @@ export function getPetExams(petId) {
 export function getPetVaccinations(petId) {
   return apiGet(`/api/v1/pets/vaccinations/${encodeURIComponent(petId)}`);
 }
+
+export function getMedicinesInStock(branchId) {
+  return apiGet(`/api/v1/services/exams/medicines/${encodeURIComponent(branchId)}`);
+}
+
+export function createPrescription(data) {
+  return apiPost("/api/v1/services/exams/medicines", data);
+}
+
+export function updateRevisitDate(maPhieuDV, ngayTaiKham) {
+  return apiPatch("/api/v1/services/exams/revisit-date", {
+    maPhieuDV,
+    ngayTaiKham
+  });
+}

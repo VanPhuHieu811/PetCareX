@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Endpoint: GET /api/v1/appointments/queue/NV0094
 router.get('/dasboard', authenticate, authorizeDoctor,servicesController.getDashboard);
-router.get('/exams/medicines', servicesController.getMedicines);
+router.get('/exams/medicines/:branchId', servicesController.getMedicines);
 router.post('/exams/medicines', servicesController.postPrescription);
 router.patch('/exams/revisit-date', servicesController.patchRevisitDate);
 router.patch('/exams', servicesController.patchExamDiagnosis);

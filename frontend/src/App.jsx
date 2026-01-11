@@ -102,7 +102,7 @@ function App() {
 							<Route index element={<Navigate to="dashboard" replace />} />
 							<Route path="dashboard" element={<Dashboard />} />
 							<Route path="pet/:id" element={<PetDetail />} />
-							<Route path="exam/:petId" element={<ClinicalExam />} />
+							<Route path="exam/:MaPhieuDV" element={<ClinicalExam />} />
 							<Route path="vaccination/:petId" element={<CustomerVaccination />} />
 							<Route path="settings" element={<DoctorSetting />} />
 						</Route>

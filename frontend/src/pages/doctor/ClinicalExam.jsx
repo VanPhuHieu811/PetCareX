@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { petHistories, currentUser } from '../../services/mockDataBS';
-import { getCustomerDetails } from '../../api/doctor';
+import { getCustomerDetails, getAppointmentQueue } from '../../api/doctor';
 // 1. Import các component đã tách
 import Step1Diagnosis from '../../components/doctor/clinical/Step1Diagnosis';
 import Step2Treatment from '../../components/doctor/clinical/Step2Treatment'; 
@@ -10,7 +10,8 @@ import PrescriptionModal from '../../components/doctor/clinical/PrescriptionModa
 import AppointmentModal from '../../components/doctor/clinical/AppointmentModal';
 
 const ClinicalExam = () => {
-  const { petId } = useParams();
+  const { MaPhieuDV } = useParams();
+  
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   
@@ -27,32 +28,86 @@ const ClinicalExam = () => {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
 
-  const [pet, setPetInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [queue, setQueue] = useState([]);
+  const [pet, setPetInfo] = useState(null);
   useEffect(() => {
-    const fetchPetFullData = async () => {
-      try {
-        setLoading(true);
-        // Chạy song song các API để tối ưu tốc độ
-        const [customerData] = await Promise.all([
-          getCustomerDetails(petId),    // Lấy info từ hàm bạn vừa đưa
-        ]);
+      const fetchDashboardData = async () => {
+          try {
+              setLoading(true);
+              const response = await getAppointmentQueue();
+              if (response.success) {
+                  // Cấu trúc response khớp với Backend bạn đã viết: { dashboardStats, queue }
+                  setQueue(response.queue);
+              }
+          } catch (err) {
+              console.error("Lỗi khi lấy dữ liệu dashboard:", err);
+          } finally {
+              setLoading(false);
+          }
+      };
 
-        const customer = customerData?.data?.[0];
+      fetchDashboardData();
+  }, []);
 
-        if (customer) {
-          setPetInfo(customer);
-        }
 
-      } catch (err) {
-        console.error("Lỗi khi tải hồ sơ thú cưng:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPetFullData();
-}, [petId]);
+  const currentPet = queue.find(p => p.MaPhieuDV === MaPhieuDV);
 
+//  if (loading) return <div>Đang tải...</div>;
+  
+
+//  console.log(currentPet.MaTC);
+
+//   useEffect(() => {
+//     if (!currentPet.MaTC) return;
+//     const fetchPetFullData = async () => {
+//       try {
+//         setLoading(true);
+//         // Chạy song song các API để tối ưu tốc độ
+//         const [customerData] = await Promise.all([
+//           getCustomerDetails(currentPet.MaTC),    // Lấy info từ hàm bạn vừa đưa
+//         ]);
+
+//         const customer = customerData?.data?.[0];
+
+//         if (customer) {
+//           setPetInfo(customer);
+//         }
+
+//       } catch (err) {
+//         console.error("Lỗi khi tải hồ sơ thú cưng:", err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchPetFullData();
+// }, [currentPet.MaTC]);
+
+  useEffect(() => {
+  if (!currentPet?.MaTC) return;
+
+  const fetchPetFullData = async () => {
+    try {
+      setLoading(true);
+      const customerData = await getCustomerDetails(currentPet.MaTC);
+      const customer = customerData?.data?.[0];
+      if (customer) setPetInfo(customer);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPetFullData();
+}, [currentPet?.MaTC]);
+  
+if (loading) return <div className="p-10 text-center">Đang tải ...</div>;
+if (!currentPet) return <div>Không tìm thấy phiếu dịch vụ</div>;
+if (!pet) return <div className="p-10 text-center">Không tìm thấy thông tin thú cưng</div>;
+
+
+console.log(pet);
 
   const currentTime = "19:41"; 
   
@@ -152,6 +207,8 @@ const ClinicalExam = () => {
           onClose={() => setIsModalOpen(false)} 
           petName={pet?.TenTC || "Lucky"} 
           formData={formData}
+          maPhieuDV={currentPet.MaPhieuDV}
+          branchId={currentPet.MaCN}
         />
         {/* 3. Chèn Modal vào cuối Component */}
         <AppointmentModal 
