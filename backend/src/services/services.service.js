@@ -28,6 +28,13 @@ export const searchMedicines = async (pool, branchId) => {
 export const createPrescription = async (pool, data) => {
   const { MaPhieuDV, MaCN, NgayTaiKham, medicines } = data;
 
+
+  console.log(MaCN);
+
+  if (!MaPhieuDV || !MaCN || !Array.isArray(medicines)) {
+    throw new Error('Dữ liệu kê đơn không hợp lệ');
+  }
+
   try {
     // Lặp qua từng loại thuốc trong đơn để lưu vào DB
     for (const item of medicines) {
@@ -35,10 +42,10 @@ export const createPrescription = async (pool, data) => {
         .input('MaPhieuDV', MaPhieuDV)
         .input('MaSP', item.MaSP)
         .input('MaCN', MaCN)
-        .input('SoLuongMua', parseInt(item.soLuong))
-        .input('TanSuat', item.tanSuat)
+        .input('SoLuongMua', Number(item.soLuong))
+        .input('TanSuat', Number(item.tanSuat))
         .input('LieuDung', item.lieuDung)
-        .input('NgayTaiKham', NgayTaiKham)
+        .input('NgayTaiKham', NgayTaiKham || null)
         .execute('sp_TaoDonThuoc'); // Gọi SP có logic Trừ kho & Snapshot
     }
     return { success: true };

@@ -21,7 +21,7 @@ export const getDashboard = async (req, res) => {
 
 export const getMedicines = async (req, res) => {
   try {
-    const { branchId } = req.body; // Lấy từ Query String
+    const { branchId } = req.params; // Lấy từ Query String
     const medicines = await servicesService.searchMedicines(req.db, branchId);
     
     res.status(200).json(medicines);

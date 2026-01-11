@@ -199,9 +199,9 @@ const Dashboard = () => {
 												onClick={(e) => {
 													e.stopPropagation();
 													if (apt.LoaiDichVu === 'Khám bệnh') {
-														navigate(`/doctor/exam/${apt.MaTC}`); // Chuyển sang trang khám bạn vừa tạo
+														navigate(`/doctor/exam/${apt.MaPhieuDV}`); // Chuyển sang trang khám bạn vừa tạo
 													} else {
-														navigate(`/doctor/vaccination/${apt.MaTC}`);
+														navigate(`/doctor/vaccination/${apt.MaPhieuDV}`);
 													}
 												}}
 												className={`w-[90px] h-[38px] rounded-xl text-sm font-bold text-white

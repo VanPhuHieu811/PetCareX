@@ -1,4 +1,4 @@
-import { apiGet} from "./client";
+import { apiGet, apiPost , apiPatch} from "./client";
 
 export function getAppointmentQueue() {
   return apiGet("/api/v1/services/dasboard");
@@ -33,3 +33,37 @@ export function getPetExams(petId) {
 export function getPetVaccinations(petId) {
   return apiGet(`/api/v1/pets/vaccinations/${encodeURIComponent(petId)}`);
 }
+
+export function getMedicinesInStock(branchId) {
+  return apiGet(`/api/v1/services/exams/medicines/${branchId}`);
+}
+
+export function createPrescription(data) {
+  return apiPost("/api/v1/services/exams/medicines", data);
+}
+
+export function updateRevisitDate(maPhieuDV, ngayTaiKham) {
+  return apiPatch("/api/v1/services/exams/revisit-date", {
+    maPhieuDV,
+    ngayTaiKham
+  });
+}
+
+// src/api/doctor.js
+export const updateExamDiagnosis = async (data) => {
+  const res = await fetch('http://localhost:3000/api/v1/services/exams', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || 'Cập nhật khám thất bại');
+  }
+
+  return json;
+};

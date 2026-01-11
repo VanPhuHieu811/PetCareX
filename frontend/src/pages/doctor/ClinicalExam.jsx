@@ -1,61 +1,117 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { petHistories, currentUser } from '../../services/mockDataBS';
-import { getCustomerDetails } from '../../api/doctor';
+import { getCustomerDetails, getAppointmentQueue } from '../../api/doctor';
+import { updateExamDiagnosis } from '../../api/doctor';
 // 1. Import các component đã tách
 import Step1Diagnosis from '../../components/doctor/clinical/Step1Diagnosis';
-import Step2Treatment from '../../components/doctor/clinical/Step2Treatment'; 
+import Step2Treatment from '../../components/doctor/clinical/Step2Treatment';
 import Stepper from '../../components/doctor/common/Stepper';
 import PrescriptionModal from '../../components/doctor/clinical/PrescriptionModal';
 import AppointmentModal from '../../components/doctor/clinical/AppointmentModal';
 
 const ClinicalExam = () => {
-  const { petId } = useParams();
+  const { MaPhieuDV } = useParams();
+
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  
+
   // 1. CẬP NHẬT: Thêm state quản lý đóng/mở Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // 2. Thêm state để lưu trữ dữ liệu form của các bước
   const [formData, setFormData] = useState({
     trieuChung: '',
-    chuanDoan: '',
-    huongXuLy: ''
+    chuanDoan: ''
   });
 
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
 
-  const [pet, setPetInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [queue, setQueue] = useState([]);
+  const [pet, setPetInfo] = useState(null);
   useEffect(() => {
-    const fetchPetFullData = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        // Chạy song song các API để tối ưu tốc độ
-        const [customerData] = await Promise.all([
-          getCustomerDetails(petId),    // Lấy info từ hàm bạn vừa đưa
-        ]);
-
-        const customer = customerData?.data?.[0];
-
-        if (customer) {
-          setPetInfo(customer);
+        const response = await getAppointmentQueue();
+        if (response.success) {
+          // Cấu trúc response khớp với Backend bạn đã viết: { dashboardStats, queue }
+          setQueue(response.queue);
         }
-
       } catch (err) {
-        console.error("Lỗi khi tải hồ sơ thú cưng:", err);
+        console.error("Lỗi khi lấy dữ liệu dashboard:", err);
       } finally {
         setLoading(false);
       }
     };
+
+    fetchDashboardData();
+  }, []);
+
+
+  const currentPet = queue.find(p => p.MaPhieuDV === MaPhieuDV);
+
+  //  if (loading) return <div>Đang tải...</div>;
+
+
+  //  console.log(currentPet.MaTC);
+
+  //   useEffect(() => {
+  //     if (!currentPet.MaTC) return;
+  //     const fetchPetFullData = async () => {
+  //       try {
+  //         setLoading(true);
+  //         // Chạy song song các API để tối ưu tốc độ
+  //         const [customerData] = await Promise.all([
+  //           getCustomerDetails(currentPet.MaTC),    // Lấy info từ hàm bạn vừa đưa
+  //         ]);
+
+  //         const customer = customerData?.data?.[0];
+
+  //         if (customer) {
+  //           setPetInfo(customer);
+  //         }
+
+  //       } catch (err) {
+  //         console.error("Lỗi khi tải hồ sơ thú cưng:", err);
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     };
+  //     fetchPetFullData();
+  // }, [currentPet.MaTC]);
+
+  useEffect(() => {
+    if (!currentPet?.MaTC) return;
+
+    const fetchPetFullData = async () => {
+      try {
+        setLoading(true);
+        const customerData = await getCustomerDetails(currentPet.MaTC);
+        const customer = customerData?.data?.[0];
+        if (customer) setPetInfo(customer);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchPetFullData();
-}, [petId]);
+  }, [currentPet?.MaTC]);
+
+  if (loading) return <div className="p-10 text-center">Đang tải ...</div>;
+  if (!currentPet) return <div>Không tìm thấy phiếu dịch vụ</div>;
+  if (!pet) return <div className="p-10 text-center">Không tìm thấy thông tin thú cưng</div>;
 
 
-  const currentTime = "19:41"; 
-  
+  console.log(pet);
+  console.log(currentPet);
+
+  const currentTime = "19:41";
+
   // 2. Định nghĩa danh sách các bước
   const stepsConfig = [
     { label: "Chẩn đoán", sub: "Triệu chứng & kết quả" },
@@ -65,17 +121,34 @@ const ClinicalExam = () => {
   // CẬP NHẬT: Hàm xử lý khi chọn hành động ở Bước 2
   const handleActionSelect = (actionId) => {
     setFormData(prev => ({ ...prev, huongXuLy: actionId }));
-    
+
     // Nếu chọn kê toa thuốc thì mở Modal
     if (actionId === 'prescription') {
       setIsModalOpen(true);
-    } 
+    }
     else if (actionId === 'appointment') { // Thêm logic này
       setIsAppointmentModalOpen(true);
     }
     else if (actionId === 'finish') {
       // Logic hoàn tất khám
+      try {
+      // 🔹 1. Gọi API cập nhật chẩn đoán
+      updateExamDiagnosis({
+        maPhieuDV: currentPet.MaPhieuDV,
+        trieuChung: formData.trieuChung,
+        chuanDoan: formData.chuanDoan
+      });
+
+      // 🔹 2. Thông báo thành công
+      alert('Kết thúc khám thành công');
+
+      // 🔹 3. Quay về dashboard
       navigate('/doctor/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Lỗi khi kết thúc khám');
+    }
+      
     }
   };
 
@@ -97,7 +170,7 @@ const ClinicalExam = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border flex justify-between items-center mb-8">
           <div className="flex gap-4 items-center">
             <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden flex items-center justify-center text-3xl">
-               
+
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -109,9 +182,9 @@ const ClinicalExam = () => {
             </div>
           </div>
           {pet?.TinhTrangSucKhoe !== 'Khỏe mạnh' && (
-             <div className="bg-red-50 text-red-500 px-4 py-2 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2">
-               ⚠️ Có cảnh báo đặc biệt
-             </div>
+            <div className="bg-red-50 text-red-500 px-4 py-2 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2">
+              ⚠️ Có cảnh báo đặc biệt
+            </div>
           )}
         </div>
 
@@ -129,15 +202,15 @@ const ClinicalExam = () => {
 
         {/* Bottom Actions giữ nguyên */}
         <div className="flex justify-between mt-8">
-          <button 
+          <button
             onClick={() => step > 1 && setStep(step - 1)}
             className={`px-8 py-3 rounded-xl border font-bold text-slate-500 transition-all ${step === 1 ? 'invisible opacity-0' : 'visible opacity-100'}`}
           >
             ← Quay lại
           </button>
-          
+
           {step === 1 && (
-            <button 
+            <button
               onClick={() => setStep(2)}
               className="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
             >
@@ -147,17 +220,21 @@ const ClinicalExam = () => {
         </div>
 
         {/* CẬP NHẬT: Chèn Modal vào cuối Component */}
-        <PrescriptionModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          petName={pet?.TenTC || "Lucky"} 
+        <PrescriptionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          petName={pet?.TenTC || "Lucky"}
           formData={formData}
+          maPhieuDV={currentPet.MaPhieuDV}
+          branchId={currentPet.MaCN}
         />
         {/* 3. Chèn Modal vào cuối Component */}
-        <AppointmentModal 
+        <AppointmentModal
           isOpen={isAppointmentModalOpen}
           onClose={() => setIsAppointmentModalOpen(false)}
           petName={pet?.TenTC}
+          maPhieuDV={currentPet.MaPhieuDV}
+          formData={formData}
         />
 
         {/* CẬP NHẬT: Phần ghi chú tự động lưu ở dưới cùng */}
