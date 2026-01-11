@@ -168,19 +168,21 @@ const StaffLayout = () => {
 
         {/* --- Thông tin nhân viên dưới Sidebar --- */}
         <div className="mt-auto border-t border-gray-100 pt-6 px-4">
-          <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 border-2 border-white">
-              {displayName.charAt(0)}
+          <Link to="/staff/settings" className="block">
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 border-2 border-white group-hover:border-blue-200 transition-colors">
+                {displayName.charAt(0)}
+              </div>
+              <div className="overflow-hidden">
+                <p className="font-bold text-sm text-gray-800 truncate group-hover:text-blue-600 transition-colors" title={displayName}>
+                  {displayName}
+                </p>
+                <p className="text-[11px] text-gray-400 font-medium truncate" title={displayBranch}>
+                  {roleLabel} • {displayBranch}
+                </p>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <p className="font-bold text-sm text-gray-800 truncate" title={displayName}>
-                {displayName}
-              </p>
-              <p className="text-[11px] text-gray-400 font-medium truncate" title={displayBranch}>
-                {roleLabel} • {displayBranch}
-              </p>
-            </div>
-          </div>
+          </Link>
         </div>
       </aside>
 
