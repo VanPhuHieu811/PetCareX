@@ -130,7 +130,7 @@ from DichVu
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau
 from NguoiDung nd 
 join TaiKhoan tk on tk.MaND = nd.MaND
-where tk.VaiTro = N'Bán hàng'
+where tk.VaiTro = N'Bác sĩ'
 
 select nd.MaND, nd.HoTen, nd.Email, tk.MatKhau, hd.MaHoaDon, count(p.MaPhieuDV)
 from NguoiDung nd 
