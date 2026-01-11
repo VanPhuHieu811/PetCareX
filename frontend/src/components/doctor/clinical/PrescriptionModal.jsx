@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { mockMedicines } from '../../../services/mockDataBS';
 import CalendarPicker from '../common/CalendarPicker';
 
-const PrescriptionModal = ({ isOpen, onClose, petName }) => {
+const PrescriptionModal = ({ isOpen, onClose, petName, formData }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);

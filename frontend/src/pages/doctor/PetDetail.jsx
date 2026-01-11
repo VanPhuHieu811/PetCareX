@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCustomerDetails, getPackageRegistration } from '../../api/doctor';
+import { getCustomerDetails, getPackageRegistration, getPetExams, getPetVaccinations } from '../../api/doctor';
 // import { getPetExams, getPetVaccinations} from '../../api/petApi';
 import VaccinePackage from '../../components/doctor/common/VaccinePackage';
 
@@ -18,8 +18,8 @@ const PetDetail = () => {
 
   // --- STATE QUẢN LÝ DỮ LIỆU THỰC TẾ ---
   const [petInfo, setPetInfo] = useState(null);
-  // const [examHistory, setExamHistory] = useState([]);
-  // const [vaccineHistory, setVaccineHistory] = useState([]);
+  const [history, setExamHistory] = useState([]);
+  const [vaccinationHistory, setVaccineHistory] = useState([]);
   const [vaccinePackage, setVaccinePkg] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,14 +28,15 @@ const PetDetail = () => {
       try {
         setLoading(true);
         // Chạy song song các API để tối ưu tốc độ
-        const [customerData/*, exams, vaccinations, pkg*/] = await Promise.all([
-          getCustomerDetails(id)    // Lấy info từ hàm bạn vừa đưa
-          /*getPetExams(id),           // Lấy lịch sử khám
+        const [customerData, exams, vaccinations, pkg] = await Promise.all([
+          getCustomerDetails(id),    // Lấy info từ hàm bạn vừa đưa
+          getPetExams(id),           // Lấy lịch sử khám
           getPetVaccinations(id),    // Lấy lịch sử tiêm
-          getPackageRegistration(id)*/ // Lấy thông tin gói tiêm
+          getPackageRegistration(id) // Lấy thông tin gói tiêm
         ]);
         // Vì getCustomerDetails trả về khách hàng, ta tìm đúng thú cưng có MaTC trùng với id
         // const currentPet = customerData.pets?.find(p => p.MaTC === id);
+        console.log(exams);
         const customer = customerData?.data?.[0];
         // if (currentPet) {
         //   // Bổ sung tên chủ nuôi từ object cha vào info thú cưng
@@ -44,9 +45,9 @@ const PetDetail = () => {
         if (customer) {
           setPetInfo(customer);
         }
-        // setExamHistory(exams || []);
-        // setVaccineHistory(vaccinations || []);
-        // setVaccinePkg(pkg);
+        setExamHistory(exams || []);
+        setVaccineHistory(vaccinations || []);
+        setVaccinePkg(pkg);
       } catch (err) {
         console.error("Lỗi khi tải hồ sơ thú cưng:", err);
       } finally {

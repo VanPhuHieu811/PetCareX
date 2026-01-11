@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { petHistories, currentUser } from '../../services/mockDataBS';
+import { getCustomerDetails } from '../../api/doctor';
 // 1. Import các component đã tách
 import Step1Diagnosis from '../../components/doctor/clinical/Step1Diagnosis';
 import Step2Treatment from '../../components/doctor/clinical/Step2Treatment'; 
@@ -25,7 +26,34 @@ const ClinicalExam = () => {
 
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
-  const pet = petHistories[petId]?.info;
+
+  const [pet, setPetInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchPetFullData = async () => {
+      try {
+        setLoading(true);
+        // Chạy song song các API để tối ưu tốc độ
+        const [customerData] = await Promise.all([
+          getCustomerDetails(petId),    // Lấy info từ hàm bạn vừa đưa
+        ]);
+
+        const customer = customerData?.data?.[0];
+
+        if (customer) {
+          setPetInfo(customer);
+        }
+
+      } catch (err) {
+        console.error("Lỗi khi tải hồ sơ thú cưng:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPetFullData();
+}, [petId]);
+
+
   const currentTime = "19:41"; 
   
   // 2. Định nghĩa danh sách các bước
@@ -74,10 +102,10 @@ const ClinicalExam = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-800">{pet?.TenTC || "Lucky"}</h2>
-                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs">{pet?.Loai}</span>
+                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs">{pet?.TenLoaiTC}</span>
                 <span className="text-slate-600 text-xs not-italic">🩺 Khám bệnh</span>
               </div>
-              <p className="text-sm text-slate-500">{pet?.TenGiong} • Chủ: {pet?.TenChuNuoi}</p>
+              <p className="text-sm text-slate-500">{pet?.TenGiong} • Chủ: {pet?.HoTen}</p>
             </div>
           </div>
           {pet?.TinhTrangSucKhoe !== 'Khỏe mạnh' && (
@@ -123,6 +151,7 @@ const ClinicalExam = () => {
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
           petName={pet?.TenTC || "Lucky"} 
+          formData={formData}
         />
         {/* 3. Chèn Modal vào cuối Component */}
         <AppointmentModal 

@@ -26,3 +26,10 @@ export function getPackageRegistration(petID) {
   return apiGet(`/api/v1/packages/register/${encodeURIComponent(petID)}`);
 }
 
+export function getPetExams(petId) {
+  return apiGet(`/api/v1/pets/exams/${encodeURIComponent(petId)}`);
+}
+
+export function getPetVaccinations(petId) {
+  return apiGet(`/api/v1/pets/vaccinations/${encodeURIComponent(petId)}`);
+}
