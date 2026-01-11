@@ -42,8 +42,6 @@ export default function PetList({ pets, selectedPetId, onSelectPet }: PetListPro
                             <p className="text-sm text-gray-600">{pet.species} • {pet.breed}</p>
                             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                 <span>{pet.gender}</span>
-                                <span>•</span>
-                                <span>{pet.weight}kg</span>
                             </div>
                         </div>
                     </div>

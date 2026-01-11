@@ -13,19 +13,48 @@ const getCustomerDetails = async (req, res) => {
         }
 
         // Truyền pool vào service
-        const data = await receptionService.getCustomerInfo(pool, identifier);
+        const records = await receptionService.getCustomerInfo(pool, identifier);
 
-        if (data.length === 0) {
+        if (!records || records.length === 0) {
             return res.status(404).json({ message: 'Không tìm thấy thông tin khách hàng' });
         }
 
         res.status(200).json({
             success: true,
-            data: data
+            data: records
         });
     } catch (error) {
         console.error('Error in getCustomerDetails:', error);
         res.status(500).json({ message: 'Lỗi hệ thống', error: error.message });
+    }
+};
+
+const getPetHistory = async (req, res) => {
+    try {
+        const { maTC } = req.params; // Lấy mã thú cưng từ URL
+        const pool = req.db;
+
+        if (!maTC) {
+            return res.status(400).json({ message: 'Thiếu mã thú cưng' });
+        }
+
+        const history = await receptionService.getPetMedicalHistory(pool, maTC);
+        res.status(200).json({
+            success: true,
+            data: history
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy lịch sử thú cưng', error: error.message });
+    }
+};
+
+const getCustomerStatistics = async (req, res) => {
+    try {
+        const pool = req.db;
+        const stats = await receptionService.getCustomerStats(pool);
+        res.status(200).json({ success: true, data: stats });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy thống kê', error: error.message });
     }
 };
 
@@ -77,4 +106,20 @@ const getFreeDoctors = async (req, res) => {
         res.status(500).json({ message: 'Lỗi lấy danh sách bác sĩ', error: error.message });
     }
 };
-export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors };
+// Thêm vào file reception.controller.js
+const addCustomer = async (req, res) => {
+    try {
+        const pool = req.db;
+        const customerData = req.body;
+
+        if (!customerData.name || !customerData.sdt) {
+            return res.status(400).json({ message: 'Tên và Số điện thoại là bắt buộc' });
+        }
+
+        const newCustomer = await receptionService.createCustomer(pool, customerData);
+        res.status(201).json({ success: true, data: newCustomer });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi thêm khách hàng', error: error.message });
+    }
+};
+export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer, getPetHistory};

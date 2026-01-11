@@ -1,400 +1,535 @@
 import { useState, useRef, useEffect } from 'react';
-import { branches, getAvailableSlotsForDate, getAvailableDoctorsForSlot, myPets, services } from '../../services/mockDataKH';
-import { Doctor, TimeSlot } from '../../types';
-import { CheckCircle2, Clock, MapPin, PawPrint, Stethoscope, User, ChevronRight, ChevronLeft, Phone, ChevronDown, Check } from 'lucide-react';
-import clsx from 'clsx';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import clsx from 'clsx';
+import { 
+    CheckCircle2, Clock, MapPin, PawPrint, Stethoscope, 
+    User, ChevronRight, ChevronLeft, Phone, ChevronDown, 
+    Check, Loader2, Calendar as CalendarIcon 
+} from 'lucide-react';
+
+// --- IMPORTS API ---
+import { getMyPets } from '../../api/petApi'; // Import từ file bạn đã cung cấp
+import { 
+    getBranches, 
+    getAvailableDoctors, 
+    bookExamAppointment, 
+    bookVaccineAppointment,
+    Branch, 
+    Doctor 
+} from '../../api/bookingApi'; // Import từ file mới tạo
 
 const steps = [
-	{ id: 1, title: 'Dịch vụ & Địa điểm' },
-	{ id: 2, title: 'Thú cưng' },
-	{ id: 3, title: 'Thời gian & Bác sĩ' },
-	{ id: 4, title: 'Xác nhận' }
+    { id: 1, title: 'Dịch vụ & Địa điểm' },
+    { id: 2, title: 'Thú cưng' },
+    { id: 3, title: 'Thời gian & Bác sĩ' },
+    { id: 4, title: 'Xác nhận' }
+];
+
+// ⚠️ QUAN TRỌNG: Hãy đổi id khớp với MaDV trong bảng DichVu của database
+const SERVICES_DATA = [
+    { 
+        id: 'DV001', // Ví dụ: Mã dịch vụ Khám bệnh
+        name: 'Khám bệnh', 
+        type: 'Khám bệnh',
+        image: 'https://images.unsplash.com/photo-1628009368231-76033d0738cd?w=200&h=200&fit=crop',
+        priceRange: '150.000đ - 500.000đ'
+    },
+    { 
+        id: 'DV002', // Ví dụ: Mã dịch vụ Tiêm phòng
+        name: 'Tiêm phòng', 
+        type: 'Tiêm phòng',
+        image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200&h=200&fit=crop',
+        priceRange: 'Theo loại vắc-xin'
+    }
+];
+
+const TIME_SLOTS = [
+    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+    "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"
 ];
 
 export default function Booking() {
-	const navigate = useNavigate();
-	const [currentStep, setCurrentStep] = useState(1);
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const [currentStep, setCurrentStep] = useState(1);
 
-	// Selection State
-	const [selectedBranch, setSelectedBranch] = useState(branches[0]);
-	const [selectedService, setSelectedService] = useState(services[0]);
-	const [selectedPet, setSelectedPet] = useState(myPets[0]);
-	const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-	const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-	const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-	const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-	const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
-	const branchDropdownRef = useRef<HTMLDivElement>(null);
+    // --- State Dữ liệu ---
+    const [branches, setBranches] = useState<Branch[]>([]);
+    const [myPets, setMyPetsList] = useState<any[]>([]);
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    
+    // --- State Loading ---
+    const [loadingData, setLoadingData] = useState(false);
+    const [loadingDoctors, setLoadingDoctors] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-	// Derived state - doctors available for selected time slot
-	const availableDoctors = selectedSlot
-		? getAvailableDoctorsForSlot(selectedDate, selectedSlot, selectedBranch.id)
-		: [];
+    // --- State Lựa chọn ---
+    const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+    const [selectedService, setSelectedService] = useState(SERVICES_DATA[0]);
+    const [selectedPet, setSelectedPet] = useState<any>(null);
+    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+    const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+    
+    const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+    const branchDropdownRef = useRef<HTMLDivElement>(null);
 
-	// Close dropdown when clicking outside
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) {
-				setIsBranchDropdownOpen(false);
-			}
-		};
+    // 1. Fetch dữ liệu ban đầu (Chi nhánh & Pets)
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            setLoadingData(true);
+            try {
+                // Gọi song song 2 API
+                const [branchesData, petsData] = await Promise.all([
+                    getBranches(),
+                    getMyPets()
+                ]);
 
-		if (isBranchDropdownOpen) {
-			document.addEventListener('mousedown', handleClickOutside);
-		}
+                // Xử lý Chi nhánh
+                if (branchesData) {
+                    setBranches(branchesData);
+                    if (branchesData.length > 0) setSelectedBranch(branchesData[0]);
+                }
 
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [isBranchDropdownOpen]);
+                // Xử lý Thú cưng (petApi.ts trả về { success: true, data: [...] } hoặc mảng trực tiếp tùy client.js)
+                // Dựa trên client.js bạn gửi: handle(res) trả về json body.
+                // Kiểm tra xem apiGet trả về mảng hay object {data: []}
+                const petList = Array.isArray(petsData) ? petsData : (petsData?.data || []);
+                setMyPetsList(petList);
+                if (petList.length > 0) setSelectedPet(petList[0]);
 
-	const handleDateChange = (date: string) => {
-		setSelectedDate(date);
-		setAvailableSlots(getAvailableSlotsForDate(date, selectedBranch.id));
-		setSelectedSlot(null); // Reset slot
-		setSelectedDoctor(null); // Reset doctor when date changes
-	};
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu:", error);
+                toast.error("Không thể tải dữ liệu hệ thống");
+            } finally {
+                setLoadingData(false);
+            }
+        };
 
-	const handleSlotSelect = (slotTime: string) => {
-		setSelectedSlot(slotTime);
-		setSelectedDoctor(null); // Reset doctor when slot changes
-	};
+        if (user) {
+            fetchInitialData();
+        }
+    }, [user]);
 
-	const handleDoctorSelect = (doc: Doctor) => {
-		setSelectedDoctor(doc);
-	};
+    // 2. Fetch Bác sĩ rảnh (khi thay đổi Chi nhánh, Ngày, Giờ)
+    useEffect(() => {
+        const fetchDoctors = async () => {
+            if (!selectedBranch || !selectedDate || !selectedSlot) return;
 
-	// Load available slots when step 3 is reached
-	useEffect(() => {
-		if (currentStep === 3 && availableSlots.length === 0) {
-			setAvailableSlots(getAvailableSlotsForDate(selectedDate, selectedBranch.id));
-		}
-	}, [currentStep, selectedDate, selectedBranch.id]);
+            setLoadingDoctors(true);
+            setDoctors([]);
+            setSelectedDoctor(null);
 
-	const handleNext = () => {
-		if (currentStep < 4) setCurrentStep(c => c + 1);
-	};
+            try {
+                const res = await getAvailableDoctors(selectedBranch.MaCN, selectedDate, selectedSlot);
+                if (res && res.success) {
+                    setDoctors(res.data);
+                } else if (Array.isArray(res)) {
+                     // Fallback nếu API trả về mảng trực tiếp (không bọc trong success)
+                    setDoctors(res);
+                }
+            } catch (error) {
+                console.error("Lỗi tìm bác sĩ:", error);
+            } finally {
+                setLoadingDoctors(false);
+            }
+        };
 
-	const handleBack = () => {
-		if (currentStep > 1) setCurrentStep(c => c - 1);
-	};
+        fetchDoctors();
+    }, [selectedBranch, selectedDate, selectedSlot]);
 
-	const handleConfirm = () => {
-		// Mock API Call
-		alert('Đặt lịch thành công! Mã phiếu: BK-' + Math.floor(Math.random() * 10000));
-		navigate('/profile');
-	};
+    // Handle click outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) {
+                setIsBranchDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-	return (
-		<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl">
-			{/* Progress Bar */}
-			<div className="mb-8">
-				<div className="flex items-center justify-between relative">
-					<div className="absolute left-0 top-1/2 -z-10 h-0.5 w-full bg-gray-200" />
-					{steps.map((step) => (
-						<div key={step.id} className="flex flex-col items-center bg-gray-50 px-2">
-							<div
-								className={clsx(
-									"w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300",
-									currentStep >= step.id
-										? "bg-blue-600 text-white shadow-lg"
-										: "bg-gray-200 text-gray-500"
-								)}
-							>
-								{step.id}
-							</div>
-							<span className={clsx("text-xs font-medium mt-2", currentStep >= step.id ? "text-blue-700" : "text-gray-400")}>
-								{step.title}
-							</span>
-						</div>
-					))}
-				</div>
-			</div>
+    const handleDateChange = (date: string) => {
+        setSelectedDate(date);
+        setSelectedSlot(null);
+        setSelectedDoctor(null);
+    };
 
-			<div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[500px] flex flex-col">
-				<div className="p-6 md:p-8 flex-grow">
+    const handleNext = () => {
+        if (currentStep === 1 && !selectedBranch) return toast.error("Vui lòng chọn chi nhánh");
+        if (currentStep === 2 && !selectedPet) return toast.error("Vui lòng chọn thú cưng");
+        if (currentStep === 3 && (!selectedSlot || !selectedDoctor)) return toast.error("Vui lòng chọn giờ và bác sĩ");
+        
+        if (currentStep < 4) setCurrentStep(c => c + 1);
+    };
 
-					{/* STEP 1: Branch & Service */}
-					{currentStep === 1 && (
-						<div className="space-y-8 animate-fade-in">
-							<div>
-								<h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-									<MapPin className="text-blue-600" /> Chọn chi nhánh gần bạn
-								</h2>
+    const handleBack = () => {
+        if (currentStep > 1) setCurrentStep(c => c - 1);
+    };
 
-								{/* Custom Dropdown */}
-								<div className="relative" ref={branchDropdownRef}>
-									<button
-										type="button"
-										onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-										className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-medium cursor-pointer transition-all hover:border-blue-300 flex items-center justify-between"
-									>
-										<span className="text-left truncate">
-											{selectedBranch.name} - {selectedBranch.address}
-										</span>
-										<ChevronDown className={clsx(
-											"w-5 h-5 text-gray-500 flex-shrink-0 ml-2 transition-transform",
-											isBranchDropdownOpen && "transform rotate-180"
-										)} />
-									</button>
+    // 3. Xử lý Đặt lịch
+    const handleConfirm = async () => {
+        if (!user || !selectedBranch || !selectedPet || !selectedDoctor || !selectedSlot) return;
 
-									{/* Dropdown Menu */}
-									{isBranchDropdownOpen && (
-										<div className="absolute z-50 w-full mt-2 bg-white rounded-xl border-2 border-gray-200 shadow-lg max-h-80 overflow-y-auto">
-											{branches.map(branch => (
-												<button
-													key={branch.id}
-													type="button"
-													onClick={() => {
-														setSelectedBranch(branch);
-														setIsBranchDropdownOpen(false);
-													}}
-													className={clsx(
-														"w-full px-4 py-3 text-left transition-colors flex items-center justify-between",
-														selectedBranch.id === branch.id
-															? "bg-blue-50 text-blue-700"
-															: "text-gray-700 hover:bg-gray-50"
-													)}
-												>
-													<div className="flex-1 min-w-0">
-														<div className="font-medium truncate">{branch.name}</div>
-														<div className="text-sm text-gray-500 truncate">{branch.address}</div>
-													</div>
-													{selectedBranch.id === branch.id && (
-														<Check className="w-5 h-5 text-blue-600 flex-shrink-0 ml-2" />
-													)}
-												</button>
-											))}
-										</div>
-									)}
-								</div>
+        setIsSubmitting(true);
+        try {
+            const dateTimeISO = `${selectedDate}T${selectedSlot}:00`; // YYYY-MM-DDTHH:mm:00
 
-								{/* Branch Details */}
-								<div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-									<div className="space-y-3">
-										<div className="flex items-start gap-3">
-											<MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-											<div>
-												<div className="font-semibold text-gray-900">{selectedBranch.name}</div>
-												<div className="text-sm text-gray-600 mt-1">{selectedBranch.address}</div>
-											</div>
-										</div>
-										<div className="flex items-center gap-3">
-											<Phone className="w-5 h-5 text-blue-600 flex-shrink-0" />
-											<span className="text-sm text-gray-700">{selectedBranch.phone}</span>
-										</div>
-										<div className="flex items-center gap-3">
-											<Clock className="w-5 h-5 text-blue-600 flex-shrink-0" />
-											<span className="text-sm text-gray-700">Giờ mở cửa: {selectedBranch.openTime} - {selectedBranch.closeTime}</span>
-										</div>
-									</div>
-								</div>
-							</div>
+            const commonPayload = {
+                maKH: user.MaND || user.id, // ID lấy từ AuthContext
+                maCN: selectedBranch.MaCN,
+                maDV: selectedService.id,
+                hinhThucDat: 'Đặt trước',
+                bacSiPhuTrach: selectedDoctor.MaNV,
+                maTC: selectedPet.MaTC,
+            };
 
-							<div>
-								<h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-									<Stethoscope className="text-blue-600" /> Chọn dịch vụ
-								</h2>
-								<div className="flex md:flex-row flex-col gap-6">
-									{services.map(service => (
-										<div
-											key={service.id}
-											onClick={() => setSelectedService(service)}
-											className={clsx(
-												"flex-1 p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center text-center gap-3 hover:bg-blue-50 min-w-0",
-												selectedService.id === service.id
-													? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
-													: "border-gray-200 hover:border-blue-300"
-											)}
-										>
-											<div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-												<img src={service.image} alt={service.name} className="w-full h-full object-cover" />
-											</div>
-											<div className="w-full min-w-0">
-												<div className="font-bold text-gray-900 whitespace-nowrap text-sm">{service.name}</div>
-												<div className="text-xs text-blue-600 font-medium mt-1 whitespace-nowrap">{service.priceRange}</div>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-						</div>
-					)}
+            let res;
+            if (selectedService.type === 'Khám bệnh') {
+                res = await bookExamAppointment({
+                    ...commonPayload,
+                    ngayKham: dateTimeISO
+                });
+            } else {
+                res = await bookVaccineAppointment({
+                    ...commonPayload,
+                    ngayTiem: dateTimeISO,
+                    maDK: null 
+                });
+            }
 
-					{/* STEP 2: Pet Selection */}
-					{currentStep === 2 && (
-						<div className="animate-fade-in">
-							<h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-								<PawPrint className="text-blue-600" /> Chọn thú cưng của bạn?
-							</h2>
-							<div className="grid md:grid-cols-2 gap-6">
-								{myPets.map(pet => (
-									<div
-										key={pet.id}
-										onClick={() => setSelectedPet(pet)}
-										className={clsx(
-											"flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all hover:bg-blue-50",
-											selectedPet.id === pet.id
-												? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
-												: "border-gray-200 hover:border-blue-300"
-										)}
-									>
-										<img src={pet.avatar} alt={pet.name} className="w-16 h-16 rounded-full object-cover border border-gray-200" />
-										<div>
-											<div className="font-bold text-lg text-gray-900">{pet.name}</div>
-											<div className="text-sm text-gray-500">{pet.species} • {pet.breed}</div>
-										</div>
-										{selectedPet.id === pet.id && <CheckCircle2 className="ml-auto text-blue-600 w-6 h-6" />}
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+            if (res.success) {
+                toast.success("Đặt lịch thành công!");
+                navigate('/customer/appointments'); // Chuyển hướng sau khi đặt
+            } else {
+                toast.error(res.message || "Đặt lịch thất bại");
+            }
 
-					{/* STEP 3: Time & Doctor */}
-					{currentStep === 3 && (
-						<div className="animate-fade-in space-y-8">
-							<div className="flex flex-col md:flex-row gap-8">
-								<div className="flex-1">
-									<h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-										<Clock className="text-blue-600" /> Chọn giờ khám
-									</h2>
-									<div className="mb-4">
-										<label className="text-sm font-medium text-gray-700 mb-1 block">Ngày khám</label>
-										<input
-											type="date"
-											className="p-2 border border-gray-300 rounded-lg w-full"
-											value={selectedDate}
-											onChange={(e) => handleDateChange(e.target.value)}
-											min={new Date().toISOString().split('T')[0]}
-										/>
-									</div>
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || "Có lỗi xảy ra khi đặt lịch");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-									<div className="grid grid-cols-3 gap-2">
-										{availableSlots.map((slot) => (
-											<button
-												key={slot.time}
-												disabled={!slot.isAvailable}
-												onClick={() => handleSlotSelect(slot.time)}
-												className={clsx(
-													"py-2 px-1 text-sm rounded-lg border text-center transition-colors",
-													!slot.isAvailable && "bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed decoration-slice",
-													slot.isAvailable && selectedSlot !== slot.time && "border-gray-200 hover:border-blue-500 hover:text-blue-600",
-													selectedSlot === slot.time && "bg-blue-600 text-white border-blue-600"
-												)}
-											>
-												{slot.time}
-											</button>
-										))}
-									</div>
-								</div>
+    return (
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl font-sans">
+            {/* Progress Bar */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between relative">
+                    <div className="absolute left-0 top-1/2 -z-10 h-0.5 w-full bg-gray-200" />
+                    {steps.map((step) => (
+                        <div key={step.id} className="flex flex-col items-center bg-gray-50 px-2">
+                            <div className={clsx(
+                                "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300",
+                                currentStep >= step.id ? "bg-blue-600 text-white shadow-lg" : "bg-gray-200 text-gray-500"
+                            )}>
+                                {step.id}
+                            </div>
+                            <span className={clsx("text-xs font-medium mt-2", currentStep >= step.id ? "text-blue-700" : "text-gray-400")}>
+                                {step.title}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-								<div className="flex-1 border-l pl-8 border-gray-100">
-									<h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-										<User className="text-blue-600" /> Chọn bác sĩ
-									</h2>
-									{selectedSlot ? (
-										<div className="space-y-3">
-											{availableDoctors.length > 0 ? (
-												availableDoctors.map(doc => (
-													<div
-														key={doc.id}
-														onClick={() => handleDoctorSelect(doc)}
-														className={clsx(
-															"flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:bg-blue-50",
-															selectedDoctor?.id === doc.id
-																? "border-blue-600 bg-blue-50"
-																: "border-gray-200"
-														)}
-													>
-														<img src={doc.avatar} className="w-12 h-12 rounded-full" />
-														<div>
-															<div className="font-bold text-sm text-gray-900">{doc.name}</div>
-															<div className="text-xs text-gray-500">{doc.specialty}</div>
-														</div>
-													</div>
-												))
-											) : (
-												<div className="text-sm text-gray-400 italic">Không có bác sĩ khả dụng cho giờ này</div>
-											)}
-										</div>
-									) : (
-										<div className="text-sm text-gray-400 italic">Vui lòng chọn giờ khám trước</div>
-									)}
-								</div>
-							</div>
-						</div>
-					)}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[500px] flex flex-col">
+                <div className="p-6 md:p-8 flex-grow">
+                    
+                    {/* STEP 1: Dịch vụ & Địa điểm */}
+                    {currentStep === 1 && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <MapPin className="text-blue-600" /> Chọn chi nhánh gần bạn
+                                </h2>
+                                <div className="relative" ref={branchDropdownRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                                        className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-600 bg-white text-gray-900 font-medium cursor-pointer flex items-center justify-between hover:border-blue-400 transition-all"
+                                    >
+                                        <span className="truncate">
+                                            {selectedBranch ? `${selectedBranch.TenCN} - ${selectedBranch.DiaChi}` : "Đang tải danh sách..."}
+                                        </span>
+                                        <ChevronDown className={clsx("w-5 h-5 text-gray-500 transition-transform", isBranchDropdownOpen && "rotate-180")} />
+                                    </button>
 
-					{/* STEP 4: Confirm */}
-					{currentStep === 4 && (
-						<div className="animate-fade-in">
-							<h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-								<CheckCircle2 className="text-blue-600" /> Xác nhận thông tin
-							</h2>
+                                    {isBranchDropdownOpen && (
+                                        <div className="absolute z-50 w-full mt-2 bg-white rounded-xl border-2 border-gray-200 shadow-xl max-h-60 overflow-y-auto">
+                                            {branches.map(branch => (
+                                                <button
+                                                    key={branch.MaCN}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedBranch(branch);
+                                                        setIsBranchDropdownOpen(false);
+                                                    }}
+                                                    className={clsx(
+                                                        "w-full px-4 py-3 text-left transition-colors flex items-center justify-between",
+                                                        selectedBranch?.MaCN === branch.MaCN ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50"
+                                                    )}
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium truncate">{branch.TenCN}</div>
+                                                        <div className="text-sm text-gray-500 truncate">{branch.DiaChi}</div>
+                                                    </div>
+                                                    {selectedBranch?.MaCN === branch.MaCN && <Check className="w-5 h-5 text-blue-600 ml-2" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-							<div className="bg-blue-50 p-6 rounded-2xl space-y-4 text-sm max-w-lg mx-auto border border-blue-100">
-								<div className="flex justify-between border-b border-blue-100 pb-2">
-									<span className="text-gray-500">Khách hàng</span>
-									<span className="font-semibold text-gray-900">Nguyễn Văn A</span>
-								</div>
-								<div className="flex justify-between border-b border-blue-100 pb-2">
-									<span className="text-gray-500">Thú cưng</span>
-									<span className="font-semibold text-gray-900">{selectedPet.name} ({selectedPet.species})</span>
-								</div>
-								<div className="flex justify-between border-b border-blue-100 pb-2">
-									<span className="text-gray-500">Chi nhánh</span>
-									<span className="font-semibold text-gray-900 text-right">{selectedBranch.name}</span>
-								</div>
-								<div className="flex justify-between border-b border-blue-100 pb-2">
-									<span className="text-gray-500">Dịch vụ</span>
-									<span className="font-semibold text-gray-900">{selectedService.name}</span>
-								</div>
-								<div className="flex justify-between border-b border-blue-100 pb-2">
-									<span className="text-gray-500">Bác sĩ</span>
-									<span className="font-semibold text-gray-900">{selectedDoctor?.name}</span>
-								</div>
-								<div className="flex justify-between pt-2">
-									<span className="text-gray-500">Thời gian</span>
-									<span className="font-bold text-blue-700 text-lg">{selectedSlot} - {selectedDate}</span>
-								</div>
-							</div>
-						</div>
-					)}
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Stethoscope className="text-blue-600" /> Chọn dịch vụ
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {SERVICES_DATA.map(service => (
+                                        <div
+                                            key={service.id}
+                                            onClick={() => setSelectedService(service)}
+                                            className={clsx(
+                                                "p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center text-center gap-3",
+                                                selectedService.id === service.id ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600" : "border-gray-200 hover:border-blue-300"
+                                            )}
+                                        >
+                                            <img src={service.image} alt={service.name} className="w-16 h-16 rounded-full object-cover shadow-sm" />
+                                            <div>
+                                                <div className="font-bold text-gray-900">{service.name}</div>
+                                                <div className="text-xs text-blue-600 font-medium mt-1">{service.priceRange}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-				</div>
+                    {/* STEP 2: Chọn Thú Cưng */}
+                    {currentStep === 2 && (
+                        <div className="animate-fade-in">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <PawPrint className="text-blue-600" /> Chọn thú cưng
+                                </h2>
+                                <button onClick={() => navigate('/customer/pets/add')} className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                                    + Thêm mới
+                                </button>
+                            </div>
+                            
+                            {myPets.length === 0 ? (
+                                <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                    <p className="text-gray-500 mb-2">Bạn chưa có thú cưng nào.</p>
+                                    <p className="text-sm text-gray-400">Vui lòng thêm thú cưng để tiếp tục đặt lịch.</p>
+                                </div>
+                            ) : (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {myPets.map(pet => (
+                                        <div
+                                            key={pet.MaTC}
+                                            onClick={() => setSelectedPet(pet)}
+                                            className={clsx(
+                                                "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                                                selectedPet?.MaTC === pet.MaTC ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"
+                                            )}
+                                        >
+                                            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-2xl border border-white shadow-sm">
+                                                🐶
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-lg text-gray-900">{pet.TenTC}</div>
+                                                <div className="text-sm text-gray-500">{pet.LoaiTC || "Thú cưng"} • {pet.Giong || "Chưa rõ"}</div>
+                                            </div>
+                                            {selectedPet?.MaTC === pet.MaTC && <CheckCircle2 className="ml-auto text-blue-600" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-				{/* Footer Actions */}
-				<div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between">
-					<button
-						onClick={handleBack}
-						disabled={currentStep === 1}
-						className={clsx(
-							"flex items-center px-6 py-2 rounded-lg font-medium transition-colors",
-							currentStep === 1
-								? "text-gray-300 cursor-not-allowed"
-								: "text-gray-600 hover:bg-gray-200 bg-white border border-gray-200"
-						)}
-					>
-						<ChevronLeft className="w-4 h-4 mr-1" /> Quay lại
-					</button>
+                    {/* STEP 3: Thời gian & Bác sĩ */}
+                    {currentStep === 3 && (
+                        <div className="animate-fade-in space-y-8">
+                            <div className="flex flex-col md:flex-row gap-8">
+                                {/* Chọn Ngày & Giờ */}
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Clock className="text-blue-600" /> Chọn thời gian
+                                    </h2>
+                                    <div className="mb-6">
+                                        <label className="text-sm font-bold text-gray-700 mb-2 block">Ngày khám</label>
+                                        <div className="relative">
+                                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                                            <input
+                                                type="date"
+                                                className="pl-10 p-3 border border-gray-300 rounded-xl w-full font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={selectedDate}
+                                                onChange={(e) => handleDateChange(e.target.value)}
+                                                min={new Date().toISOString().split('T')[0]}
+                                            />
+                                        </div>
+                                    </div>
 
-					<button
-						onClick={currentStep === 4 ? handleConfirm : handleNext}
-						disabled={currentStep === 3 && (!selectedSlot || !selectedDoctor)}
-						className={clsx(
-							"flex items-center px-8 py-2 rounded-lg font-medium transition-colors shadow-sm",
-							(currentStep === 3 && (!selectedSlot || !selectedDoctor))
-								? "bg-gray-300 text-white cursor-not-allowed"
-								: "bg-blue-600 text-white hover:bg-blue-700"
-						)}
-					>
-						{currentStep === 4 ? 'Xác nhận đặt lịch' : 'Tiếp tục'}
-						{currentStep !== 4 && <ChevronRight className="w-4 h-4 ml-1" />}
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+                                    <label className="text-sm font-bold text-gray-700 mb-2 block">Khung giờ ({TIME_SLOTS.length} slots)</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {TIME_SLOTS.map((slot) => (
+                                            <button
+                                                key={slot}
+                                                onClick={() => setSelectedSlot(slot)}
+                                                className={clsx(
+                                                    "py-2 px-1 text-sm rounded-lg border font-medium transition-all",
+                                                    selectedSlot === slot 
+                                                        ? "bg-blue-600 text-white border-blue-600 shadow-md" 
+                                                        : "border-gray-200 hover:border-blue-500 hover:text-blue-600 text-gray-600 bg-white"
+                                                )}
+                                            >
+                                                {slot}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Chọn Bác Sĩ */}
+                                <div className="flex-1 border-l pl-0 md:pl-8 border-gray-100 pt-6 md:pt-0 border-t md:border-t-0">
+                                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <User className="text-blue-600" /> Chọn bác sĩ
+                                    </h2>
+                                    
+                                    {!selectedSlot ? (
+                                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                            <Clock className="mx-auto text-gray-400 mb-2 w-8 h-8" />
+                                            <p className="text-sm text-gray-500">Vui lòng chọn khung giờ để xem bác sĩ rảnh.</p>
+                                        </div>
+                                    ) : loadingDoctors ? (
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <Loader2 className="animate-spin text-blue-600 mb-2 w-8 h-8" />
+                                            <span className="text-sm text-gray-500 font-medium">Đang tìm bác sĩ phù hợp...</span>
+                                        </div>
+                                    ) : doctors.length > 0 ? (
+                                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                                            {doctors.map(doc => (
+                                                <div
+                                                    key={doc.MaNV}
+                                                    onClick={() => setSelectedDoctor(doc)}
+                                                    className={clsx(
+                                                        "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                                                        selectedDoctor?.MaNV === doc.MaNV ? "border-blue-600 bg-blue-50" : "border-gray-100 hover:border-blue-300"
+                                                    )}
+                                                >
+                                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg border border-white shadow-sm">
+                                                        {doc.HoTen.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-sm text-gray-900">{doc.HoTen}</div>
+                                                        <div className="text-xs text-gray-500">{doc.Email}</div>
+                                                    </div>
+                                                    {selectedDoctor?.MaNV === doc.MaNV && <CheckCircle2 className="ml-auto text-blue-600 w-5 h-5" />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 bg-orange-50 rounded-xl border border-orange-100 text-orange-600 text-sm p-4">
+                                            <p className="font-bold mb-1">Rất tiếc!</p>
+                                            Không có bác sĩ nào rảnh vào <strong>{selectedSlot}</strong> ngày <strong>{selectedDate}</strong>.
+                                            <br/>Vui lòng chọn giờ khác.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 4: Xác nhận */}
+                    {currentStep === 4 && (
+                        <div className="animate-fade-in">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <CheckCircle2 className="text-blue-600" /> Xác nhận thông tin
+                            </h2>
+
+                            <div className="bg-blue-50 p-6 rounded-2xl space-y-4 text-sm max-w-lg mx-auto border border-blue-100 shadow-sm">
+                                <div className="flex justify-between border-b border-blue-200 pb-3">
+                                    <span className="text-gray-500">Khách hàng</span>
+                                    <span className="font-bold text-gray-900">{user?.HoTen || user?.name}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-blue-200 pb-3">
+                                    <span className="text-gray-500">Thú cưng</span>
+                                    <span className="font-bold text-gray-900">{selectedPet?.TenTC} ({selectedPet?.LoaiTC})</span>
+                                </div>
+                                <div className="flex justify-between border-b border-blue-200 pb-3">
+                                    <span className="text-gray-500">Chi nhánh</span>
+                                    <span className="font-bold text-gray-900 text-right">{selectedBranch?.TenCN}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-blue-200 pb-3">
+                                    <span className="text-gray-500">Dịch vụ</span>
+                                    <span className="font-bold text-blue-700">{selectedService?.name}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-blue-200 pb-3">
+                                    <span className="text-gray-500">Bác sĩ</span>
+                                    <span className="font-bold text-gray-900">{selectedDoctor?.HoTen}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 items-center">
+                                    <span className="text-gray-500">Thời gian</span>
+                                    <div className="text-right">
+                                        <div className="font-black text-2xl text-blue-600">{selectedSlot}</div>
+                                        <div className="text-gray-600 font-medium">{selectedDate}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <button
+                        onClick={handleBack}
+                        disabled={currentStep === 1 || isSubmitting}
+                        className={clsx(
+                            "flex items-center px-6 py-2.5 rounded-xl font-bold transition-colors",
+                            currentStep === 1 
+                                ? "text-gray-300 cursor-not-allowed" 
+                                : "text-gray-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200"
+                        )}
+                    >
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Quay lại
+                    </button>
+
+                    <button
+                        onClick={currentStep === 4 ? handleConfirm : handleNext}
+                        disabled={
+                            isSubmitting || loadingData ||
+                            (currentStep === 1 && !selectedBranch) ||
+                            (currentStep === 2 && !selectedPet) ||
+                            (currentStep === 3 && (!selectedSlot || !selectedDoctor))
+                        }
+                        className={clsx(
+                            "flex items-center px-8 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200",
+                            (isSubmitting || loadingData)
+                                ? "bg-gray-400 text-white cursor-wait"
+                                : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-blue-300 active:scale-95 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
+                        )}
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang xử lý...
+                            </>
+                        ) : (
+                            <>
+                                {currentStep === 4 ? 'Xác nhận đặt lịch' : 'Tiếp tục'}
+                                {currentStep !== 4 && <ChevronRight className="w-4 h-4 ml-1" />}
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }

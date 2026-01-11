@@ -273,5 +273,23 @@ BEGIN CATCH
 END CATCH;
 
 
-select *
-from LoaiSP
+SELECT 
+    p.MaPhieuDV,
+    p.NgayDatDV AS NgayLap,
+    d.TenDV,
+    pk.MoTaChuanDoan,
+    pk.MoTaTrieuChung,
+    nd.HoTen AS TenBS
+FROM PhieuDatDV p
+JOIN DichVu d ON p.MaDV = d.MaDV
+LEFT JOIN DatKhamBenh pk ON p.MaPhieuDV = pk.MaPhieuDV
+LEFT JOIN NhanVien nv ON pk.BacSiPhuTrach = nv.MaNV
+LEFT JOIN NguoiDung nd ON nv.MaNV = nd.MaND
+WHERE pk.MaTC =  'TC00008'
+ORDER BY p.NgayDatDV DESC
+
+select TenTC, nd.hoten
+from thucung 
+join KhachHang kh on kh.Makh = thucung.MaKH
+join NguoiDung nd on nd.mand=kh.makh
+where Matc='TC00008'

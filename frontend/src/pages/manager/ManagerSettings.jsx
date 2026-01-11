@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const Settings = () => {
+const ManagerSettings = () => {
   const [showPassModal, setShowPassModal] = useState(false);
 
   const { logout } = useAuth();
@@ -39,8 +39,6 @@ const Settings = () => {
         {/* Cột trái: Menu cài đặt */}
         <div className="lg:col-span-4 space-y-4">
           <SettingsTab icon={User} label="Thông tin cá nhân" active />
-          <SettingsTab icon={Bell} label="Thông báo" />
-          <SettingsTab icon={Shield} label="Quyền hạn & Bảo mật" />
 
           <hr className="border-gray-100 my-6" />
 
@@ -245,4 +243,4 @@ const InputGroup = ({ label, value }) => (
   </div>
 );
 
-export default Settings;
+export default ManagerSettings;
