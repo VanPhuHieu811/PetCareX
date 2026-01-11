@@ -2,7 +2,7 @@ import receptionService from '../services/reception.service.js';
 
 const getCustomerDetails = async (req, res) => {
     try {
-        const { identifier } = req.body;
+        const { identifier } = req.query;
 
         // Lấy connection pool từ middleware (thường là req.db hoặc req.pool)
         // Bạn hãy kiểm tra trong file sqlserver.config.js xem biến này tên là gì

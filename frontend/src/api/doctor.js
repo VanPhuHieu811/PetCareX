@@ -4,3 +4,25 @@ export function getAppointmentQueue() {
   return apiGet("/api/v1/services/dasboard");
 }
 
+//const BASE_PATH = "/api/v1/reception"; // Giả sử route được mount tại đây trong server
+
+// const receptionAPI = {
+//   /**
+//    * Lấy thông tin khách hàng kèm danh sách thú cưng
+//    * Endpoint: GET /?identifier=...
+//    */
+//   getCustomerDetails: async (identifier: string): Promise<Customer> => {
+//     // encodeURIComponent giúp xử lý các ký tự đặc biệt trong Email hoặc SĐT
+//     return apiGet(`${BASE_PATH}?identifier=${encodeURIComponent(identifier)}`);
+//   },
+
+export function getCustomerDetails(identifier) {
+  return apiGet(
+    `/api/v1/reception?identifier=${encodeURIComponent(identifier)}`
+  );
+}
+
+export function getPackageRegistration(petID) {
+  return apiGet(`/api/v1/packages/register/${encodeURIComponent(petID)}`);
+}
+

@@ -3,7 +3,7 @@ import * as packagesController from '../controllers/packages.controller.js';
 
 const router = express.Router();
 
-router.get('/register', packagesController.getInfoPackages);
+router.get('/register/:petId', packagesController.getInfoPackages);
 router.get('/packages', packagesController.getPackages);
 router.post('/register', packagesController.postRegisterPackage);
 router.post('/schedule', packagesController.postPackageSchedule);

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPetExams, getPetVaccinations } from "../../api/petApi";
-import { getCustomerDetails } from "../../api/receptionAPI";
+import { getCustomerDetails, getPackageRegistration } from '../../api/doctor';
+// import { getPetExams, getPetVaccinations} from '../../api/petApi';
 import VaccinePackage from '../../components/doctor/common/VaccinePackage';
 
 const PetDetail = () => {
@@ -9,12 +9,52 @@ const PetDetail = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('history');
 
-  const petData = petHistories[id];
-  const vaccinePackage = petVaccinePackages[id];
+  // const petData = petHistories[id];
+  // const vaccinePackage = petVaccinePackages[id];
 
-  if (!petData) return <div className="p-10 text-center">Hồ sơ không tồn tại</div>;
+  // if (!petData) return <div className="p-10 text-center">Hồ sơ không tồn tại</div>;
 
-  const { info, history, vaccinationHistory = [] } = petData;
+  // const { info, history, vaccinationHistory = [] } = petData;
+
+  // --- STATE QUẢN LÝ DỮ LIỆU THỰC TẾ ---
+  const [petInfo, setPetInfo] = useState(null);
+  // const [examHistory, setExamHistory] = useState([]);
+  // const [vaccineHistory, setVaccineHistory] = useState([]);
+  const [vaccinePackage, setVaccinePkg] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPetFullData = async () => {
+      try {
+        setLoading(true);
+        // Chạy song song các API để tối ưu tốc độ
+        const [customerData/*, exams, vaccinations, pkg*/] = await Promise.all([
+          getCustomerDetails(id)    // Lấy info từ hàm bạn vừa đưa
+          /*getPetExams(id),           // Lấy lịch sử khám
+          getPetVaccinations(id),    // Lấy lịch sử tiêm
+          getPackageRegistration(id)*/ // Lấy thông tin gói tiêm
+        ]);
+        // Vì getCustomerDetails trả về khách hàng, ta tìm đúng thú cưng có MaTC trùng với id
+        // const currentPet = customerData.pets?.find(p => p.MaTC === id);
+        const customer = customerData?.data?.[0];
+        // if (currentPet) {
+        //   // Bổ sung tên chủ nuôi từ object cha vào info thú cưng
+        //   setPetInfo({ ...currentPet, TenChuNuoi: customerData.HoTen });
+        // // }
+        if (customer) {
+          setPetInfo(customer);
+        }
+        // setExamHistory(exams || []);
+        // setVaccineHistory(vaccinations || []);
+        // setVaccinePkg(pkg);
+      } catch (err) {
+        console.error("Lỗi khi tải hồ sơ thú cưng:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPetFullData();
+  }, [id]);
 
   const calculateAge = (birthDate) => {
     const birth = new Date(birthDate);
@@ -24,7 +64,8 @@ const PetDetail = () => {
     if (months < 0) { years--; months += 12; }
     return `${years} tuổi ${months} tháng`;
   };
-
+  if (loading) return <div className="p-10 text-center">Đang tải hồ sơ thú cưng...</div>;
+  if (!petInfo) return <div className="p-10 text-center">Không tìm thấy thông tin thú cưng</div>;
   return (
     <div className="bg-[#f4f7fe] min-h-screen py-6">
       <div className="max-w-6xl mx-auto px-6">
@@ -38,29 +79,29 @@ const PetDetail = () => {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-800">{info.TenTC}</h1>
-              <span className="bg-blue-50 text-blue-600 px-3 py-0.5 rounded-lg text-xs font-bold uppercase">{info.Loai}</span>
+              <h1 className="text-2xl font-bold text-slate-800">{petInfo.TenTC}</h1>
+              <span className="bg-blue-50 text-blue-600 px-3 py-0.5 rounded-lg text-xs font-bold uppercase">{petInfo.LoaiThuCung}</span>
             </div>
             {/* Đã bỏ cân nặng */}
             <p className="text-slate-800 mt-1">
-              • Giống: {info.TenGiong} • Tuổi: {calculateAge(info.NgaySinh)} • {info.GioiTinh}
+              • Giống: {petInfo.TenGiong} • Tuổi: {calculateAge(petInfo.NgaySinh)} • {petInfo.GioiTinh}
             </p>
             {/* Đã bỏ Số điện thoại */}
             <p className="text-slate-800 mt-1">
-              • Chủ nuôi: <span className="text-slate-800">{info.TenChuNuoi}</span>
+              • Chủ nuôi: <span className="text-slate-800">{petInfo.HoTen}</span>
             </p>
           </div>
         </div>
 
         {/* Cảnh báo đặc biệt (Giống ảnh) */}
-        {(info.TinhTrangSucKhoe || info.CanhBaoKhac) && (
+        {(petInfo.TinhTrangSucKhoe) && (
           <div className="bg-red-50/50 border border-red-100 rounded-2xl p-5 mb-6 flex items-start gap-4">
             <div className="text-red-500 text-xl mt-1"></div>
             <div className="space-y-2">
               <p className="text-xs font-bold text-red-800 uppercase tracking-widest">Cảnh báo đặc biệt</p>
               <div className="flex flex-wrap gap-2 items-center">
                 <span className="bg-red-500 text-white text-[10px] px-3 py-1.5 rounded-full font-bold shadow-sm shadow-red-100">
-                  {info.TinhTrangSucKhoe}
+                  {petInfo.TinhTrangSucKhoe}
                 </span>
               </div>
             </div>
