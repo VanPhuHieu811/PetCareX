@@ -341,7 +341,7 @@ BEGIN
         -- 2. Tự động chuyển trạng thái PhieuDatDV sang 'Hoàn thành' nếu cần
         UPDATE PhieuDatDV
         SET TrangThai = N'Hoàn thành'
-        WHERE MaPhieuDV = @MaPhieuDV AND TrangThai = N'Đang thực hiện';
+        WHERE MaPhieuDV = @MaPhieuDV;
 
         COMMIT TRANSACTION;
     END TRY
