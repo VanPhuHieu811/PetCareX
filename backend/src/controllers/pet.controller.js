@@ -134,22 +134,22 @@ export const deletePet = async (req, res) => {
     }
 }
 
-
 export const getPetExamHistory = async (req, res) =>{
     try {
-        const customerId = req.user?.id;        
-
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'getPetExamHistory. Pet ID is required'});
         }
 
-        const pet = await petService.getPetById(req.db, id, customerId);
+        const pet = await petService.getPetById(req.db, id);
         if (!pet) return res.status(404).json({ error: 'Pet not found' });
-        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+
+        if (!canAccessPet(req.user, pet.MaKH)) {
+            return res.status(403).json({ error: 'Forbidden: You do not own this pet' });
+        }
         
-        const exams = await petService.getPetExamHistory(req.db, id, customerId);
+        const exams = await petService.getPetExamHistory(req.db, id);
 
         res.status(200).json({
             success: true,
@@ -163,30 +163,31 @@ export const getPetExamHistory = async (req, res) =>{
 
 export const getPetVaccinationHistory = async (req, res) => {
     try {
-        const customerId = req.user?.id;
-
         const {id} = req.params;
 
         if (!id) {
             return res.status(400).json({error: 'getPetVXHistory. Pet ID is required'})
         }
 
-        const pet = await petService.getPetById(req.db, id, customerId);
-        if (!pet) return res.status(404).json({ error: 'updatePet. Pet not found' });
-        if (pet.MaKH !== customerId) return res.status(403).json({ error: 'Forbidden' });
+        const pet = await petService.getPetById(req.db, id);
+        if (!pet) return res.status(404).json({ error: 'Pet not found' });
+
+        if (!canAccessPet(req.user, pet.MaKH)) {
+            return res.status(403).json({ error: 'Forbidden: You do not own this pet' });
+        }
 
         const vaccinations = await petService.getPetVaccinationHistory(req.db, id);
 
         res.status(200).json({
-        success: true,
-        count: vaccinations.length,
-        data: vaccinations
+            success: true,
+            count: vaccinations.length,
+            data: vaccinations
         });
 
     } catch (err) {
         res.status(500).json({ 
-        error: 'getPetVXHistory. Fail to get pet history', 
-        details: err.message 
+            error: 'getPetVXHistory. Fail to get pet history', 
+            details: err.message 
         });
     }
 };
