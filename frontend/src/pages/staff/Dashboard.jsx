@@ -8,7 +8,7 @@ const Dashboard = () => {
     <>
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-[#1E293B] flex items-center gap-3">
-          Xin chào, Hoa! 👋
+          Chúc bạn một ngày làm việc vui vẻ! 👋
         </h1>
         <p className="text-gray-400 mt-2 font-medium">Đây là tổng quan hoạt động của chi nhánh hôm nay</p>
       </div>

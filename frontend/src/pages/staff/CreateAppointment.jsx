@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Search, UserPlus, PawPrint, Calendar, 
-  Clock, Stethoscope, User, Plus, Check, Loader2, ChevronDown, X 
+  Clock, Stethoscope, User, Plus, Check, Loader2, ChevronDown, X, Package 
 } from 'lucide-react';
 import receptionAPI from '../../api/receptionAPI';
 import { useAuth } from '../../context/AuthContext'; 
 import staffApi from '../../api/staffApi';
 
+
 const CreateAppointment = () => {
+
+  
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -21,6 +24,10 @@ const CreateAppointment = () => {
   const [petList, setPetList] = useState([]); 
   const [availableDoctors, setAvailableDoctors] = useState([]);
   
+  // --- STATES MỚI CHO GÓI TIÊM ---
+  const [packagesList, setPackagesList] = useState([]); 
+  const [selectedPackageId, setSelectedPackageId] = useState('');
+
   // --- STATES GỢI Ý (SEARCH) ---
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -47,43 +54,35 @@ const CreateAppointment = () => {
 
   const [isCreating, setIsCreating] = useState(false);
 
-  // --- 2. KIỂM TRA QUYỀN TRUY CẬP ---
-  // Nếu Auth đang tải -> Hiện Loading để tránh lỗi user null
+  // --- 2. KIỂM TRA QUYỀN TRUY CẬP (GIỮ NGUYÊN) ---
   if (authLoading) {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" size={40}/></div>;
   }
 
-  // Nếu tải xong mà không có user -> Đá về login
   if (!user) {
     navigate('/login');
     return null;
   }
 
-  // Lấy chi nhánh an toàn (Fallback CN001 nếu thiếu dữ liệu để test)
-const [fetchedBranchId, setFetchedBranchId] = useState('');
+  const [fetchedBranchId, setFetchedBranchId] = useState('');
 
-  // Gọi API lấy profile để có MaCN chuẩn nhất
   useEffect(() => {
     const fetchStaffProfile = async () => {
       try {
         const res = await staffApi.getMyProfile();
         if (res.success && res.data) {
-          // Lấy MaCN từ dữ liệu trả về (kiểm tra các trường hợp tên biến)
           const realID = res.data.MaCN || res.data.branchID || res.data.maCN;
           if (realID) setFetchedBranchId(realID);
         }
-      } catch (error) {
-        console.error("Lỗi lấy thông tin chi nhánh:", error);
-      }
+      } catch (error) { console.error("Lỗi lấy thông tin chi nhánh:", error); }
     };
     fetchStaffProfile();
   }, []);
-  // Logic: Ưu tiên lấy từ API (fetchedBranchId), nếu chưa load xong thì lấy từ User Context, cuối cùng là fallback
+  
   const branchID = fetchedBranchId || user.MaCN || user.branchID || 'CN001';
 
-  // --- 3. CÁC USE EFFECT LOAD DỮ LIỆU ---
+  // --- 3. CÁC USE EFFECT LOAD DỮ LIỆU (GIỮ NGUYÊN PHẦN CŨ) ---
 
-  // Load danh sách LOÀI (Chó, Mèo...)
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
@@ -94,7 +93,6 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
     fetchSpecies();
   }, []);
 
-  // Load danh sách GIỐNG khi chọn Loài
   useEffect(() => {
     const fetchBreeds = async () => {
       if (selectedSpeciesId) {
@@ -108,7 +106,21 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
     fetchBreeds();
   }, [selectedSpeciesId]);
 
-  // Tìm kiếm khách hàng (SỬA LỖI DROPDOWN 1 NGƯỜI)
+  // --- USE EFFECT MỚI: LOAD GÓI TIÊM ---
+  useEffect(() => {
+    if (selectedService === 'Gói tiêm' && packagesList.length === 0) {
+      const fetchPackages = async () => {
+        try {
+          const res = await receptionAPI.getAllPackages();
+          const data = Array.isArray(res) ? res : (res.data || []);
+          setPackagesList(data);
+        } catch (error) { console.error("Lỗi lấy gói tiêm:", error); }
+      };
+      fetchPackages();
+    }
+  }, [selectedService]);
+
+  // Tìm kiếm khách hàng (GIỮ NGUYÊN LOGIC BẠN ĐÃ DUYỆT)
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (searchTerm.trim().length >= 2 && !customerInfo) {
@@ -116,8 +128,6 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
           const res = await receptionAPI.getCustomerDetails(searchTerm);
           if (res.data && res.data.length > 0) {
             setRawSearchResult(res.data);
-            
-            // LOGIC SỬA LỖI: Dùng MaND (hoặc SĐT) làm khóa để Map không gộp nhầm
             const uniqueCustomers = Array.from(
                 new Map(res.data.map(item => {
                     const key = item.MaND || item.maND || item.makh || item.sdt;
@@ -137,23 +147,18 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, customerInfo]);
 
-  // Chọn khách hàng từ gợi ý
   const handleSelectCustomer = (customer) => {
     const customerID = customer.mand
     setCustomerInfo({ ...customer, __id: customerID });
     setSearchTerm(customer.HoTen); 
     setShowSuggestions(false);
     
-    // Normalize ID ra ngoài để sử dụng trong filter
     const selectedID = (customerID || '').toUpperCase().trim();
     
-    // FIX: Lọc thú cưng của khách hàng hiện tại (không phải toàn bộ)
     const customerPets = rawSearchResult
         .filter(row => {
-            // So sánh chuẩn: chuyển về cùng định dạng uppercase
             const rowMaKH = (row.mand || '').toUpperCase().trim();
             const rowMaND = (row.mand || '').toUpperCase().trim();
-            // Kiểm tra: ID khớp VÀ có MaTC
             return (rowMaKH === selectedID || rowMaND === selectedID) && row.MaTC;
         })
         .map(item => ({
@@ -175,17 +180,15 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
     setRawSearchResult([]);
   };
 
-  // Lấy bác sĩ rảnh (SỬA LỖI DANH SÁCH TRỐNG)
+  // Lấy bác sĩ rảnh (GIỮ NGUYÊN)
   useEffect(() => {
     const fetchDoctors = async () => {
-      // Chỉ gọi khi có đủ 3 tham số
       if (branchID && bookingDate && bookingTime) {
         try {
           const docs = await receptionAPI.getAvailableDoctors(branchID, bookingDate, bookingTime);
           const doctorList = Array.isArray(docs) ? docs : (docs.data || []);
           setAvailableDoctors(doctorList);
           
-          // Tự chọn bác sĩ đầu tiên nếu không phải khám bệnh
           if (selectedService !== 'Khám bệnh' && doctorList.length > 0) {
             setSelectedDoctor(doctorList[0]);
           }
@@ -197,12 +200,9 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
 
   // --- 4. XỬ LÝ NGHIỆP VỤ ---
 
-  // Thêm Thú Cưng (SỬA LỖI MaKH NULL & CanNang)
+  // Thêm Thú Cưng (GIỮ NGUYÊN)
   const handleConfirmAddPet = async () => {
-    // Lấy ID khách hàng từ biến thể (do SQL/API trả về có thể khác nhau)
-    const customerID =
-      customerInfo?.mand ||
-      customerInfo?.makh;
+    const customerID = customerInfo?.mand || customerInfo?.makh;
 
     if (!customerID) {
         alert("Lỗi: Không xác định được Mã Khách Hàng. Vui lòng tìm kiếm lại!");
@@ -218,9 +218,9 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
         const payload = {
             maKH: customerID,
             name: newPetName,
-            gender: "Đực", // Có thể mở rộng UI chọn giới tính
-            breedId: selectedBreedId, // Gửi MaGiong xuống DB
-            weight: 0 // Đã xóa cột CanNang ở Backend, gửi 0 cho an toàn
+            gender: "Đực",
+            breedId: selectedBreedId, 
+            weight: 0 
         };
         
         const res = await receptionAPI.addPet(payload);
@@ -242,39 +242,95 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
     } finally { setIsCreating(false); }
   };
 
-  // Xác nhận Đặt Lịch
+  // --- XÁC NHẬN ĐẶT LỊCH (SỬA LOGIC GÓI TIÊM) ---
   const handleConfirmBooking = async () => {
+    // 1. Validate dữ liệu cơ bản
     const customerID = customerInfo?.MaND || customerInfo?.maND || customerInfo?.mand || customerInfo?.makh;
-    
-    let serviceCode = 'DV001'; 
-    let type = 'KhamBenh';
-    if (selectedService === 'Tiêm phòng') { serviceCode = 'DV002'; type = 'TiemPhong'; }
-    if (selectedService === 'Gói tiêm') { serviceCode = 'DV003'; type = 'TiemPhong'; }
+    if (!customerID || !selectedPet?.id) return alert("Thiếu thông tin khách hàng hoặc thú cưng!");
+    if (!bookingDate || !bookingTime) return alert("Chưa chọn thời gian khám!");
 
-    const payload = {
-        maCN: branchID,
-        maKH: customerID,
-        maTC: selectedPet.id,
-        maBS: selectedDoctor?.MaNV || null,
-        maDV: serviceCode,
-        ngayHen: `${bookingDate} ${bookingTime}`,
-        loaiDichVu: type,
-        isPackage: selectedService === 'Gói tiêm',
-        maGoiTP: selectedService === 'Gói tiêm' ? 'GTP01' : null 
-    };
+    // 2. Validate Gói tiêm (MỚI)
+    if (selectedService === 'Gói tiêm' && !selectedPackageId) {
+        return alert("Vui lòng chọn Gói tiêm cụ thể!");
+    }
 
+    const isoDateTime = `${bookingDate}T${bookingTime}:00`;
     setIsCreating(true);
+
     try {
-        const res = await receptionAPI.createAppointment(payload);
-        if (res.success) {
-            alert("Đặt lịch thành công! Mã phiếu: " + (res.data?.maPhieuDV || res.maPhieuDV));
-            navigate('/staff/appointments');
+      let resultAppointment;
+      
+      // LOGIC A: ĐẶT LỊCH KHÁM
+      if (selectedService === 'Khám bệnh') {
+        const payload = {
+            maKH: customerID,
+            maCN: branchID,
+            maDV: 'DV01',
+            hinhThucDat: 'Tại quầy',
+            bacSiPhuTrach: selectedDoctor?.MaNV || null,
+            maTC: selectedPet.id,
+            ngayKham: isoDateTime 
+        };
+        resultAppointment = await receptionAPI.createExamAppointment(payload);
+      } 
+      // LOGIC B: ĐẶT LỊCH TIÊM (LẺ & GÓI)
+      else {
+        const payload = {
+            maKH: customerID,
+            maCN: branchID,
+            maDV: 'DV02', 
+            hinhThucDat: 'Tại quầy',
+            bacSiPhuTrach: selectedDoctor?.MaNV || null,
+            maTC: selectedPet.id,
+            ngayTiem: isoDateTime,
+            maDK: null // Lần đầu tạo chưa có mã ĐK
+        };
+        resultAppointment = await receptionAPI.createVaccineAppointment(payload);
+      }
+
+      // XỬ LÝ KẾT QUẢ
+      const maPhieuDV = resultAppointment.MaPhieuDV || resultAppointment.data?.MaPhieuDV || resultAppointment.maPhieuDV;
+
+      if (maPhieuDV) {
+        // LOGIC MỚI: NẾU LÀ GÓI TIÊM -> GỌI API ĐĂNG KÝ GÓI
+        if (selectedService === 'Gói tiêm') {
+            try {
+                await receptionAPI.registerPackage({
+                    MaKH: customerID,
+                    MaGoiTP: selectedPackageId,
+                    MaPhieuDV: maPhieuDV
+                });
+                alert(`Tạo lịch tiêm và Đăng ký gói thành công! (Mã phiếu: ${maPhieuDV})`);
+            } catch (pkgError) {
+                console.error(pkgError);
+                // Vẫn thông báo thành công phần tạo lịch, nhưng báo lỗi phần gói
+                alert(`Tạo lịch thành công (Phiếu: ${maPhieuDV}), nhưng lỗi đăng ký gói: ${pkgError.message}`);
+            }
+        } else {
+            alert(`Đặt lịch thành công! (Mã phiếu: ${maPhieuDV})`);
         }
-    } catch (error) { alert("Lỗi đặt lịch: " + error.message); } 
-    finally { setIsCreating(false); }
+        
+        navigate('/staff/appointments');
+      } else {
+        alert("Lỗi: Server không trả về mã phiếu. " + JSON.stringify(resultAppointment));
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi hệ thống: " + err.message);
+    } finally { setIsCreating(false); }
   };
 
-  // UI Helper: Đóng dropdown
+  // Helper tính tiền hiển thị
+  const calculateTotal = () => {
+    if (selectedService === 'Gói tiêm' && selectedPackageId) {
+        const pkg = packagesList.find(p => p.MaGoiTP === selectedPackageId);
+        return pkg?.GiaTien ? `${pkg.GiaTien.toLocaleString()}đ` : '---';
+    }
+    return '150.000đ';
+  };
+
+  // UI Helper
   useEffect(() => {
     const handleClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowSuggestions(false);
@@ -299,7 +355,7 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
         {/* CỘT TRÁI */}
         <div className="col-span-8 space-y-6">
           
-          {/* BƯỚC 1: TÌM KHÁCH & CHỌN PET */}
+          {/* BƯỚC 1: TÌM KHÁCH & CHỌN PET (GIỮ NGUYÊN UI) */}
           <div className={`bg-white rounded-[32px] border p-8 ${selectedPet ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-100'}`}>
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6">
                <User size={20} className="text-blue-500" /> 1. Xác định đối tượng
@@ -318,7 +374,6 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
                        {customerInfo && <button onClick={handleResetCustomer} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"><X size={18} /></button>}
                    </div>
 
-                   {/* SUGGESTION DROPDOWN */}
                    {showSuggestions && suggestions.length > 0 && (
                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 max-h-[300px] overflow-y-auto">
                            {suggestions.map((cus, idx) => (
@@ -347,13 +402,12 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
                       </button>
                     </div>
 
-                    {/* FORM THÊM THÚ CƯNG (Dynamic Data) */}
+                    {/* FORM THÊM PET GIỮ NGUYÊN */}
                     {showAddPetForm && (
                         <div className="mt-6 p-6 bg-gray-50 rounded-3xl border border-gray-200 animate-in zoom-in">
                             <h4 className="text-xs font-black text-blue-500 uppercase mb-4">Nhập thông tin bé mới</h4>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <input type="text" placeholder="Tên thú cưng" className="p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none" value={newPetName} onChange={(e)=>setNewPetName(e.target.value)}/>
-                                
                                 <div className="relative">
                                     <select value={selectedSpeciesId} onChange={(e)=>setSelectedSpeciesId(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none appearance-none bg-white">
                                         <option value="">-- Chọn loài --</option>
@@ -361,7 +415,6 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/>
                                 </div>
-
                                 <div className="relative col-span-2">
                                     <select value={selectedBreedId} onChange={(e)=>setSelectedBreedId(e.target.value)} disabled={!selectedSpeciesId} className="w-full p-3 rounded-xl border border-gray-200 text-sm font-bold outline-none appearance-none bg-white disabled:bg-gray-100">
                                         <option value="">-- Chọn giống --</option>
@@ -395,19 +448,44 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
             )}
           </div>
 
-          {/* BƯỚC 2: LỊCH HẸN & BÁC SĨ */}
+          {/* BƯỚC 2: LỊCH HẸN & BÁC SĨ (THÊM PHẦN GÓI TIÊM VÀO ĐÂY) */}
           <div className={`bg-white rounded-[32px] border p-8 ${!selectedPet ? 'opacity-30 grayscale pointer-events-none' : ''}`}>
              <h3 className="font-bold text-gray-800 mb-8 flex items-center gap-2"><Calendar size={20} className="text-blue-500" /> 2. Chi tiết lịch hẹn</h3>
              <div className="space-y-8">
                <div className="grid grid-cols-3 gap-4">
-                 <ServiceType icon={Stethoscope} label="Khám bệnh" active={selectedService === 'Khám bệnh'} onClick={() => {setSelectedService('Khám bệnh'); setSelectedDoctor(null);}} />
-                 <ServiceType icon={Clock} label="Tiêm phòng" active={selectedService === 'Tiêm phòng'} onClick={() => {setSelectedService('Tiêm phòng'); setSelectedDoctor(null);}} />
-                 <ServiceType icon={Plus} label="Gói tiêm" active={selectedService === 'Gói tiêm'} onClick={() => {setSelectedService('Gói tiêm'); setSelectedDoctor(null);}} />
+                 <ServiceType icon={Stethoscope} label="Khám bệnh" active={selectedService === 'Khám bệnh'} onClick={() => {setSelectedService('Khám bệnh'); setSelectedDoctor(null); setSelectedPackageId('');}} />
+                 <ServiceType icon={Clock} label="Tiêm phòng" active={selectedService === 'Tiêm phòng'} onClick={() => {setSelectedService('Tiêm phòng'); setSelectedDoctor(null); setSelectedPackageId('');}} />
+                 {/* SỬA ICON VÀ CLICK HANDLER CHO GÓI TIÊM */}
+                 <ServiceType icon={Package} label="Gói tiêm" active={selectedService === 'Gói tiêm'} onClick={() => {setSelectedService('Gói tiêm'); setSelectedDoctor(null);}} />
                </div>
+
+               {/* --- UI CHỌN GÓI TIÊM (CHỈ HIỆN KHI CHỌN DỊCH VỤ NÀY) --- */}
+               {selectedService === 'Gói tiêm' && (
+                    <div className="animate-in fade-in slide-in-from-top-2 bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                        <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-3 block">Chọn gói vắc-xin muốn đăng ký</label>
+                        <div className="relative">
+                            <select 
+                                value={selectedPackageId} 
+                                onChange={(e) => setSelectedPackageId(e.target.value)}
+                                className="w-full p-4 bg-white rounded-xl border border-purple-200 text-sm font-bold text-purple-900 outline-none appearance-none cursor-pointer hover:border-purple-300 transition-all"
+                            >
+                                <option value="">-- Vui lòng chọn gói --</option>
+                                {packagesList.map(pkg => (
+                                    <option key={pkg.MaGoiTP} value={pkg.MaGoiTP}>
+                                        {pkg.TenGoiTP} - {pkg.GiaTien ? pkg.GiaTien.toLocaleString() + 'đ' : 'Liên hệ'}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-300" size={20}/>
+                        </div>
+                    </div>
+               )}
+
                <div className="grid grid-cols-2 gap-6">
                  <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày khám</label><input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className="w-full bg-gray-50 p-4 rounded-xl font-bold outline-none border border-gray-100 focus:border-blue-500" /></div>
                  <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Giờ khám</label><input type="time" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} className="w-full bg-gray-50 p-4 rounded-xl font-bold outline-none border border-gray-100 focus:border-blue-500" /></div>
                </div>
+               
                {bookingDate && bookingTime && (
                  <div className="space-y-4 animate-in fade-in duration-500">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bác sĩ khả dụng:</p>
@@ -433,10 +511,28 @@ const [fetchedBranchId, setFetchedBranchId] = useState('');
                  <SummaryRow label="Khách hàng" value={customerInfo?.HoTen || '---'} />
                  <SummaryRow label="Thú cưng" value={selectedPet?.name || '---'} />
                  <SummaryRow label="Dịch vụ" value={selectedService} highlight />
+                 
+                 {/* HIỂN THỊ TÊN GÓI NẾU CÓ */}
+                 {selectedService === 'Gói tiêm' && selectedPackageId && (
+                    <SummaryRow 
+                        label="Gói chọn" 
+                        value={packagesList.find(p => p.MaGoiTP === selectedPackageId)?.TenGoiTP} 
+                        highlight 
+                    />
+                 )}
+
                  <SummaryRow label="Bác sĩ" value={selectedDoctor?.HoTen || '---'} />
                  <SummaryRow label="Thời gian" value={bookingDate ? `${bookingTime} - ${bookingDate}` : '---'} />
               </div>
-              <div className="mt-6 flex justify-between items-center"><span className="text-xs font-black text-gray-400 uppercase">Tạm tính</span><span className="text-2xl font-black text-blue-600">150.000đ</span></div>
+              
+              {/* TÍNH TIỀN ĐỘNG */}
+              <div className="mt-6 flex justify-between items-center">
+                  <span className="text-xs font-black text-gray-400 uppercase">Tạm tính</span>
+                  <span className="text-2xl font-black text-blue-600">
+                      {calculateTotal()}
+                  </span>
+              </div>
+
               <button onClick={handleConfirmBooking} disabled={!selectedPet || !selectedDoctor || !bookingDate || isCreating} className="w-full py-4 bg-[#0095FF] text-white rounded-xl font-black mt-6 shadow-lg shadow-blue-100 hover:bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all flex items-center justify-center gap-2">
                 {isCreating && <Loader2 className="animate-spin" size={20} />} XÁC NHẬN ĐẶT LỊCH
               </button>
