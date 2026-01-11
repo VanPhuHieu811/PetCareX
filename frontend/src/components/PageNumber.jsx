@@ -65,13 +65,13 @@ const Pagination = ({ currentPage = 1, totalPages = 10, onPageChange }) => {
       {/* Danh sách số trang */}
       {pageNumbers.map((page, index) => {
         if (page === '...') {
-          return <span key={index} className='dots'>...</span>;
+          return <span key={index} className='PN-dots'>...</span>;
         }
 
         return (
           <button
             key={index}
-            className={`PN-pageBtn ${currentPage === page ? 'active' : ''}`}
+            className={`PN-pageBtn ${currentPage === page ? 'PN-active' : ''}`}
             onClick={() => onPageChange && onPageChange(page)}
           >
             {page}
