@@ -35,7 +35,7 @@ export default function Vaccination() {
 	const [vacxinUseRates, setVacxinUseRates] = useState([]);
 
 	const [branchID, setBranchID] = useState("");
-	// Lấy dữ liệu branch của người dùng
+	// Lấy dữ liệu branch của quản lý
 	useEffect(() => {
 		async function fetchStaffBranch() {
 			try {
@@ -362,9 +362,7 @@ export default function Vaccination() {
 
 			{isSelectOpen && !isModalOpen && (
 				<div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-					<div 
-						className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden"
-					>
+					<div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
 						<div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
 							<h2 className="text-white font-bold text-lg">
 								Nhập Vacxin vào chi nhánh
