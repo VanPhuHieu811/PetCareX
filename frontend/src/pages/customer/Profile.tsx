@@ -1,4 +1,3 @@
-// src/pages/customer/Profile.tsx
 import { useEffect, useMemo, useState } from "react";
 import { clsx } from "clsx";
 import {
@@ -17,7 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Components
 import MedicalRecordDetailModal from "../../components/customer/history/MedicalRecordDetailModal";
@@ -133,6 +132,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("orders");
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // global loading/error
   const [loading, setLoading] = useState(true);
@@ -216,6 +216,19 @@ export default function Profile() {
     loadAll();
   }, []);
 
+  // Xử lý navigation từ Booking
+  // ==========================
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.openAddPet) {
+      setActiveTab("pets");
+      setIsAddPetModalOpen(true);
+      // Clear state để không mở lại khi reload
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
+  // ==========================
   // ==========================
   // HÀM MỞ HÓA ĐƠN (GỌI API MỚI)
   // ==========================

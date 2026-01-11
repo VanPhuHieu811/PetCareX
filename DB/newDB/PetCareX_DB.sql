@@ -3,7 +3,10 @@
    Mục tiêu: Tối ưu hiệu suất đọc & Snapshot dữ liệu
    Cập nhật: Bổ sung đầy đủ Explicit Constraints (FK, PK, CK)
    ========================================================= */
-USE db_ac35db_new;
+CREATE DATABASE PetCareX;
+GO
+
+USE PetCareX;
 GO
 
 /* =========================================================
