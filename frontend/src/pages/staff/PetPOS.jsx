@@ -130,6 +130,40 @@ const PetPOS = () => {
     return () => clearTimeout(timer);
   }, [customerId]);
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!cart.length) return;
+    if (!staffProfile?.MaCN || !staffProfile?.MaND) {
+      alert("Không tìm thấy thông tin nhân viên/chi nhánh. Vui lòng đăng nhập lại.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const payload = {
+        branchId: staffProfile.MaCN,
+        staffId: staffProfile.MaND,
+        customerId: (isValidCustomer && customerId.trim()) ? customerId : null,
+        items: cart.map(item => ({ id: item.id, qty: item.qty })),
+        paymentMethod: paymentMethod
+      };
+
+      const res = await staffApi.createOrder(payload);
+      if (res.success) {
+        setShowSuccess(true);
+        // Maybe clear cart after success modal close, handled in Modal actions
+      } else {
+        alert("Thanh toán thất bại: " + (res.message || res.error));
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Lỗi kết nối: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen gap-6">
       <div className="grid grid-cols-12 gap-8 font-sans flex-1 min-h-0">
@@ -312,13 +346,17 @@ const PetPOS = () => {
               </button>
             </div>
 
+
             <button
-              onClick={() => setShowSuccess(true)}
-              disabled={cart.length === 0}
-              className={`w-full py-4 rounded-xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 ${cart.length > 0 ? 'bg-[#0095FF] text-white shadow-blue-100 hover:bg-blue-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || isProcessing}
+              className={`w-full py-4 rounded-xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 ${cart.length > 0 && !isProcessing ? 'bg-[#0095FF] text-white shadow-blue-100 hover:bg-blue-600' : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
             >
-              THANH TOÁN (IN HÓA ĐƠN)
+              {isProcessing ? (
+                <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={16} /> ĐANG XỬ LÝ...</span>
+              ) : 'THANH TOÁN (IN HÓA ĐƠN)'}
             </button>
+
           </div>
         </div>
 
