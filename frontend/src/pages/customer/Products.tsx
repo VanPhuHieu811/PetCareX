@@ -40,6 +40,13 @@ const QUICK_FILTERS = [
     { id: 'Phụ kiện', label: 'Phụ kiện' }
 ];
 
+// Mapping danh mục sang hình ảnh tương ứng
+const CATEGORY_IMAGES: { [key: string]: string } = {
+    'Thuốc': 'https://apc-health.vn/wp-content/uploads/2024/09/DOSONE-01.png',
+    'Thức ăn': 'https://thanhtienplastic.com/uploads/6-25/in-bao-bi-dung-thuc-an-cho-thu-cung.jpg',
+    'Phụ kiện': 'https://fagopet.vn/uploads/images/62468ae39487f634f84426f8/vong-co-co-chuong.webp'
+};
+
 export default function Products() {
     const { addToCart } = useCart();
 
@@ -142,7 +149,7 @@ export default function Products() {
             originalPrice: item.GiaBan,
             salePrice: item.GiaBan,
             discountPercentage: 0,
-            image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+            image: CATEGORY_IMAGES[item.TenLoaiSP],
             description: `Đơn vị tính: ${item.DonViTinh}`,
             rating: 5,
             stock: stock,

@@ -37,28 +37,10 @@ app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/carts', cartRoutes);
-
-app.use('/api/v1/branches', branchRoutes);
-
-app.use('/api/v1/reception', receptionRoutes);
-
-app.use('/api/v1/invoices', invoiceRoutes);
-
-app.use('/api/v1/pets', petRoutes); 
-
-app.use('/api/v1/doctors', doctorRoutes);
-
-app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
-
-app.use('/api/v1/customers', customerRoutes);
-//services
 app.use('/api/v1/services', servicesRoutes);
-//packages
 app.use('/api/v1/packages', packagesRoutes);
-
 app.use('/api/v1/vacxin', vacxinRoutes);
-
 app.use('/api/v1/staff', staffRoutes);
 
 export default app;
