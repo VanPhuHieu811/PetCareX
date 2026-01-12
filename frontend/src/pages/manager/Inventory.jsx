@@ -7,6 +7,7 @@ import '../../styles/Inventory.css';
 
 const BASEURL = "http://localhost:3000/api/v1"
 
+// Danh sách sản phẩm của petcareX
 function productForm(product, currentProduct, setCurrentProduct) {
 	return (
 		<button key={product.MaSP}
@@ -19,7 +20,7 @@ function productForm(product, currentProduct, setCurrentProduct) {
 				GiaBan: product.GiaBan,
 				DonViTinh: product.DonViTinh,
 				SoLuongTonKho: 0,
-				TrangThai: 0
+				TrangThai: false
 			})}
 		>
 			<Cat size={30} className="text-gray-400 mx-auto" />
@@ -50,13 +51,14 @@ export default function Inventory() {
 		GiaBan: 0,
 		DonViTinh: '',
 		SoLuongTonKho: 0,
-		TrangThai: 0,
+		TrangThai: false,
 	});
 
 	// Lấy dữ liệu branch của người dùng
 	const [branchID, setBranchID] = useState("");
 	const [products, setProducts] = useState([]); // product trong chi nhánh
 	const [deletedProducts, setDeletedProducts] = useState([]); // tất cả product nhánh có TrangThai = 1)
+	const [productChangingFlag, setProductChangingFlag] = useState(false); // Cờ để theo dõi thay đổi sản phẩm
 	useEffect(() => {
 		async function fetchStaffBranch() {
 			try {
@@ -104,9 +106,15 @@ export default function Inventory() {
 				const res = await fetch(`${BASEURL}/products/branch?branchId=${branchID}&page=${currentPage}&limit=20`);
 				if (!res.ok)
 					throw new Error(`Failed to fetch branch products: ${res.status} ${res.statusText}`);
-				const data = await res.json(); 
-				setProducts(data.filter(p => p.TrangThai === false)); // Lọc những sản phẩm chưa bị xóa
-				setDeletedProducts(data.filter(p => p.TrangThai === true)); // Bao gồm cả sản phẩm bị xóa (TrangThai = true)
+				const data = await res.json();
+				const productsData = data.filter(p => p.TrangThai === false); // Lọc những sản phẩm chưa bị xóa
+				const deletedData = data.filter(p => p.TrangThai === true); // Bao gồm cả sản phẩm bị xóa (TrangThai = true)
+				
+				console.log(productsData);
+				console.log(deletedData);
+				
+				setProducts(productsData);
+				setDeletedProducts(deletedData);
 			} catch (error) {
 				console.error('Error fetching branch products:', error);
 			}
@@ -128,7 +136,7 @@ export default function Inventory() {
 			}
 		};
 		fetchCountBranchTotalPages();
-	}, [branchID]);
+	}, [branchID, productChangingFlag]);
 
 	const filteredProducts = products.filter(p =>
 		p.TenSP.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,7 +154,8 @@ export default function Inventory() {
 				TenLoaiSP: '',
 				GiaBan: 0,
 				DonViTinh: '',
-				SoLuongTonKho: 0
+				SoLuongTonKho: 0,
+				TrangThai: false
 			});
 
 			const res = await fetch(`${BASEURL}/products?page=${currentAllPage}&limit=15`);
@@ -167,11 +176,11 @@ export default function Inventory() {
 			return;
 		}
 
-		if(deletedProducts.find(p => p.MaSP === currentProduct.MaSP && p.TrangThai === true)) {
+		if (deletedProducts.find(p => p.MaSP === currentProduct.MaSP && p.TrangThai === true)) {
 			try {
 				console.log("Đang khôi phục sản phẩm đã xóa trước đó...");
 				// Đổi trạng thái sản phẩm của chi nhánh qua 0 (đang hoạt động)
-				await fetch(`${BASEURL}/products/branch/recover`, {
+				const res = await fetch(`${BASEURL}/products/branch/recover`, {
 					method: 'PATCH',
 					headers: {
 						'Content-Type': 'application/json'
@@ -181,14 +190,20 @@ export default function Inventory() {
 						productId: currentProduct.MaSP
 					})
 				});
+				if (!res.ok) {
+					alert("Lỗi khi khôi phục sản phẩm về chi nhánh");
+					return;
+				}
 				alert("Sản phẩm đã bị xóa trước đó, khôi phục lại sản phẩm!");
+				// Đổi trạng thái cờ thay đổi sản phẩm để useEffect tải lại danh sách
+				setProductChangingFlag(!productChangingFlag);
+				setIsModalOpen(false);
+				return;
 			}
 			catch (error) {
 				alert("Lỗi khi khôi phục sản phẩm về chi nhánh");
 				console.error('Error recovering product to branch:', error);
 			}
-			setIsModalOpen(false);
-			return;
 		}
 
 		if (products.find(p => p.MaSP === currentProduct.MaSP)) {
@@ -223,8 +238,8 @@ export default function Inventory() {
 				alert("Lỗi khi thêm sản phẩm vào chi nhánh");
 				return;
 			}
-			// Cập nhật lại danh sách sản phẩm sau khi thêm
-			setProducts([...products, currentProduct]);
+			// Bật cờ thay đổi sản phẩm để useEffect tải lại danh sách
+			setProductChangingFlag(!productChangingFlag);
 			setIsSelectAmountOpen(false);
 			alert("Thêm sản phẩm vào chi nhánh thành công!");
 		}
@@ -262,7 +277,7 @@ export default function Inventory() {
 				alert("Lỗi khi cập nhật số lượng sản phẩm trong chi nhánh");
 				return;
 			}
-			// Cập nhật lại danh sách sản phẩm sau khi thêm
+
 			setProducts(products.map(p =>
 				p.MaSP === currentProduct.MaSP
 					? { ...p, SoLuongTonKho: p.SoLuongTonKho + addedStock }
@@ -295,8 +310,8 @@ export default function Inventory() {
 				alert("Sản phẩm đã xuất hiện trong đơn hàng khác, không thể xóa!");
 				return;
 			}
-			// Cập nhật lại danh sách sản phẩm sau khi xóa
-			setProducts(products.filter(p => p.MaSP !== maSP));
+			// Bật cờ thay đổi sản phẩm để useEffect tải lại danh sách
+			setProductChangingFlag(!productChangingFlag);
 			alert("Xóa sản phẩm khỏi chi nhánh thành công!");
 		}
 		catch (error) {
@@ -429,8 +444,8 @@ export default function Inventory() {
 					</tbody>
 				</table>
 				<PageNumber
-					currentPage={currentPage} 
-					totalPages={totalPages} 
+					currentPage={currentPage}
+					totalPages={totalPages}
 					onPageChange={handleBranchPageChange}
 				/>
 				{filteredProducts.length === 0 && (
@@ -501,12 +516,11 @@ export default function Inventory() {
 
 						<input
 							type="number"
-							min="1"
 							className="w-[90%] border border-gray-300 rounded-lg p-3 my-4 outline-none focus:ring-2 focus:ring-blue-500"
 							style={{ margin: '20px auto', display: 'block' }}
 							placeholder="Nhập số lượng tồn kho"
 							value={currentProduct.SoLuongTonKho}
-							onChange={(e) => setcurrentProduct({ ...currentProduct, SoLuongTonKho: parseInt(e.target.value) })}
+							onChange={(e) => setCurrentProduct({ ...currentProduct, SoLuongTonKho: parseInt(e.target.value) })}
 						/>
 
 						<div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">

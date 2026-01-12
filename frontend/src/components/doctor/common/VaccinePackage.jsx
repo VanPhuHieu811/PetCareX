@@ -49,35 +49,41 @@ const VaccinePackage = ({ packageData }) => {
 
         {/* Danh sách mũi */}
         <div className="space-y-3">
-          {packageData.danhSachMui.map((mui, idx) => {
-            const isCompleted = mui.trangThai === 'Đã tiêm';
-            const isToday = mui.trangThai === 'Hôm nay';
-            const displayDate = mui.ngayThucHien || mui.ngayDuKien;
+          {packageData.danhSachMui && packageData.danhSachMui.length > 0 ? (
+            packageData.danhSachMui.map((mui, idx) => {
+              const isCompleted = mui.trangThai === 'Đã tiêm';
+              const isToday = mui.trangThai === 'Hôm nay';
+              const displayDate = mui.ngayThucHien || mui.ngayDuKien;
 
-            return (
-              <div
-                key={idx}
-                className={`flex justify-between items-center p-4 rounded-xl border
-                  ${isToday ? 'border-blue-300 bg-blue-50'
-                  : isCompleted ? 'border-slate-200 bg-slate-50'
-                  : 'border-slate-200 bg-white'}
-                `}
-              >
-                <div>
-                  <p className="font-medium text-slate-800">
-                    Mũi {idx + 1} – {mui.tenVacxin}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {isCompleted ? 'Đã tiêm' : isToday ? 'Hôm nay' : 'Dự kiến'}
-                  </p>
-                </div>
+              return (
+                <div
+                  key={idx}
+                  className={`flex justify-between items-center p-4 rounded-xl border
+                    ${isToday ? 'border-blue-300 bg-blue-50'
+                    : isCompleted ? 'border-slate-200 bg-slate-50'
+                    : 'border-slate-200 bg-white'}
+                  `}
+                >
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      Mũi {idx + 1} – {mui.tenVacxin}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {isCompleted ? 'Đã tiêm' : isToday ? 'Hôm nay' : 'Dự kiến'}
+                    </p>
+                  </div>
 
-                <div className="text-sm font-medium text-slate-700">
-                  {displayDate}
+                  <div className="text-sm font-medium text-slate-700">
+                    {displayDate}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <p className="text-sm text-slate-500 text-center py-4">
+              Chưa có mũi tiêm nào
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -6,9 +6,6 @@ import { formatDate } from '../../components/formatter';
 
 const BASEURL = "http://localhost:3000/api/v1"
 
-// biến lưu tạm _______________
-const branchID = 'CN001'
-//_____________________________
 
 type DoctorStat = {
 	MaNV: string;
@@ -37,8 +34,34 @@ const Dashboard: React.FC = () => {
 	const [doctorStats, setDoctorStats] = useState<DoctorStat[]>([]);
 	const [visitStats, setVisitStats] = useState<VisitStat[]>([]);
 
+	const [branchID, setBranchID] = useState<string>("");
+	useEffect(() => {
+		async function fetchStaffBranch() {
+			try {
+				const token = localStorage.getItem('petcare_token');
+				const res = await fetch(`${BASEURL}/branches/staff-branch`, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+				if (!res.ok)
+					throw new Error(`Failed to fetch staff branch: ${res.status} ${res.statusText}`);
+				const data = await res.json();
+				if (data.length > 0) {
+					setBranchID(data[0].MaCN);
+				} else {
+					console.error('No branch found for the staff member.');
+				}
+			} catch (error) {
+				console.error('Error fetching staff branch:', error);
+			}
+		}
+		fetchStaffBranch();
+	}, []);
+
 	useEffect(() => {
 		async function fetchBranchRevenue() {
+			if(!branchID) return;
 			try {
 				const res = await fetch(`${BASEURL}/branches/revenue?id=${branchID}`);
 				if (!res.ok) {
@@ -65,6 +88,7 @@ const Dashboard: React.FC = () => {
 		fetchBranchRevenue();
 
 		async function fetchBranchServiceUsage() {
+			if(!branchID) return;
 			try {
 				const res = await fetch(`${BASEURL}/branches/usage?id=${branchID}`);
 				if (!res.ok) {
@@ -89,6 +113,7 @@ const Dashboard: React.FC = () => {
 		fetchBranchServiceUsage();
 
 		async function fetchDoctorsStatistics() {
+			if(!branchID) return;
 			try {
 				const res = await fetch(`${BASEURL}/doctors/statistics?id=${branchID}`);
 				if (!res.ok) {
@@ -109,11 +134,12 @@ const Dashboard: React.FC = () => {
 			}
 		}
 		fetchDoctorsStatistics();
-	}, []);
+	}, [branchID]);
 
-	useEffect(() => {
+	useEffect(() => { // Lấy thông kê theo ngay-thang-nam
 		// Lấy year, month, day từ selectedDate
 		if (!selectedDate) return; // chưa chọn ngày thì bỏ qua
+		if(!branchID) return;
 
 		const dateObj = new Date(selectedDate);
 		let year = dateObj.getFullYear();
@@ -148,7 +174,7 @@ const Dashboard: React.FC = () => {
 			}
 		}
 		fetchDateStatistics();
-	}, [selectedDate]);
+	}, [branchID, selectedDate]);
 
 	const getLabel = () => {
 		const dateObj = new Date(selectedDate);
@@ -162,7 +188,7 @@ const Dashboard: React.FC = () => {
 			{/* Header & Filters */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-800">Tổng quan Chi nhánh CN01</h1>
+					<h1 className="text-2xl font-bold text-gray-800">Tổng quan Chi nhánh {branchID}</h1>
 					<p className="text-gray-500">Báo cáo tài chính và hoạt động</p>
 				</div>
 

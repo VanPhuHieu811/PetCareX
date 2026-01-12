@@ -288,7 +288,7 @@ export default function Vaccination() {
 											</button>
 										</td>
 									</tr>
-								)): <td colSpan="7" className="text-center text-gray-500 py-4">Đang tìm kiếm danh sách vắc-xin ...</td> 
+								)): <tr><td colSpan="7" className="text-center text-gray-500 py-4">Đang tìm kiếm danh sách vắc-xin ...</td></tr> 
 								}
 							</tbody>
 						</table>
