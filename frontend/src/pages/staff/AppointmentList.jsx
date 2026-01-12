@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, ChevronDown, MoreVertical, 
-  RotateCcw, Edit2, Trash2, X, User, PawPrint, Loader2 
+  RotateCcw, Edit2, Trash2, X, User, PawPrint, Loader2, AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import receptionAPI from '../../api/receptionAPI';
 
-// 1. ĐỊNH NGHĨA STATUS CARD (Phải nằm ngoài hoặc trước khi gọi trong AppointmentList)
+// 1. ĐỊNH NGHĨA STATUS CARD
 const StatusCard = ({ count, label, color }) => {
   const styles = {
     blue: 'text-blue-500 bg-blue-50 border-blue-100',
@@ -40,18 +40,19 @@ const AppointmentList = () => {
 
   // States UI
   const [showReschedule, setShowReschedule] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);   
   const [openMenuId, setOpenMenuId] = useState(null);
   const [selectedAppt, setSelectedAppt] = useState(null);
+
+  // States form đổi lịch
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
 
   // Hàm lấy dữ liệu từ API
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Gọi API với các tham số lọc
       const response = await receptionAPI.getAppointmentBoard(filterDate, filterStatus, searchTerm);
-      
-      // Dữ liệu trả về từ service gồm stats và appointments
-      console.log(response.appointments)
       setStats(response.stats); 
       setAppointments(response.appointments); 
     } catch (error) {
@@ -64,6 +65,54 @@ const AppointmentList = () => {
   useEffect(() => {
     fetchData();
   }, [filterDate, filterStatus, searchTerm]);
+  // --- HÀM XỬ LÝ ĐỔI LỊCH (Reschedule) ---
+const handleRescheduleSubmit = async () => {
+  if (!selectedAppt || !rescheduleDate || !rescheduleTime) {
+    alert("Vui lòng chọn đầy đủ ngày và giờ mới!");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    
+    // 1. Gộp Date và Time thành chuỗi chuẩn ISO (YYYY-MM-DDTHH:mm:00)
+    // Ví dụ: 2024-12-31 và 14:30 -> 2024-12-31T14:30:00
+    const combinedDateTime = `${rescheduleDate}T${rescheduleTime}:00`;
+    
+    // 2. Gọi API
+    await receptionAPI.rescheduleAppointment(selectedAppt.MaPhieuDV, combinedDateTime);
+    alert("✅ Đổi lịch hẹn thành công!");
+    // 3. Thông báo & Làm mới dữ liệu
+    console.log("Đổi lịch thành công!");
+    setShowReschedule(false); // Đóng modal
+    setRescheduleDate('');    // Reset form
+    setRescheduleTime('');
+    await fetchData();        // Tải lại danh sách
+    
+  } catch (error) {
+    console.error("Lỗi đổi lịch:", error);
+    alert("Đổi lịch thất bại: " + (error.response?.data?.message || error.message));
+  } finally {
+    setLoading(false);
+  }
+};
+  // --- HÀM XỬ LÝ HỦY LỊCH ---
+  const handleCancelAppointment = async () => {
+    if (!selectedAppt) return;
+    try {
+      await receptionAPI.cancelAppointment(selectedAppt.MaPhieuDV);
+      alert("✅ Hủy lịch hẹn thành công!");
+    // Thông báo thành công (Tùy chọn)
+    console.log("Đã hủy thành công!");
+
+    // Đóng Modal và tải lại dữ liệu mới nhất từ Server
+    setShowCancelModal(false);
+    await fetchData(); 
+    
+  } finally {
+    setLoading(false); // Tắt loading dù thành công hay thất bại
+  }
+};
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
@@ -72,6 +121,7 @@ const AppointmentList = () => {
 
   return (
     <>
+      {/* Header & Filter Section (Giữ nguyên) */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#1E293B]">Quản lý lịch hẹn</h1>
@@ -128,7 +178,7 @@ const AppointmentList = () => {
         </div>
       </div>
 
-      {/* Thống kê từ dữ liệu stats của Backend */}
+      {/* Stats Cards (Giữ nguyên) */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <StatusCard count={stats.DangCho} label="Đang chờ" color="blue" />
         <StatusCard count={stats.DaThanhToan} label="Đang thanh toán" color="orange" />
@@ -136,6 +186,7 @@ const AppointmentList = () => {
         <StatusCard count={stats.DaHuy} label="Đã hủy" color="red" />
       </div>
 
+      {/* List Content */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6 min-h-[400px] relative">
         {loading && (
           <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
@@ -198,14 +249,14 @@ const AppointmentList = () => {
                   >
                     <MoreVertical size={20} />
                   </button>
-                  {/* Menu Action giữ nguyên logic UI của bạn */}
+                  
                   {openMenuId === appt.MaPhieuDV && (
                   <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 shadow-xl rounded-xl z-[100] py-1">
                     <button
                       onClick={() => {
                         setSelectedAppt({
                           ...appt, 
-                          pet: appt.TenThuCung, // Map lại tên để Modal hiển thị đúng
+                          pet: appt.TenThuCung, 
                           owner: appt.TenKH,
                           time: formatTime(appt.NgayDatDV)
                         });
@@ -216,11 +267,17 @@ const AppointmentList = () => {
                     >
                       <RotateCcw size={14} /> Đổi lịch hẹn
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50">
-                      <Edit2 size={14} /> Chỉnh sửa
-                    </button>
                     <hr className="my-1 border-gray-50" />
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50">
+                    
+                    {/* BUTTON HỦY LỊCH - ĐÃ SỬA */}
+                    <button 
+                      onClick={() => {
+                        setSelectedAppt(appt); // Set dữ liệu
+                        setOpenMenuId(null);   // Đóng menu
+                        setShowCancelModal(true); // Mở modal
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50"
+                    >
                       <Trash2 size={14} /> Hủy lịch
                     </button>
                   </div>
@@ -236,7 +293,7 @@ const AppointmentList = () => {
         </div>
       </div>
 
-      {/* Modal Đổi lịch */}
+      {/* Modal Đổi lịch (Giữ nguyên) */}
       {showReschedule && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[24px] w-full max-w-[380px] shadow-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -272,15 +329,24 @@ const AppointmentList = () => {
                   </label>
                   <input
                     type="date"
+                    // THÊM VÀO ĐÂY
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]} // Không cho chọn ngày quá khứ
                     className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/10 outline-none"
                   />
                 </div>
+
+                {/* INPUT GIỜ MỚI */}
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block ml-1">
                     Giờ mới
                   </label>
                   <input
                     type="time"
+                    // THÊM VÀO ĐÂY
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
                     className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/10 outline-none"
                   />
                 </div>
@@ -294,8 +360,49 @@ const AppointmentList = () => {
               >
                 Hủy
               </button>
-              <button className="flex-[1.5] py-3 bg-[#0095FF] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-600 shadow-md">
+              <button 
+              onClick={handleRescheduleSubmit}
+              className="flex-[1.5] py-3 bg-[#0095FF] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-600 shadow-md">
                 <RotateCcw size={14} /> Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL XÁC NHẬN HỦY LỊCH (MỚI) --- */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-red-900/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] w-full max-w-[320px] shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+                <Trash2 size={24} className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Hủy lịch hẹn?</h3>
+              <p className="text-sm text-gray-500 mb-4 leading-relaxed">
+                Bạn có chắc muốn hủy lịch hẹn của <br/> 
+                <span className="font-bold text-gray-800">{selectedAppt?.TenThuCung}</span> (Khách: {selectedAppt?.TenKH})?
+              </p>
+              <div className="bg-red-50 p-3 rounded-xl flex items-start gap-3 text-left">
+                 <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                 <p className="text-xs text-red-600 font-medium">
+                   Hành động này sẽ cập nhật trạng thái lịch hẹn thành "Đã hủy" và không thể hoàn tác.
+                 </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 flex gap-3 border-t border-gray-100">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={handleCancelAppointment}
+                className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 shadow-md shadow-red-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 size={14} /> Xác nhận hủy
               </button>
             </div>
           </div>

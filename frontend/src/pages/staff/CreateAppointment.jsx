@@ -185,7 +185,9 @@ const CreateAppointment = () => {
     const fetchDoctors = async () => {
       if (branchID && bookingDate && bookingTime) {
         try {
+          
           const docs = await receptionAPI.getAvailableDoctors(branchID, bookingDate, bookingTime);
+
           const doctorList = Array.isArray(docs) ? docs : (docs.data || []);
           setAvailableDoctors(doctorList);
           

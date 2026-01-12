@@ -159,6 +159,7 @@ const receptionAPI = {
     return apiGet(`${BASE_PATH}/appointments?${query}`);
   },
 
+
   // --- NHÓM 3: ĐẶT LỊCH DỊCH VỤ (SERVICES) ---
 
   /** * Tạo lịch KHÁM BỆNH 
@@ -195,6 +196,15 @@ const receptionAPI = {
   }) => {
     return apiPost(`${PACKAGE_PATH}/register`, payload);
   },
+
+  /** HỦY LỊCH HẸN DỊCH VỤ */
+  cancelAppointment: async (appointmentId: string): Promise<any> => {
+    return apiPost(`${BASE_PATH}/appointment/cancel/${appointmentId}`, {});
+  },
+  /** ĐỔI LỊCH HẸN DỊCH VỤ */
+  rescheduleAppointment: async (appointmentId: string, newDateTime: string): Promise<any> => {
+    return apiPost(`${BASE_PATH}/appointment/reschedule/${appointmentId}`, { newDateTime });
+  }
 };
 
 export default receptionAPI;

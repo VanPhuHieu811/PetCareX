@@ -12,5 +12,7 @@ router.post('/add-pet', receptionController.addPet);
 router.post('/create-appointment', receptionController.createAppointment);
 router.get('/species', receptionController.getPetSpecies);
 router.get('/breeds', receptionController.getBreeds);
+router.post('/appointment/cancel/:id',receptionController.cancelAppointment );
+router.post('/appointment/reschedule/:id', receptionController.rescheduleAppointment);
 
 export default router;

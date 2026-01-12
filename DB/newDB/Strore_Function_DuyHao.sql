@@ -287,3 +287,6 @@ RETURN
 );
 
 go
+select *
+from PhieuDatDV
+where TenKhachHang = N'Cuong Huy Hieu Hao Manh'

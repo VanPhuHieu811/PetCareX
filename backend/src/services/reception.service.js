@@ -147,12 +147,12 @@ const getAppointmentDashboard = async (pool, { date, status, search }) => {
 };
 
 //3. Lấy danh sách các bác sĩ rãnh ở chi nhánh
-const getAvailableDoctors = async (pool, { branchID, date, time }) => {
-	try {
-		const request = pool.request();
-		request.input('MaCN', sql.NVarChar(50), branchID);
-		request.input('NgayDatDV', sql.DateTime, date);
-		request.input('ThoiGian', sql.NVarChar(50), time);
+const getAvailableDoctors=async(pool,{ branchID, date, time }) => {
+   try{
+    const request=pool.request();
+    request.input('MaCN',sql.NVarChar(50),branchID);
+    request.input('NgayDatDV',sql.DateTime,date);
+    request.input('ThoiGian',sql.NVarChar(50),time);
 
 		const query = `select * from dbo.FN_GetAvailableDoctors(@MaCN,@NgayDatDV,@ThoiGian)`;
 		const result = await request.query(query);
@@ -306,7 +306,58 @@ const createAppointment = async (pool, data) => {
 		throw error;
 	}
 };
+// 6. [NEW] Hủy lịch hẹn
+const cancelAppointment = async (pool, maPhieuDV) => {
+    try {
+        const request = pool.request();
+        request.input('MaPhieuDV', sql.NVarChar, maPhieuDV);
+
+        // Kiểm tra tồn tại và trạng thái
+        const checkQuery = `SELECT TrangThai FROM PhieuDatDV WHERE MaPhieuDV = @MaPhieuDV`;
+        const checkRes = await request.query(checkQuery);
+
+        if (checkRes.recordset.length === 0) {
+            throw new Error('Không tìm thấy lịch hẹn.');
+        }
+
+        const currentStatus = checkRes.recordset[0].TrangThai;
+        if (currentStatus === 'Hoàn thành' || currentStatus === 'Hủy' ) {
+            throw new Error('Lịch hẹn đã kết thúc hoặc đã bị hủy trước đó.');
+        }
+
+        // Cập nhật trạng thái
+        const updateQuery = `
+            UPDATE PhieuDatDV 
+            SET TrangThai = N'Hủy' 
+            WHERE MaPhieuDV = @MaPhieuDV
+        `;
+        await request.query(updateQuery);
+
+        return { success: true, message: 'Đã hủy lịch hẹn thành công' };
+    } catch (error) {
+        throw error;
+    }
+};
+/* rescheduleAppointment*/
+const rescheduleAppointment = async (pool, maPhieuDV, newDateTime) => {
+	try{
+		const request = pool.request();
+		request.input('MaPhieuDV', sql.NVarChar, maPhieuDV);
+		request.input('NewDate', sql.DateTime, newDateTime);
+		const updateQuery = `
+			UPDATE PhieuDatDV
+			SET NgayDatDV = @NewDate, TrangThai = N'Đang chờ'
+			WHERE MaPhieuDV = @MaPhieuDV
+		`;
+		await request.query(updateQuery);
+		return { success: true, message: 'Lịch hẹn đã được đổi thành công' };
+	}
+	catch(error){
+		throw error;
+	}
+}
+
 export default {
 	getCustomerInfo, getAppointmentDashboard, getAvailableDoctors, getCustomerStats, createCustomer, getPetMedicalHistory, addPet,
-	getPetSpecies, getBreedsBySpecies, addPet, createAppointment
+	getPetSpecies, getBreedsBySpecies, addPet, createAppointment, cancelAppointment, rescheduleAppointment
 };

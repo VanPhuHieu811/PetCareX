@@ -190,6 +190,44 @@ const createAppointment = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+const cancelAppointment= async (req, res) => {
+    try{
+        const pool = req.db;
+        const { id } = req.params;
+        const result = await receptionService.cancelAppointment(pool, id);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("Lỗi Cancel Appointment:", error);
+        
+        // Trả về lỗi cho frontend
+        return res.status(500).json({
+            message: 'Đã xảy ra lỗi khi hủy lịch hẹn',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}
+
+const rescheduleAppointment = async (req, res) => {
+    try{
+        const pool = req.db;
+        const { id } = req.params;
+        const { newDateTime } = req.body;
+        if (!newDateTime) {
+            return res.status(400).json({ message: 'Thiếu thông tin ngày giờ mới' });
+        }
+
+        const result = await receptionService.rescheduleAppointment(pool, id, newDateTime);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("Lỗi Reschedule Appointment:", error);
+        return res.status(500).json({
+            message: 'Đã xảy ra lỗi khi đổi lịch hẹn',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}
+
 export default { getCustomerDetails, getAppointmentBoard, getFreeDoctors , getCustomerStatistics, addCustomer, getPetHistory,
-    getBreeds, getPetSpecies,addPet, createAppointment
+    getBreeds, getPetSpecies,addPet, createAppointment, cancelAppointment, rescheduleAppointment
 };
